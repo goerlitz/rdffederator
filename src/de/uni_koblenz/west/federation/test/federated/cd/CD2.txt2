@@ -1,0 +1,5 @@
+SELECT ?party ?page WHERE {
+   dbpedia:Barack_Obama dbpedia-owl:party ?party .
+   ?x nytimes:topicPage ?page .
+   ?x owl:sameAs dbpedia:Barack_Obama }
+

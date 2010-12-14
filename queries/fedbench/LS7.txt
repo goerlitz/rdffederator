@@ -1,0 +1,8 @@
+SELECT ?drug ?transform ?mass WHERE {
+   ?drug drugbank:affectedOrganism  'Humans and other mammals'.
+   ?drug drugbank:casRegistryNumber ?cas .
+   ?keggDrug bio2rdf:xRef ?cas .
+   ?keggDrug bio2rdf:mass ?mass
+      FILTER ( ?mass > '5' )
+      OPTIONAL { ?drug drugbank:biotransformation ?transform . } 
+}

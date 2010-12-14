@@ -1,0 +1,7 @@
+SELECT ?predicate ?object WHERE {
+   { drugbank-drugs:DB00201 ?predicate ?object . }
+  UNION
+   { drugbank-drugs:DB00201 owl:sameAs ?caff .
+     ?caff ?predicate ?object . } 
+}
+
