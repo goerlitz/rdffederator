@@ -1,7 +1,0 @@
-SELECT ?pres ?party ?page WHERE {
-   ?pres rdf:type dbpedia-owl:President .
-   ?pres dbpedia-owl:nationality dbpedia:United_States .
-   ?pres dbpedia-owl:party ?party .
-   ?x nytimes:topicPage ?page .
-   ?x owl:sameAs ?pres 
-}

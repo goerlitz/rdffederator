@@ -1,7 +1,0 @@
-SELECT ?actor ?news WHERE {
-   ?film purl:title 'Tarzan' .
-   ?film linkedMDB:actor ?actor .
-   ?actor owl:sameAs ?x.
-   ?y owl:sameAs ?x .
-   ?y nytimes:topicPage ?news 
-}

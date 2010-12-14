@@ -1,6 +1,0 @@
-SELECT ?location ?news WHERE {
-   ?location geonames:parentFeature ?parent .
-   ?parent geonames:name 'California'  .
-   ?y owl:sameAs ?location.
-   ?y nytimes:topicPage ?news 
-}

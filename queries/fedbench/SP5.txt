@@ -1,8 +1,0 @@
-SELECT DISTINCT ?person ?name
-WHERE {
-  ?article rdf:type bench:Article .
-  ?article dc:creator ?person .
-  ?inproc rdf:type bench:Inproceedings .
-  ?inproc dc:creator ?person .
-  ?person foaf:name ?name
-}
