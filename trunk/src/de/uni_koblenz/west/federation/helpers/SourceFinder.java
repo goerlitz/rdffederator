@@ -21,6 +21,7 @@
 package de.uni_koblenz.west.federation.helpers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -43,30 +44,47 @@ public class SourceFinder<P> {
 	
 	protected static final boolean HANDLE_SAMEAS = true;
 	
-	ModelAdapter<P, ?> adapter;
-	RDFStatistics stats;
+	private ModelAdapter<P, ?> adapter;
+	private RDFStatistics stats;
 	
+	/**
+	 * Creates a source finder using the supplied statistics and model adapter.
+	 * 
+	 * @param stats the statistics to use.
+	 * @param adapter the model adapter to use.
+	 */
 	public SourceFinder(RDFStatistics stats, ModelAdapter<P, ?> adapter) {
 		this.adapter = adapter;
 		this.stats = stats;
 	}
 	
-	public Map<Set<Graph>, List<P>> findPlanSetsPerSource(Set<P> patterns) {
+	/**
+	 * Find matching sources for the supplied patterns.
+	 * Since a single pattern may match multiple sources the result maps
+	 * a set of sources to a set of matched patterns, i.e {Graph}->{Pattern}.
+	 * 
+	 * @param patterns the pattern that need to matched to sources.
+	 * @return a map that maps set of sources to sets of patterns.
+	 */
+	public Map<Set<Graph>, List<P>> findPlanSetsPerSource(Collection<P> patterns) {
 		Map<Set<Graph>, List<P>> graphSets = new HashMap<Set<Graph>, List<P>>();
 		List<P> sameAsPatterns = new ArrayList<P>();
 
-		// find sources for all patterns and create Map for {Graph}:{Pattern}
+		// find sources for all patterns and create Map for {Graph}->{Pattern}
+		// patterns containing owl:sameAs may be treated separately
 		for (P pattern : patterns) {
 			String[] values = adapter.getPatternConstants(pattern);
 
-			// add sameAs patterns to extra list for special treatement
+			// add owl:sameAs patterns to extra list for special treatment
 			if (HANDLE_SAMEAS && "http://www.w3.org/2002/07/owl#sameAs".equals(values[1])) {
 				sameAsPatterns.add(pattern);
 				continue;
 			}
 
-			// get sources for pattern and add pattern to the mapped list 
+			// get sources for current pattern 
 			Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
+			
+			// add current pattern with matched sources to the mapping
 			List<P> patternList = graphSets.get(sources);
 			if (patternList == null) {
 				patternList = new ArrayList<P>();
@@ -75,45 +93,54 @@ public class SourceFinder<P> {
 			patternList.add(pattern);
 		}
 
-		// special treatment of sameAs patterns
+		// special treatment of owl:sameAs patterns:
+		// can be added to patterns which contain the subject variable
+		// e.g. {x? a Type . x? sameAs ?y} or {ME knows ?x . x? sameAs ?y} 
 		if (HANDLE_SAMEAS) {
 
 			Iterator<P> iterator = sameAsPatterns.iterator();
 			while (iterator.hasNext()) {
+				
 				P sameAsPattern = iterator.next();
+				
+				// get subject variable of owl:sameAs pattern and find other
+				// patterns in the graph sets which contain this variable
 				String varName = adapter.getVarName(sameAsPattern, 0);
-				List<Set<Graph>> targetSets = new ArrayList<Set<Graph>>();
-
-				// look for graph sets which the same variable in their patterns
+				List<Set<Graph>> candidates = new ArrayList<Set<Graph>>();
+				
 				for (Set<Graph> graphSet : graphSets.keySet()) {
 					for (P pattern : graphSets.get(graphSet)) {
 						if (adapter.getPatternVars(pattern).contains(varName)) {
-							targetSets.add(graphSet);
+							candidates.add(graphSet);
 						}
 					}
 				}
 
-				// if there is only a single matching graph set, add the sameAs pattern
-				// TODO Can we assign sameAs patterns to multiple graph sets?
-				if (targetSets.size() == 1) {
-					graphSets.get(targetSets.get(0)).add(sameAsPattern);
+				// add the owl:sameAs pattern to all candidate sets and remove
+				// it from the list
+				for (Set<Graph> graphSet : candidates) {
+					graphSets.get(graphSet).add(sameAsPattern);
 					iterator.remove();
 				}
 			}
+			
+			// check that no owl:sameAs pattern is left.
+			if (sameAsPatterns.size() != 0)
+				throw new IllegalArgumentException("sameAs pattern can not be joined with another pattern: " + sameAsPatterns);
 
-			// find graph sets for unassigned sameAs patterns
-			for (P sameAsPattern : sameAsPatterns) {
-				String[] values = adapter.getPatternConstants(sameAsPattern);
-
-				// get sources for pattern and add pattern to the mapped list 
-				Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
-				List<P> patternList = graphSets.get(sources);
-				if (patternList == null) {
-					patternList = new ArrayList<P>();
-					graphSets.put(sources, patternList);
-				}
-				patternList.add(sameAsPattern);
-			}
+//			// find graph sets for unassigned sameAs patterns
+//			for (P sameAsPattern : sameAsPatterns) {
+//				String[] values = adapter.getPatternConstants(sameAsPattern);
+//
+//				// get sources for pattern and add pattern to the mapped list 
+//				Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
+//				List<P> patternList = graphSets.get(sources);
+//				if (patternList == null) {
+//					patternList = new ArrayList<P>();
+//					graphSets.put(sources, patternList);
+//				}
+//				patternList.add(sameAsPattern);
+//			}
 		}
 
 		// print pattern sets
