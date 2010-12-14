@@ -36,7 +36,6 @@ import de.uni_koblenz.west.optimizer.rdf.BGPJoin;
 import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
 import de.uni_koblenz.west.optimizer.rdf.BGPQueryModel;
 import de.uni_koblenz.west.optimizer.rdf.util.BGPModelPrinter;
-import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
  * Sesame specific realization of the basic graph pattern model.
@@ -61,12 +60,6 @@ public class SesameBGPWrapper extends BGPQueryModel<StatementPattern, ValueExpr>
 		
 		this.root = root;
 		this.parent = rootParent;
-	}
-	
-	// TODO: do we really need the stats in here?
-	// TODO: find another way for source selection outside the model
-	public void setStatistics(RDFStatistics stats) {
-		this.stats = stats;
 	}
 	
 	// --- OVERRIDE ------------------------------------------------------------

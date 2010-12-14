@@ -18,7 +18,7 @@
  * RDF Federator uses libraries from the OpenRDF Sesame Project licensed 
  * under the Aduna BSD-style license. 
  */
-package de.uni_koblenz.west.federation.helpers;
+package de.uni_koblenz.west.optimizer.rdf;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.optimizer.rdf.ModelAdapter;
 import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
