@@ -1,0 +1,44 @@
+################################################################################
+# Sesame configuration template for RDF federation.
+#
+# ATTENTION: the Sail implementing the sail:sailType must be published
+#            in META-INF/services/org.openrdf.sail.SailFactory
+################################################################################
+@prefix void: <http://rdfs.org/ns/void#>.
+@prefix rep:  <http://www.openrdf.org/config/repository#>.
+@prefix sr:   <http://www.openrdf.org/config/repository/sail#>.
+@prefix http: <http://www.openrdf.org/config/repository/http#>.
+@prefix sail: <http://www.openrdf.org/config/sail#>.
+@prefix mem:  <http://www.openrdf.org/config/sail/memory#>.
+@prefix fed:  <http://west.uni-koblenz.de/federation/config/sail#>.
+
+[] a rep:Repository ;
+   rep:repositoryTitle "Linked Data Federation" ;
+   rep:repositoryImpl [
+      rep:repositoryType "openrdf:SailRepository" ;
+      sr:sailImpl [
+         sail:sailType "west:FederationSail" ;
+
+         # optimizer settings
+         fed:optimizer "DYNAMIC_PROGRAMMING" ;
+#         fed:optimizer "PATTERN_HEURISTIC" ;
+
+         # cardinality estimator settings
+         fed:estimator "STATISTICS" ;
+#         fed:estimator "TRUE_COUNT" ;
+
+         # statistics
+         fed:statistic "/home/goerlitz/datasets/sp2b_50k.stats" ;
+
+         # sparql endpoints
+         fed:member [
+            rep:repositoryType "openrdf:SailRepository" ;
+            sr:sailImpl [
+#                sail:sailType "openrdf:MemoryStore" ;
+                sail:sailType "openrdf:NativeStore" ;
+#                mem:persist "true";
+            ];
+         ];
+         
+      ]
+   ].

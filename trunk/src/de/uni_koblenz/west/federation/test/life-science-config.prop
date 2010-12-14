@@ -1,0 +1,7 @@
+repository.config=federated/RDF-Rep-life-science_config.n3
+
+query.directory=federated/ls
+query.extension=.txt
+
+optimizer.strategy=DYNAMIC_PROGRAMMING
+optimizer.estimator=STATISTICS

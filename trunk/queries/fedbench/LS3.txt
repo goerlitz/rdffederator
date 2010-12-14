@@ -1,0 +1,7 @@
+SELECT ?Drug ?IntDrug ?IntEffect WHERE {
+   ?Drug rdf:type dbpedia-owl:Drug .
+   ?y owl:sameAs ?Drug .
+   ?Int drugbank:interactionDrug1 ?y .
+   ?Int drugbank:interactionDrug2 ?IntDrug .
+   ?Int drugbank:text ?IntEffect . 
+}

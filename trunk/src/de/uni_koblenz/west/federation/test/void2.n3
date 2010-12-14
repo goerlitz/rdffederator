@@ -1,0 +1,25 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix void: <http://rdfs.org/ns/void#> .
+
+_:node2 a void:Dataset ;
+	void:sparqlEndpoint <http://example2.org/sparql> ;
+	void:triples "19000"^^xsd:integer ;
+	void:entities "9000"^^xsd:integer ;
+	void:properties "3"^^xsd:integer ;
+	void:propertyPartition [
+		void:property rdf:type ;
+		void:triples "9000"^^xsd:integer
+	] , [
+		void:property foaf:homepage ;
+		void:triples "1000"^^xsd:integer
+	] , [
+		void:property foaf:name ;
+		void:triples "9000"^^xsd:integer
+	] ;
+	void:classPartition [
+		void:class foaf:Person ;
+		void:entities "9000"^^xsd:integer
+	] .
