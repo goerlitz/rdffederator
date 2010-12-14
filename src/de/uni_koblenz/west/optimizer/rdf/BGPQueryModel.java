@@ -20,8 +20,6 @@
  */
 package de.uni_koblenz.west.optimizer.rdf;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,12 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.optimizer.QueryModel;
 import de.uni_koblenz.west.optimizer.rdf.util.BGPCollector;
-import de.uni_koblenz.west.optimizer.rdf.util.BGPModelPrinter;
-import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
  * Generic model for a Basic Graph Pattern tree structure.
@@ -53,7 +48,8 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 
 	protected List<BGPOperator<P, F>> baseOperators;
 	protected ModelAdapter<P, F> adapter;
-	protected RDFStatistics stats;
+	
+	protected SourceFinder<P> sourceFinder;
 	
 	public static enum JoinExec {
 		DIRECT,
@@ -69,6 +65,10 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 		if (adapter == null)
 			throw new IllegalArgumentException("adapter must not be null");
 		this.adapter = adapter;
+	}
+	
+	public void setSourceFinder(SourceFinder<P> sourceFinder) {
+		this.sourceFinder = sourceFinder;		
 	}
 	
 	protected AccessPlan<P, F> createPlan(P pattern, Set<Graph> sources) {
@@ -130,8 +130,11 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 	}
 	
 	private void createBaseRelations() {
+		if (sourceFinder == null)
+			throw new IllegalArgumentException("source finder must not be null");
+		
 		baseOperators = new ArrayList<BGPOperator<P,F>>();
-		Map<Set<Graph>, List<P>> graphSets = findPlanSetsPerSource();
+		Map<Set<Graph>, List<P>> graphSets = sourceFinder.findPlanSetsPerSource(getAllPatterns());
 		
 		// evaluation
 		Set<Graph> graphs = new HashSet<Graph>();
@@ -164,81 +167,6 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 //			System.out.println(new BGPModelPrinter<P, F>(adapter).eval(op));
 	}
 	
-	private Map<Set<Graph>, List<P>> findPlanSetsPerSource() {
-		Map<Set<Graph>, List<P>> graphSets = new HashMap<Set<Graph>, List<P>>();
-		List<P> sameAsPatterns = new ArrayList<P>();
-		
-		// find sources for all patterns and create Map for {Graph}:{Pattern}
-		for (P pattern : getAllPatterns()) {
-			String[] values = adapter.getPatternConstants(pattern);
-			
-			// add sameAs patterns to extra list for special treatement
-			if (HANDLE_SAMEAS && "http://www.w3.org/2002/07/owl#sameAs".equals(values[1])) {
-				sameAsPatterns.add(pattern);
-				continue;
-			}
-			
-			// get sources for pattern and add pattern to the mapped list 
-			Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
-			List<P> patternList = graphSets.get(sources);
-			if (patternList == null) {
-				patternList = new ArrayList<P>();
-				graphSets.put(sources, patternList);
-			}
-			patternList.add(pattern);
-		}
-		
-		// special treatment of sameAs pattens
-		if (HANDLE_SAMEAS) {
-			
-			Iterator<P> iterator = sameAsPatterns.iterator();
-			while (iterator.hasNext()) {
-				P sameAsPattern = iterator.next();
-				String varName = adapter.getVarName(sameAsPattern, 0);
-				List<Set<Graph>> targetSets = new ArrayList<Set<Graph>>();
-				
-				// look for graph sets which the same variable in their patterns
-				for (Set<Graph> graphSet : graphSets.keySet()) {
-					for (P pattern : graphSets.get(graphSet)) {
-						if (adapter.getPatternVars(pattern).contains(varName)) {
-							targetSets.add(graphSet);
-						}
-					}
-				}
-				
-				// if there is only a single matching graph set, add the sameAs pattern
-				// TODO Can we assign sameAs patterns to multiple graph sets?
-				if (targetSets.size() == 1) {
-					graphSets.get(targetSets.get(0)).add(sameAsPattern);
-					iterator.remove();
-				}
-			}
-			
-			// find graph sets for unassigned sameAs patterns
-			for (P sameAsPattern : sameAsPatterns) {
-				String[] values = adapter.getPatternConstants(sameAsPattern);
-				
-				// get sources for pattern and add pattern to the mapped list 
-				Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
-				List<P> patternList = graphSets.get(sources);
-				if (patternList == null) {
-					patternList = new ArrayList<P>();
-					graphSets.put(sources, patternList);
-				}
-				patternList.add(sameAsPattern);
-			}
-		}
-		
-//		// print pattern sets
-//		for (Set<Graph> graphSet : graphSets.keySet()) {
-//			System.out.println("BGPModel: Sources " + graphSet);
-//			for (P pattern : graphSets.get(graphSet))
-//				System.out.println("  " + adapter.toSparqlPattern(pattern));
-//		}
-		
-		return graphSets;
-	}
-	
 	// --- OVERRIDE ------------------------------------------------------------
 	
 	@Override
@@ -247,42 +175,14 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 			createBaseRelations();
 		
 		return baseOperators.size();
-		
-//		return getAllPatterns().size();
 	}
 
 	@Override
 	public Set<BGPOperator<P, F>> createAccessPlans() {
-		
-		if (stats == null)
-			throw new IllegalArgumentException("need statistics for pattern sources");
-		
 		if (baseOperators == null)
 			createBaseRelations();
 		
 		return new HashSet<BGPOperator<P,F>>(baseOperators);
-		
-//		Set<F> filters = getAllFilters();
-//		Set<BGPOperator<P, F>> plans = new HashSet<BGPOperator<P, F>>();
-//		
-//		for (P pattern : getAllPatterns()) {
-//			
-//			String[] values = adapter.getPatternConstants(pattern);
-////			if (bound[1] == null)
-////				throw new UnsupportedOperationException("unbound predicates not supported");
-//			
-//			// TODO: handle combinations of bound vars, e.g. pattern with type
-////			try {
-////				Set<Graph> sources = stats.findGraphs(new URI(bound[1]));
-//				Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
-//				AccessPlan<P, F> plan = createPlan(pattern, sources);
-//				applyFilters(plan, filters);
-//				plans.add(plan);
-////			} catch (URISyntaxException e) {
-////				// should not happen
-////			}
-//		}
-//		return plans;
 	}
 	
 	@Override

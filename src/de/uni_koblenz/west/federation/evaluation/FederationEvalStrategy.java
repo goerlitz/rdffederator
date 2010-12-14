@@ -62,9 +62,9 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
-import de.uni_koblenz.west.federation.helpers.SourceFinder;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
@@ -96,7 +96,8 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	Map<StatementPattern, Set<Graph>> graphMap;
 	
 	public FederationEvalStrategy(RDFStatistics stats, final ValueFactory vf) {
-		// providing a dummy triple source
+		// use a dummy triple source
+		// it can handle only single triple patterns but no basic graph patterns
 		super(new TripleSource() {
 			@Override public ValueFactory getValueFactory() {
 				return vf;
@@ -108,7 +109,6 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 				throw new UnsupportedOperationException("Statement retrival is not supported in federation");
 			}
 		});
-//		this.finder = finder;
 		this.stats = stats;
 	}
 	

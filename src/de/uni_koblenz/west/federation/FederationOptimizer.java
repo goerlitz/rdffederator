@@ -39,6 +39,7 @@ import de.uni_koblenz.west.federation.helpers.BasicGraphPatternCollector;
 import de.uni_koblenz.west.optimizer.Optimizer;
 import de.uni_koblenz.west.optimizer.eval.QueryModelEvaluator;
 import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
+import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
 import de.uni_koblenz.west.optimizer.rdf.util.BGPModelPrinter;
 import de.uni_koblenz.west.statistics.RDFStatistics;
@@ -71,12 +72,14 @@ public class FederationOptimizer implements QueryOptimizer {
 	 * Extract and optimize all basic graph patterns.
 	 */
 	@Override
-//	public void optimize(QueryModel query, BindingSet bindings) throws StoreException {
-	public void optimize(TupleExpr query, Dataset dataset, BindingSet bindings) {
+//	public void optimize(QueryModel query, BindingSet bindings) throws StoreException {  // Sesame 3
+	public void optimize(TupleExpr query, Dataset dataset, BindingSet bindings) {  // Sesame 2
 		
 		List<SesameBGPWrapper> bgps = new BasicGraphPatternCollector().eval(query);
 		if (bgps.size() == 0)
 			LOGGER.debug("found no basic graph patterns to optimize");
+		
+		SourceFinder<StatementPattern> finder = new SourceFinder<StatementPattern>(stats, new SesameAdapter());
 		
 		// optimize every basic graph pattern
 		for (SesameBGPWrapper bgp : bgps) {
@@ -85,9 +88,7 @@ public class FederationOptimizer implements QueryOptimizer {
 				LOGGER.debug("--- ORIGINAL BGP ---\n{}", bgp);
 			}
 
-			// TODO: remove stats from model? (used for creating access plans)
-			bgp.setStatistics(stats);
-			
+			bgp.setSourceFinder(finder);
 			optimizer.optimize(bgp);
 			
 			if (LOGGER.isDebugEnabled()) {
@@ -107,9 +108,4 @@ public class FederationOptimizer implements QueryOptimizer {
 	public void setEvaluator(QueryModelEvaluator<BGPOperator<StatementPattern, ValueExpr>, ? extends Number> evaluator) {
 		this.printer.setEvaluator(evaluator);
 	}
-	
-	public void printResult() {
-		
-	}
-	
 }

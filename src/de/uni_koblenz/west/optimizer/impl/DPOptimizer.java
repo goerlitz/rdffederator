@@ -21,7 +21,6 @@
 package de.uni_koblenz.west.optimizer.impl;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -83,9 +82,7 @@ public class DPOptimizer<O extends Operator> implements Optimizer<O> {
 				Set<O> plans2 = optPlans.get(n-i);
 				
 				// find for each plan all complementary plans to join
-//				for (O plan : optPlans.get(i)) {
 				for (O plan : plans1) {
-//					Set<O> comp = model.filterDistinctPlans(plan, optPlans.get(n-i));
 					Set<O> comp = model.filterDistinctPlans(plan, plans2);
 					plans = model.createJoins(plan, comp);
 					optPlans.add(plans, n);
@@ -108,7 +105,8 @@ public class DPOptimizer<O extends Operator> implements Optimizer<O> {
 		
 		// return the final plan
 		if (optPlans.get(count).size() == 0)
-			throw new UnsupportedOperationException("Query requiring cross products are not supported (yet)");
+			throw new UnsupportedOperationException("Queries requiring cross products are not supported (yet)");
+		
 		model.replaceRoot(optPlans.get(count).iterator().next());
 	}
 	
