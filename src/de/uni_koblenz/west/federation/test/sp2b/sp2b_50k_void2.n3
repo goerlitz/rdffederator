@@ -1,0 +1,330 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix void: <http://rdfs.org/ns/void#> .
+@prefix dbpo: <http://dbpedia.org/ontology/> .
+@prefix swrc: <http://swrc.ontoware.org/ontology#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix georss: <http://www.georss.org/georss/> .
+
+_:node15gct1fx1 a void:Dataset ;
+	void:sparqlEndpoint <http://localhost:8080/openrdf-sesame/repositories/sp2b_50k> ;
+	void:triples "50168"^^xsd:integer ;
+	void:entities "9779"^^xsd:integer ;
+	void:properties "57"^^xsd:integer ;
+	void:distinctSubjects "9788"^^xsd:integer ;
+	void:distinctObjects "25559"^^xsd:integer ;
+	void:propertyPartition [
+		void:property <http://localhost/vocabulary/bench/abstract> ;
+		void:triples "49"^^xsd:integer ;
+		void:distinctSubjects "49"^^xsd:integer ;
+		void:distinctObjects "49"^^xsd:integer
+	] , [
+		void:property <http://localhost/vocabulary/bench/booktitle> ;
+		void:triples "1508"^^xsd:integer ;
+		void:distinctSubjects "1508"^^xsd:integer ;
+		void:distinctObjects "1508"^^xsd:integer
+	] , [
+		void:property <http://localhost/vocabulary/bench/cdrom> ;
+		void:triples "85"^^xsd:integer ;
+		void:distinctSubjects "85"^^xsd:integer ;
+		void:distinctObjects "85"^^xsd:integer
+	] , [
+		void:property dc:creator ;
+		void:triples "6770"^^xsd:integer ;
+		void:distinctSubjects "5438"^^xsd:integer ;
+		void:distinctObjects "4107"^^xsd:integer
+	] , [
+		void:property dc:publisher ;
+		void:triples "39"^^xsd:integer ;
+		void:distinctSubjects "39"^^xsd:integer ;
+		void:distinctObjects "33"^^xsd:integer
+	] , [
+		void:property dc:title ;
+		void:triples "5579"^^xsd:integer ;
+		void:distinctSubjects "5579"^^xsd:integer ;
+		void:distinctObjects "5579"^^xsd:integer
+	] , [
+		void:property dcterms:issued ;
+		void:triples "1610"^^xsd:integer ;
+		void:distinctSubjects "1610"^^xsd:integer ;
+		void:distinctObjects "28"^^xsd:integer
+	] , [
+		void:property dcterms:partOf ;
+		void:triples "1117"^^xsd:integer ;
+		void:distinctSubjects "1117"^^xsd:integer ;
+		void:distinctObjects "36"^^xsd:integer
+	] , [
+		void:property dcterms:references ;
+		void:triples "34"^^xsd:integer ;
+		void:distinctSubjects "34"^^xsd:integer ;
+		void:distinctObjects "34"^^xsd:integer
+	] , [
+		void:property swrc:editor ;
+		void:triples "273"^^xsd:integer ;
+		void:distinctSubjects "108"^^xsd:integer ;
+		void:distinctObjects "102"^^xsd:integer
+	] , [
+		void:property swrc:isbn ;
+		void:triples "35"^^xsd:integer ;
+		void:distinctSubjects "35"^^xsd:integer ;
+		void:distinctObjects "35"^^xsd:integer
+	] , [
+		void:property swrc:journal ;
+		void:triples "3969"^^xsd:integer ;
+		void:distinctSubjects "3969"^^xsd:integer ;
+		void:distinctObjects "104"^^xsd:integer
+	] , [
+		void:property swrc:month ;
+		void:triples "25"^^xsd:integer ;
+		void:distinctSubjects "25"^^xsd:integer ;
+		void:distinctObjects "9"^^xsd:integer
+	] , [
+		void:property swrc:note ;
+		void:triples "132"^^xsd:integer ;
+		void:distinctSubjects "132"^^xsd:integer ;
+		void:distinctObjects "132"^^xsd:integer
+	] , [
+		void:property swrc:number ;
+		void:triples "101"^^xsd:integer ;
+		void:distinctSubjects "101"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property swrc:pages ;
+		void:triples "5012"^^xsd:integer ;
+		void:distinctSubjects "5012"^^xsd:integer ;
+		void:distinctObjects "200"^^xsd:integer
+	] , [
+		void:property swrc:series ;
+		void:triples "26"^^xsd:integer ;
+		void:distinctSubjects "26"^^xsd:integer ;
+		void:distinctObjects "25"^^xsd:integer
+	] , [
+		void:property swrc:volume ;
+		void:triples "125"^^xsd:integer ;
+		void:distinctSubjects "125"^^xsd:integer ;
+		void:distinctObjects "28"^^xsd:integer
+	] , [
+		void:property rdf:_1 ;
+		void:triples "34"^^xsd:integer ;
+		void:distinctSubjects "34"^^xsd:integer ;
+		void:distinctObjects "27"^^xsd:integer
+	] , [
+		void:property rdf:_10 ;
+		void:triples "29"^^xsd:integer ;
+		void:distinctSubjects "29"^^xsd:integer ;
+		void:distinctObjects "22"^^xsd:integer
+	] , [
+		void:property rdf:_11 ;
+		void:triples "28"^^xsd:integer ;
+		void:distinctSubjects "28"^^xsd:integer ;
+		void:distinctObjects "21"^^xsd:integer
+	] , [
+		void:property rdf:_12 ;
+		void:triples "27"^^xsd:integer ;
+		void:distinctSubjects "27"^^xsd:integer ;
+		void:distinctObjects "18"^^xsd:integer
+	] , [
+		void:property rdf:_13 ;
+		void:triples "23"^^xsd:integer ;
+		void:distinctSubjects "23"^^xsd:integer ;
+		void:distinctObjects "16"^^xsd:integer
+	] , [
+		void:property rdf:_14 ;
+		void:triples "20"^^xsd:integer ;
+		void:distinctSubjects "20"^^xsd:integer ;
+		void:distinctObjects "13"^^xsd:integer
+	] , [
+		void:property rdf:_15 ;
+		void:triples "20"^^xsd:integer ;
+		void:distinctSubjects "20"^^xsd:integer ;
+		void:distinctObjects "13"^^xsd:integer
+	] , [
+		void:property rdf:_16 ;
+		void:triples "19"^^xsd:integer ;
+		void:distinctSubjects "19"^^xsd:integer ;
+		void:distinctObjects "12"^^xsd:integer
+	] , [
+		void:property rdf:_17 ;
+		void:triples "18"^^xsd:integer ;
+		void:distinctSubjects "18"^^xsd:integer ;
+		void:distinctObjects "11"^^xsd:integer
+	] , [
+		void:property rdf:_18 ;
+		void:triples "16"^^xsd:integer ;
+		void:distinctSubjects "16"^^xsd:integer ;
+		void:distinctObjects "8"^^xsd:integer
+	] , [
+		void:property rdf:_19 ;
+		void:triples "15"^^xsd:integer ;
+		void:distinctSubjects "15"^^xsd:integer ;
+		void:distinctObjects "5"^^xsd:integer
+	] , [
+		void:property rdf:_2 ;
+		void:triples "34"^^xsd:integer ;
+		void:distinctSubjects "34"^^xsd:integer ;
+		void:distinctObjects "28"^^xsd:integer
+	] , [
+		void:property rdf:_20 ;
+		void:triples "13"^^xsd:integer ;
+		void:distinctSubjects "13"^^xsd:integer ;
+		void:distinctObjects "4"^^xsd:integer
+	] , [
+		void:property rdf:_21 ;
+		void:triples "11"^^xsd:integer ;
+		void:distinctSubjects "11"^^xsd:integer ;
+		void:distinctObjects "4"^^xsd:integer
+	] , [
+		void:property rdf:_22 ;
+		void:triples "10"^^xsd:integer ;
+		void:distinctSubjects "10"^^xsd:integer ;
+		void:distinctObjects "3"^^xsd:integer
+	] , [
+		void:property rdf:_23 ;
+		void:triples "5"^^xsd:integer ;
+		void:distinctSubjects "5"^^xsd:integer ;
+		void:distinctObjects "3"^^xsd:integer
+	] , [
+		void:property rdf:_24 ;
+		void:triples "3"^^xsd:integer ;
+		void:distinctSubjects "3"^^xsd:integer ;
+		void:distinctObjects "2"^^xsd:integer
+	] , [
+		void:property rdf:_25 ;
+		void:triples "3"^^xsd:integer ;
+		void:distinctSubjects "3"^^xsd:integer ;
+		void:distinctObjects "2"^^xsd:integer
+	] , [
+		void:property rdf:_26 ;
+		void:triples "3"^^xsd:integer ;
+		void:distinctSubjects "3"^^xsd:integer ;
+		void:distinctObjects "2"^^xsd:integer
+	] , [
+		void:property rdf:_27 ;
+		void:triples "3"^^xsd:integer ;
+		void:distinctSubjects "3"^^xsd:integer ;
+		void:distinctObjects "2"^^xsd:integer
+	] , [
+		void:property rdf:_28 ;
+		void:triples "2"^^xsd:integer ;
+		void:distinctSubjects "2"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property rdf:_29 ;
+		void:triples "2"^^xsd:integer ;
+		void:distinctSubjects "2"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property rdf:_3 ;
+		void:triples "32"^^xsd:integer ;
+		void:distinctSubjects "32"^^xsd:integer ;
+		void:distinctObjects "28"^^xsd:integer
+	] , [
+		void:property rdf:_30 ;
+		void:triples "2"^^xsd:integer ;
+		void:distinctSubjects "2"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property rdf:_31 ;
+		void:triples "1"^^xsd:integer ;
+		void:distinctSubjects "1"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property rdf:_32 ;
+		void:triples "1"^^xsd:integer ;
+		void:distinctSubjects "1"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property rdf:_33 ;
+		void:triples "1"^^xsd:integer ;
+		void:distinctSubjects "1"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property rdf:_34 ;
+		void:triples "1"^^xsd:integer ;
+		void:distinctSubjects "1"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property rdf:_4 ;
+		void:triples "32"^^xsd:integer ;
+		void:distinctSubjects "32"^^xsd:integer ;
+		void:distinctObjects "27"^^xsd:integer
+	] , [
+		void:property rdf:_5 ;
+		void:triples "31"^^xsd:integer ;
+		void:distinctSubjects "31"^^xsd:integer ;
+		void:distinctObjects "28"^^xsd:integer
+	] , [
+		void:property rdf:_6 ;
+		void:triples "31"^^xsd:integer ;
+		void:distinctSubjects "31"^^xsd:integer ;
+		void:distinctObjects "28"^^xsd:integer
+	] , [
+		void:property rdf:_7 ;
+		void:triples "31"^^xsd:integer ;
+		void:distinctSubjects "31"^^xsd:integer ;
+		void:distinctObjects "29"^^xsd:integer
+	] , [
+		void:property rdf:_8 ;
+		void:triples "30"^^xsd:integer ;
+		void:distinctSubjects "30"^^xsd:integer ;
+		void:distinctObjects "28"^^xsd:integer
+	] , [
+		void:property rdf:_9 ;
+		void:triples "30"^^xsd:integer ;
+		void:distinctSubjects "30"^^xsd:integer ;
+		void:distinctObjects "25"^^xsd:integer
+	] , [
+		void:property rdf:type ;
+		void:triples "9779"^^xsd:integer ;
+		void:distinctSubjects "9779"^^xsd:integer ;
+		void:distinctObjects "8"^^xsd:integer
+	] , [
+		void:property rdfs:seeAlso ;
+		void:triples "3697"^^xsd:integer ;
+		void:distinctSubjects "3697"^^xsd:integer ;
+		void:distinctObjects "3697"^^xsd:integer
+	] , [
+		void:property rdfs:subClassOf ;
+		void:triples "9"^^xsd:integer ;
+		void:distinctSubjects "9"^^xsd:integer ;
+		void:distinctObjects "1"^^xsd:integer
+	] , [
+		void:property foaf:homepage ;
+		void:triples "5468"^^xsd:integer ;
+		void:distinctSubjects "5468"^^xsd:integer ;
+		void:distinctObjects "5468"^^xsd:integer
+	] , [
+		void:property foaf:name ;
+		void:triples "4165"^^xsd:integer ;
+		void:distinctSubjects "4165"^^xsd:integer ;
+		void:distinctObjects "4165"^^xsd:integer
+	] ;
+	void:classPartition [
+		void:class <http://localhost/vocabulary/bench/Article> ;
+		void:entities "3969"^^xsd:integer
+	] , [
+		void:class <http://localhost/vocabulary/bench/Incollection> ;
+		void:entities "56"^^xsd:integer
+	] , [
+		void:class <http://localhost/vocabulary/bench/Inproceedings> ;
+		void:entities "1413"^^xsd:integer
+	] , [
+		void:class <http://localhost/vocabulary/bench/Journal> ;
+		void:entities "104"^^xsd:integer
+	] , [
+		void:class <http://localhost/vocabulary/bench/Proceedings> ;
+		void:entities "37"^^xsd:integer
+	] , [
+		void:class rdf:Bag ;
+		void:entities "34"^^xsd:integer
+	] , [
+		void:class foaf:Document ;
+		void:entities "1"^^xsd:integer
+	] , [
+		void:class foaf:Person ;
+		void:entities "4165"^^xsd:integer
+	] .
