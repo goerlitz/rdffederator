@@ -48,7 +48,6 @@ import org.openrdf.sail.memory.MemoryStore;
 //import org.openrdf.store.StoreException;
 
 import de.uni_koblenz.west.federation.FederationSail;
-import de.uni_koblenz.west.federation.SourceFinder;
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 
@@ -79,7 +78,7 @@ public class EvaluationStrategyTest {
 	private static final URI BOB   = vf.createURI("http://ex.com/Bob");
 	
 	private Repository[] repositories;
-	private SourceFinder sourceFinder;
+//	private SourceFinder sourceFinder;
 	private EvaluationStrategyImpl evalStrategy;
 	private FederationSail federationSail;
 
@@ -96,7 +95,7 @@ public class EvaluationStrategyTest {
 				initMemoryStore(N3_DATA2)
 		};
 		
-		sourceFinder = new SourceFinder(repositories);
+//		sourceFinder = new SourceFinder(repositories);
 //		evalStrategy = new FederationEvalStrategy(sourceFinder, vf);
 		federationSail = new FederationSail(new Properties(), Arrays.asList(repositories));
 		federationSail.initialize();

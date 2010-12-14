@@ -23,7 +23,6 @@ package de.uni_koblenz.west.federation;
 //import org.openrdf.cursor.Cursor;
 //import org.openrdf.model.LiteralFactory;
 import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.EmptyIteration;
 
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
@@ -65,8 +64,8 @@ import de.uni_koblenz.west.statistics.RDFStatistics;
  * {@link SailConnection}. Queries are split into fragments and forwarded to
  * endpoints which can probably return results.<br/><br/>
  * 
- * A {@link SourceFinder} is used to provide connections to suitable remote
- * repositories. {@link TripleSource}s, which are used to evaluate single
+ * Statistics are used to select suitable remote repositories.
+ * {@link TripleSource}s, which are used to evaluate single
  * statement patterns, are not employed.
  * 
  * @author Olaf Goerlitz
@@ -75,32 +74,27 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSailConnection.class);
 
-//	private final SourceFinder finder;
 	private final RDFStatistics stats;
 	private final ValueFactory vf;
-	private QueryOptimizer optimizer;
+	private final QueryOptimizer optimizer;
 	
 	/**
 	 * Create a Sail connection which wraps the members repository connections.
 	 * Adopted from <tt>FederationConnection.FederationConnection()</tt>.
 	 * 
 	 * @param sail the federation Sail.
-	 * @param finder the source finder.
+	 * @param stats the statistics to use.
 	 */
-//	public FederationSailConnection(FederationSail sail, SourceFinder finder) {
 	public FederationSailConnection(FederationSail sail, RDFStatistics stats) {
 		
-		super(sail);
+		super(sail);  // mandatory for Sesame 2, obsolete in Sesame 3
 		
 		if (sail == null)
 			throw new IllegalArgumentException("sail must not be NULL");
-//		if (finder == null)
-//			throw new IllegalArgumentException("source finder must not be NULL");
 		if (stats == null)
 			throw new IllegalArgumentException("statistics must not be NULL");
 		
 		this.optimizer = sail.getFederationOptimizer();
-//		this.finder = finder;
 		this.stats = stats;
 
 //		URIFactory uf = sail.getURIFactory();
@@ -171,69 +165,44 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	// Sesame 2 only ===========================================================
 	
 	@Override
+//	public void close() throws StoreException {
 	protected void closeInternal() throws SailException {
-		// nothing to do, calling super.close() would create a loop
+		// do nothing, calling super.close() creates a loop in Sesame 2
+//		super.close(); // Sesame 3 only
 	}
 
 	@Override
-	protected CloseableIteration<? extends Resource, SailException> getContextIDsInternal()
-			throws SailException {
-		throw new UnsupportedOperationException("Not yet implemented");
+//	public Cursor<? extends Resource> getContextIDs() throws StoreException {
+	protected CloseableIteration<? extends Resource, SailException> getContextIDsInternal() throws SailException {
+		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-	protected String getNamespaceInternal(String arg0) throws SailException {
-		throw new UnsupportedOperationException("Not yet implemented");
+//	public String getNamespace(String prefix) throws StoreException {
+	protected String getNamespaceInternal(String prefix) throws SailException {
+		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-	protected CloseableIteration<? extends Namespace, SailException> getNamespacesInternal()
-			throws SailException {
-		throw new UnsupportedOperationException("Not yet implemented");
+//	public Cursor<? extends Namespace> getNamespaces() throws StoreException {
+	protected CloseableIteration<? extends Namespace, SailException> getNamespacesInternal() throws SailException {
+		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-	protected CloseableIteration<? extends Statement, SailException> getStatementsInternal(
-			Resource arg0, URI arg1, Value arg2, boolean arg3, Resource... arg4)
-			throws SailException {
-		throw new UnsupportedOperationException("Not yet implemented");
+//	public Cursor<? extends Statement> getStatements(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws StoreException {
+	protected CloseableIteration<? extends Statement, SailException> getStatementsInternal(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws SailException {
+		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-	protected long sizeInternal(Resource... arg0) throws SailException {
-		throw new UnsupportedOperationException("Not yet implemented");
+//	public long size(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws StoreException {
+	protected long sizeInternal(Resource... contexts) throws SailException {
+		throw new UnsupportedOperationException("Not implemented");
 	}
 	
 	// Sesame 3 only ===========================================================
 	
-//	@Override
-//	public void close() throws StoreException {
-//		// TODO Auto-generated method stub
-//		super.close();
-//	}
-//	
-//	@Override
-//	public Cursor<? extends Resource> getContextIDs() throws StoreException {
-//		throw new UnsupportedOperationException("Not yet implemented");
-//	}
-//
-//	@Override
-//	public String getNamespace(String prefix) throws StoreException {
-//		throw new UnsupportedOperationException("Not yet implemented");
-//	}
-//
-//	@Override
-//	public Cursor<? extends Namespace> getNamespaces() throws StoreException {
-//		throw new UnsupportedOperationException("Not yet implemented");
-//	}
-//
-//	@Override
-//	public Cursor<? extends Statement> getStatements(Resource subj, URI pred,
-//			Value obj, boolean includeInferred, Resource... contexts)
-//			throws StoreException {
-//		throw new UnsupportedOperationException("Not yet implemented");
-//	}
-//
 //	/**
 //	 * Gets a ValueFactory object that can be used to create URI-, blank node-,
 //	 * literal- and statement objects.
@@ -243,12 +212,6 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 //	@Override
 //	public ValueFactory getValueFactory() {
 //		return this.vf;
-//	}
-//
-//	@Override
-//	public long size(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts)
-//			throws StoreException {
-//		throw new UnsupportedOperationException("Not yet implemented");
 //	}
 	
 }
