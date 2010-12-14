@@ -1,0 +1,6 @@
+SELECT ?film ?director ?genre WHERE {
+   ?film dbpedia-owl:director ?director.
+   ?director dbpedia-owl:nationality dbpedia:Italy .
+   ?x owl:sameAs ?film .
+   ?x linkedMDB:genre ?genre 
+}

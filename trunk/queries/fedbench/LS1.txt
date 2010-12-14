@@ -1,0 +1,5 @@
+SELECT ?drug ?melt WHERE {
+   { ?drug drugbank:meltingPoint ?melt . }
+  UNION
+   { ?drug dbpedia-owl-drug:meltingPoint ?melt . }
+}

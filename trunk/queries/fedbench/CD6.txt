@@ -1,0 +1,6 @@
+SELECT ?name ?location ?news WHERE {
+   ?artist foaf:name ?name .
+   ?artist foaf:based_near ?location .
+   ?location geonames:parentFeature ?germany .
+   ?germany geonames:name 'Federal Republic of Germany' 
+}

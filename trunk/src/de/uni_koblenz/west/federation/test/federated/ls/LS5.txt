@@ -1,0 +1,19 @@
+PREFIX owl:      <http://www.w3.org/2002/07/owl#>
+PREFIX rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX drugbank: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/>
+PREFIX kegg:     <http://bio2rdf.org/ns/kegg#>
+PREFIX bio2rdf:  <http://bio2rdf.org/ns/bio2rdf#>
+PREFIX chebi:    <http://bio2rdf.org/ns/chebi#>
+PREFIX purl:     <http://purl.org/dc/terms/>
+PREFIX dc:       <http://purl.org/dc/elements/1.1/>
+
+SELECT ?drug ?keggUrl ?chebiImage WHERE {
+   ?drug rdf:type drugbank:drugs .
+   ?drug drugbank:keggCompoundId ?keggDrug .
+   ?keggDrug bio2rdf:url ?keggUrl .
+   ?drug drugbank:genericName ?drugBankName .
+#   ?chebiDrug purl:title ?drugBankName .
+#   ?chebiDrug chebi:image ?chebiImage .
+   ?chebiDrug dc:title ?drugBankName .
+   ?chebiDrug bio2rdf:image ?chebiImage . 
+}
