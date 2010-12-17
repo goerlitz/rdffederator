@@ -32,6 +32,7 @@ import java.util.Properties;
 //import org.openrdf.model.impl.URIFactoryImpl;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
@@ -43,8 +44,10 @@ import org.openrdf.sail.helpers.SailBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
 import de.uni_koblenz.west.optimizer.eval.CostModel;
+import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
@@ -67,6 +70,7 @@ public class FederationSail extends SailBase {
 	
 	private Void2StatsRepository stats = new Void2StatsRepository();
 	private List<Repository> members = new ArrayList<Repository>();
+	private SourceFinder<StatementPattern> finder;
 	private QueryOptimizer optimizer;
 	
 	String optStrategy;
@@ -105,7 +109,11 @@ public class FederationSail extends SailBase {
 	}
 	
 	public QueryOptimizer getFederationOptimizer() {
-		return optimizer;
+		return this.optimizer;
+	}
+	
+	public SourceFinder<StatementPattern> getSourceFinder() {
+		return this.finder;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -142,10 +150,13 @@ public class FederationSail extends SailBase {
 				LOGGER.debug("member repository is already initialized", e);
 			}
 		}
+
+		this.finder = new SourceFinder<StatementPattern>(stats, new SesameAdapter());
 		
 		// initialize optimizer
 		FederationOptimizerFactory factory = new FederationOptimizerFactory();
 		factory.setStatistics(stats);
+		factory.setSourceFinder(finder);
 		factory.setCostmodel(new CostModel());
 		this.optimizer = factory.getOptimizer(optStrategy, estimatorType);
 		
@@ -186,8 +197,7 @@ public class FederationSail extends SailBase {
 		if (!this.initialized)
 			throw new IllegalStateException("Sail has not been initialized.");
 		
-//		return new FederationSailConnection(this, new SourceFinder(members));
-		return new FederationSailConnection(this, stats);
+		return new FederationSailConnection(this);
 	}
 
 	// SESAME 2.3.2 ============================================================

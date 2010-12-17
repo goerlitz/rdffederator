@@ -37,6 +37,7 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
 //import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.evaluation.TripleSource;
@@ -57,7 +58,7 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.ReadOnlySailConnection;
-import de.uni_koblenz.west.statistics.RDFStatistics;
+import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
  * Wraps multiple remote repositories with SPARQL endpoints into one
@@ -74,7 +75,8 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSailConnection.class);
 
-	private final RDFStatistics stats;
+	private final SourceFinder<StatementPattern> finder;
+//	private final RDFStatistics stats;
 	private final ValueFactory vf;
 	private final QueryOptimizer optimizer;
 	
@@ -85,17 +87,15 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	 * @param sail the federation Sail.
 	 * @param stats the statistics to use.
 	 */
-	public FederationSailConnection(FederationSail sail, RDFStatistics stats) {
+	public FederationSailConnection(FederationSail sail) {
 		
 		super(sail);  // mandatory for Sesame 2, obsolete in Sesame 3
 		
 		if (sail == null)
 			throw new IllegalArgumentException("sail must not be NULL");
-		if (stats == null)
-			throw new IllegalArgumentException("statistics must not be NULL");
 		
 		this.optimizer = sail.getFederationOptimizer();
-		this.stats = stats;
+		this.finder = sail.getSourceFinder();
 
 //		URIFactory uf = sail.getURIFactory();
 //		LiteralFactory lf = sail.getLiteralFactory();
@@ -131,8 +131,8 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluateInternal(TupleExpr query, Dataset dataset,
 			BindingSet bindings, boolean includeInferred) throws SailException {
 		
-//		FederationEvalStrategy strategy = new FederationEvalStrategy(this.finder, this.vf);
-		FederationEvalStrategy strategy = new FederationEvalStrategy(this.stats, this.vf);
+		FederationEvalStrategy strategy = new FederationEvalStrategy(this.finder, this.vf);
+//		FederationEvalStrategy strategy = new FederationEvalStrategy(this.stats, this.vf);
 		QueryOptimizerList optimizerList = new QueryOptimizerList();
 		
 		LOGGER.trace("Incoming query model:\n{}", query);

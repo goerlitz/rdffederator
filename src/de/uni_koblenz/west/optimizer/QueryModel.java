@@ -71,6 +71,11 @@ public interface QueryModel<O extends Operator> {
 	 */
 	public int getBaseRelationCount();
 	
+	/**
+	 * Replaces the root node of the model with the supplied new node.
+	 * 
+	 * @param operator the new root node to use.
+	 */
 	public void replaceRoot(O operator);
 	
 }

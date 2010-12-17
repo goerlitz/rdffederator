@@ -89,13 +89,16 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	private static final boolean MULTI_THREADED = true;
 	private static final boolean COLLECT_BGP_PATTERNS = true;
 	
-	private static final SesameAdapter adapter = new SesameAdapter();
-	private RDFStatistics stats;
+//	private static final SesameAdapter adapter = new SesameAdapter();
+//	private RDFStatistics stats;
 	
-	SourceFinder<StatementPattern> finder;
-	Map<StatementPattern, Set<Graph>> graphMap;
+	private SourceFinder<StatementPattern> finder;
 	
-	public FederationEvalStrategy(RDFStatistics stats, final ValueFactory vf) {
+	private Map<StatementPattern, Set<Graph>> graphMap;
+	
+//	public FederationEvalStrategy(RDFStatistics stats, final ValueFactory vf) {
+	public FederationEvalStrategy(SourceFinder<StatementPattern> finder, final ValueFactory vf) {
+	
 		// use a dummy triple source
 		// it can handle only single triple patterns but no basic graph patterns
 		super(new TripleSource() {
@@ -109,7 +112,11 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 				throw new UnsupportedOperationException("Statement retrival is not supported in federation");
 			}
 		});
-		this.stats = stats;
+//		this.stats = stats;
+		
+		if (finder == null)
+			throw new IllegalArgumentException("source finder must not be null");
+		this.finder = finder;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -210,16 +217,17 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 //	public Cursor<BindingSet> evaluate(StatementPattern sp, BindingSet bindings) throws StoreException {
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
 			StatementPattern sp, BindingSet bindings) throws QueryEvaluationException {
-		if (stats == null)
-			throw new IllegalArgumentException("need statistics for pattern sources");
-		
-		String[] values = adapter.getPatternConstants(sp);
-		Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
-		if (sources.size() == 0) {
-			LOGGER.warn("Cannot find any source for: " + OperatorTreePrinter.print(sp));
-//			return EmptyCursor.getInstance();
-			return new EmptyIteration<BindingSet, QueryEvaluationException>();
-		}
+//		if (stats == null)
+//			throw new IllegalArgumentException("need statistics for pattern sources");
+
+		Set<Graph> sources = graphMap.get(sp);
+//		String[] values = adapter.getPatternConstants(sp);
+//		Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
+//		if (sources.size() == 0) {
+//			LOGGER.warn("Cannot find any source for: " + OperatorTreePrinter.print(sp));
+////			return EmptyCursor.getInstance();
+//			return new EmptyIteration<BindingSet, QueryEvaluationException>();
+//		}
 		
 		if (LOGGER.isDebugEnabled())
 			LOGGER.debug("EVAL PATTERN {" + OperatorTreePrinter.print(sp) + "} on sources " + sources);
@@ -236,8 +244,8 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		if (currentQuery == null) {
 			currentQuery = expr;
 
-			if (finder == null)
-				finder = new SourceFinder<StatementPattern>(stats, adapter);
+//			if (finder == null)
+//				finder = new SourceFinder<StatementPattern>(stats, adapter);
 			
 			graphMap = new HashMap<StatementPattern, Set<Graph>>();
 			Set<StatementPattern> patterns = PatternCollector.getPattern(expr);
@@ -277,12 +285,10 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		if (LOGGER.isDebugEnabled())
 			LOGGER.debug("Sending SPARQL query to '" + sources + " with bindings " + bindings + "\n" + query);
 		
-//		for (final Repository rep : sources) {
 		for (final Graph rep : sources) {
 			if (MULTI_THREADED)
 				cursors.add(getMultiThread(rep, query));
 			else
-//				cursors.add(QueryExecutor.evalQuery(rep, query));
 				cursors.add(QueryExecutor.eval(rep.toString(), query));
 		}
 
