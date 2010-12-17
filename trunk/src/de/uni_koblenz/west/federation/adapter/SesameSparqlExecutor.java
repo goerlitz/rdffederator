@@ -20,27 +20,15 @@
  */
 package de.uni_koblenz.west.federation.adapter;
 
-import java.util.List;
-
-import org.openrdf.query.BindingSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.optimizer.rdf.eval.SparqlExecutor;
 
 public class SesameSparqlExecutor implements SparqlExecutor {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(SesameSparqlExecutor.class);
-	
 	@Override
 	public long getResultSize(Graph graph, String query) {
-		throw new UnsupportedOperationException("implementation needs fixing");
-		
-//		List<BindingSet> results = QueryExecutor.evalRemote(graph.toString(), query);
-//		LOGGER.debug(results.size() + " results for " + graph + ": " + query);
-//		return results.size();
+		return QueryExecutor.getSize(QueryExecutor.eval(graph.toString(), query));
 	}
 	
 }

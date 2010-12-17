@@ -29,6 +29,7 @@ import de.uni_koblenz.west.optimizer.Optimizer;
 import de.uni_koblenz.west.optimizer.eval.CostModel;
 import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
 import de.uni_koblenz.west.optimizer.rdf.BGPOptimizerFactory;
+import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
  * Creates optimizer based on the supplied settings.
@@ -38,6 +39,7 @@ import de.uni_koblenz.west.optimizer.rdf.BGPOptimizerFactory;
 public class FederationOptimizerFactory extends BGPOptimizerFactory<StatementPattern, ValueExpr> {
 	
 	private CostModel costModel;
+	private SourceFinder<StatementPattern> finder;
 	
 	/**
 	 * Creates a Sesame optimizer factory.
@@ -57,6 +59,10 @@ public class FederationOptimizerFactory extends BGPOptimizerFactory<StatementPat
 		this.costModel = costModel;
 	}
 	
+	public void setSourceFinder(SourceFinder<StatementPattern> finder) {
+		this.finder = finder;
+	}
+	
 	/**
 	 * Returns an optimizer with the specified characteristics.
 	 * 
@@ -73,7 +79,7 @@ public class FederationOptimizerFactory extends BGPOptimizerFactory<StatementPat
 			optimizer = newOptimizer(getEstimator(estimatorType));
 		
 		if (optimizer != null)
-			return new FederationOptimizer(optimizer, this.stats);
+			return new FederationOptimizer(optimizer, this.finder);
 		
 		throw new IllegalArgumentException("unknown optimizer type: " + optimizerType);
 	}
