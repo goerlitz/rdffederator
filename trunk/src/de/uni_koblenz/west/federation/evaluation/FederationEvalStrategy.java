@@ -54,18 +54,15 @@ import org.openrdf.query.algebra.evaluation.TripleSource;
 //import org.openrdf.query.algebra.evaluation.cursors.UnionCursor;
 import org.openrdf.query.algebra.evaluation.impl.EvaluationStrategyImpl;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
-import org.openrdf.repository.Repository;
 //import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
-import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
  * Implementation of the evaluation strategy for querying distributed data
@@ -89,11 +86,7 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	private static final boolean MULTI_THREADED = true;
 	private static final boolean COLLECT_BGP_PATTERNS = true;
 	
-//	private static final SesameAdapter adapter = new SesameAdapter();
-//	private RDFStatistics stats;
-	
 	private SourceFinder<StatementPattern> finder;
-	
 	private Map<StatementPattern, Set<Graph>> graphMap;
 	
 //	public FederationEvalStrategy(RDFStatistics stats, final ValueFactory vf) {
@@ -109,13 +102,13 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 //					Resource subj, URI pred, Value obj, Resource... contexts) throws StoreException {
 			@Override public CloseableIteration<? extends Statement, QueryEvaluationException> getStatements(
 					Resource subj, URI pred, Value obj, Resource... contexts) throws QueryEvaluationException {
-				throw new UnsupportedOperationException("Statement retrival is not supported in federation");
+				throw new UnsupportedOperationException("Statement retrieval is not supported in federation");
 			}
 		});
-//		this.stats = stats;
 		
 		if (finder == null)
 			throw new IllegalArgumentException("source finder must not be null");
+		
 		this.finder = finder;
 	}
 	
@@ -215,19 +208,9 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	 */
 	@Override
 //	public Cursor<BindingSet> evaluate(StatementPattern sp, BindingSet bindings) throws StoreException {
-	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
-			StatementPattern sp, BindingSet bindings) throws QueryEvaluationException {
-//		if (stats == null)
-//			throw new IllegalArgumentException("need statistics for pattern sources");
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(StatementPattern sp, BindingSet bindings) throws QueryEvaluationException {
 
 		Set<Graph> sources = graphMap.get(sp);
-//		String[] values = adapter.getPatternConstants(sp);
-//		Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
-//		if (sources.size() == 0) {
-//			LOGGER.warn("Cannot find any source for: " + OperatorTreePrinter.print(sp));
-////			return EmptyCursor.getInstance();
-//			return new EmptyIteration<BindingSet, QueryEvaluationException>();
-//		}
 		
 		if (LOGGER.isDebugEnabled())
 			LOGGER.debug("EVAL PATTERN {" + OperatorTreePrinter.print(sp) + "} on sources " + sources);
@@ -273,6 +256,13 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	
 //	private Cursor<BindingSet> sendSparqlQuery(TupleExpr expr, Collection<Repository> sources, BindingSet bindings) {
 	private CloseableIteration<BindingSet, QueryEvaluationException> sendSparqlQuery(TupleExpr expr, Set<Graph> sources, BindingSet bindings) {
+		
+		// check if there are any sources to query
+		if (sources.size() == 0) {
+			LOGGER.warn("Cannot find any source for: " + OperatorTreePrinter.print(expr));
+//			return EmptyCursor.getInstance();
+			return new EmptyIteration<BindingSet, QueryEvaluationException>();
+		}
 		
 		// TODO: need to know actual projection and join variables to reduce transmitted data
 		
