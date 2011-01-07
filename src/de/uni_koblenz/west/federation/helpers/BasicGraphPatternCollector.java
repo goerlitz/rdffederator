@@ -25,9 +25,12 @@ import java.util.List;
 
 import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.Join;
+import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.MultiProjection;
+import org.openrdf.query.algebra.Order;
 import org.openrdf.query.algebra.Projection;
 import org.openrdf.query.algebra.QueryModelNode;
+import org.openrdf.query.algebra.Slice;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.ValueExpr;
@@ -81,9 +84,11 @@ public class BasicGraphPatternCollector extends QueryModelVisitorBase<RuntimeExc
 			this.filters.add(filter.getCondition());
 			return;
 		}
-		// otherwise check if filter is a direct child of a Projection
+		// otherwise check if filter is a direct child of a Projection or
+		// inside a left join expression
 		// TODO: what if parent is Limit or OrderBy?
-		if (parent instanceof Projection || parent instanceof MultiProjection) {
+		if (parent instanceof Projection || parent instanceof MultiProjection
+				|| parent instanceof LeftJoin || parent instanceof Order || parent instanceof Slice ) {
 			this.filters.add(filter.getCondition());
 		}
 		saveBGP(filter, parent);

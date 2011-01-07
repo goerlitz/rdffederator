@@ -103,7 +103,10 @@ public class SesameBGPWrapper extends BGPQueryModel<StatementPattern, ValueExpr>
 	
 	@Override
 	public void replaceRoot(BGPOperator<StatementPattern, ValueExpr> operator) {
+//		System.out.println("transform model:\n" + new SesameAdapter().toSparqlBGP(operator));
 		TupleExpr newRoot = new SesameModelTransformer().eval(operator);
+//		System.out.println("changed model:\n" + OperatorTreePrinter.print(newRoot));
+		
 		this.parent.replaceChildNode(root, newRoot);
 		this.root = newRoot;
 	}
