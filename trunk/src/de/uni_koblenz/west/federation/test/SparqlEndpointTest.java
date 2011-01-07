@@ -38,7 +38,7 @@ public class SparqlEndpointTest {
 		String endpoint = "http://dbpedia.org/sparql";
 		String query = "SELECT DISTINCT * WHERE {[] a ?type } LIMIT 10";
 		
-		int size = QueryExecutor.getSize(QueryExecutor.eval(endpoint, query));
+		int size = QueryExecutor.getSize(QueryExecutor.eval(endpoint, query, null));
 		Assert.assertTrue(size == 10);
 	}
 }

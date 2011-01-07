@@ -54,7 +54,7 @@ public class FederationRepositoryTest {
 	
 //	private static final String CONFIG     = "test-config.prop";
 //	private static final String CONFIG     = "federation-config.prop";
-	private static final String CONFIG     = "life-science-config.prop";
+	private static final String CONFIG     = "config/life-science-config.prop";
 	
 	private static final String REP_CONFIG = "repository.config";
 	private static final String QUERY_DIR  = "query.directory";
