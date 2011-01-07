@@ -57,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
+import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.ReadOnlySailConnection;
 import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
@@ -124,18 +125,15 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	 *             If the Sail encountered an error or invalid internal state.
 	 */
 	@Override
-	// Sesame 3:
 //	public Cursor<? extends BindingSet> evaluate(QueryModel query,
-//			BindingSet bindings, boolean includeInferred) throws StoreException {
-	// Sesame 2:
+//			BindingSet bindings, boolean includeInferred) throws StoreException {	// Sesame 3:
 	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluateInternal(TupleExpr query, Dataset dataset,
-			BindingSet bindings, boolean includeInferred) throws SailException {
+			BindingSet bindings, boolean includeInferred) throws SailException {	// Sesame 2:
 		
 		FederationEvalStrategy strategy = new FederationEvalStrategy(this.finder, this.vf);
-//		FederationEvalStrategy strategy = new FederationEvalStrategy(this.stats, this.vf);
 		QueryOptimizerList optimizerList = new QueryOptimizerList();
 		
-		LOGGER.trace("Incoming query model:\n{}", query);
+		LOGGER.trace("Incoming query model:\n{}", OperatorTreePrinter.print(query));
 		
 		// Clone the tuple expression to allow for more aggressive optimizations
 		query = query.clone();
@@ -153,7 +151,7 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 		optimizerList.optimize(query, dataset, bindings);  // Sesame 2
 		
 		if (LOGGER.isTraceEnabled())
-			LOGGER.trace("Optimized query model:\n{}", query);
+			LOGGER.trace("Optimized query model:\n{}", OperatorTreePrinter.print(query));
 		
 		try {
 			return strategy.evaluate(query, EmptyBindingSet.getInstance());

@@ -46,6 +46,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.Join;
+import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
@@ -66,7 +67,7 @@ import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
  * Implementation of the evaluation strategy for querying distributed data
- * sources. This strategy executes all operators in parallel.
+ * sources. This strategy prefers parallel execution of query operators.
  * 
  * A {@link SourceFinder} is used to provide connections to suitable remote
  * repositories. Sesame's {@link TripleSource}s are not applicable, since
@@ -88,8 +89,13 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	
 	private SourceFinder<StatementPattern> finder;
 	private Map<StatementPattern, Set<Graph>> graphMap;
-	
-//	public FederationEvalStrategy(RDFStatistics stats, final ValueFactory vf) {
+
+	/**
+	 * Creates a new Evaluation strategy using the supplied source finder.
+	 * 
+	 * @param finder the source finder to use.
+	 * @param vf the value factory to use.
+	 */
 	public FederationEvalStrategy(SourceFinder<StatementPattern> finder, final ValueFactory vf) {
 	
 		// use a dummy triple source
@@ -113,6 +119,30 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	}
 	
 	// -------------------------------------------------------------------------
+	
+	/**
+	 * Evaluates the left join with the specified set of variable bindings as input.
+	 * IMPORTANT: left joins (optional parts) are currently not evaluated.
+	 * 
+	 * @param leftJoin
+	 *        The Left Join to evaluate
+	 * @param bindings
+	 *        The variables bindings to use for evaluating the expression, if
+	 *        applicable.
+	 * @return A cursor over the variable binding sets that match the join.
+	 */
+	@Override
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			LeftJoin leftJoin, BindingSet bindings)
+			throws QueryEvaluationException {
+		
+		CloseableIteration<BindingSet, QueryEvaluationException> result;
+		result = super.evaluate(leftJoin.getLeftArg(), bindings);
+		
+		LOGGER.info("skipping evaluation of OPTIONAL: " + OperatorTreePrinter.print(leftJoin.getRightArg()));
+		
+		return result;
+	}
 
 	/**
 	 * Evaluates the join with the specified set of variable bindings as input.
@@ -219,6 +249,7 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	
 	private TupleExpr currentQuery = null;
 	
+	// TODO move source finding from evaluation to sailconnection
 	@Override
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(TupleExpr expr, BindingSet bindings)
 			throws QueryEvaluationException {
@@ -227,9 +258,6 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		if (currentQuery == null) {
 			currentQuery = expr;
 
-//			if (finder == null)
-//				finder = new SourceFinder<StatementPattern>(stats, adapter);
-			
 			graphMap = new HashMap<StatementPattern, Set<Graph>>();
 			Set<StatementPattern> patterns = PatternCollector.getPattern(expr);
 			Map<Set<Graph>, List<StatementPattern>> graphSets = finder.findPlanSetsPerSource(patterns);
@@ -277,9 +305,9 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		
 		for (final Graph rep : sources) {
 			if (MULTI_THREADED)
-				cursors.add(getMultiThread(rep, query));
+				cursors.add(getMultiThread(rep, query, bindings));
 			else
-				cursors.add(QueryExecutor.eval(rep.toString(), query));
+				cursors.add(QueryExecutor.eval(rep.toString(), query, bindings));
 		}
 
 		// create union if multiple sources are involved
@@ -299,13 +327,13 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	}
 	
 //	public Cursor<BindingSet> getMultiThread(final Graph source, final String query) {
-	public CloseableIteration<BindingSet, QueryEvaluationException> getMultiThread(final Graph source, final String query) {
+	public CloseableIteration<BindingSet, QueryEvaluationException> getMultiThread(final Graph source, final String query, final BindingSet bindings) {
 //		Callable<Cursor<BindingSet>> callable = new Callable<Cursor<BindingSet>>() {
 		Callable<CloseableIteration<BindingSet, QueryEvaluationException>>  callable = new Callable<CloseableIteration<BindingSet, QueryEvaluationException>>() {
 //			@Override public Cursor<BindingSet> call() {
 			@Override public CloseableIteration<BindingSet, QueryEvaluationException> call() {
 //				return QueryExecutor.evalQuery(repository, query);
-				return QueryExecutor.eval(source.toString(), query);
+				return QueryExecutor.eval(source.toString(), query, bindings);
 			}
 		};
 //		Future<Cursor<BindingSet>> future = executor.submit(callable);

@@ -55,22 +55,23 @@ public class FederationOptimizer implements QueryOptimizer {
 	
 	protected Optimizer<BGPOperator<StatementPattern, ValueExpr>> optimizer;
 	protected SourceFinder<StatementPattern> finder;
-//	protected RDFStatistics stats;
 	
 	protected QueryModelVerifier<StatementPattern, ValueExpr> listener;
 	protected BGPModelPrinter<StatementPattern, ValueExpr> printer = new BGPModelPrinter<StatementPattern, ValueExpr>(new SesameAdapter());
 	
-//	protected FederationOptimizer(Optimizer<BGPOperator<StatementPattern, ValueExpr>> optimizer, RDFStatistics stats) {
+	/**
+	 * Creates a federation optimizer based on the supplied generic optimizer and source finder.
+	 * 
+	 * @param optimizer the generic query optimizer to use.
+	 * @param finder the source finder to use.
+	 */
 	protected FederationOptimizer(Optimizer<BGPOperator<StatementPattern, ValueExpr>> optimizer, SourceFinder<StatementPattern> finder) {
 		if (optimizer == null)
 			throw new IllegalArgumentException("the optimizer must not be null");
-//		if (stats == null)
-//			throw new IllegalArgumentException("RDF statistics must not be null");
 		if (finder == null)
 			throw new IllegalArgumentException("source finder must not be null");
 
 		this.optimizer = optimizer;
-//		this.stats = stats;
 		this.finder = finder;
 	}
 
@@ -84,8 +85,6 @@ public class FederationOptimizer implements QueryOptimizer {
 		List<SesameBGPWrapper> bgps = new BasicGraphPatternCollector().eval(query);
 		if (bgps.size() == 0)
 			LOGGER.debug("found no basic graph patterns to optimize");
-		
-//		SourceFinder<StatementPattern> finder = new SourceFinder<StatementPattern>(stats, new SesameAdapter());
 		
 		// optimize every basic graph pattern
 		for (SesameBGPWrapper bgp : bgps) {
