@@ -28,7 +28,7 @@ public class SesameSparqlExecutor implements SparqlExecutor {
 	
 	@Override
 	public long getResultSize(Graph graph, String query) {
-		return QueryExecutor.getSize(QueryExecutor.eval(graph.toString(), query));
+		return QueryExecutor.getSize(QueryExecutor.eval(graph.toString(), query, null));
 	}
 	
 }

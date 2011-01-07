@@ -130,7 +130,7 @@ public class VoidRepositoryConnection extends ReadOnlyRepositoryConnection {
 		if (baseURI != null)
 			throw new IllegalArgumentException("base/relative URIs not allowed");
 		
-		return QueryExecutor.prepareTupleQuery(query, this.endpoint);
+		return QueryExecutor.prepareTupleQuery(query, this.endpoint, null);
 	}
 
 	@Override

@@ -203,9 +203,9 @@ public final class QueryExecutor {
 	 * @return the result.
 	 */
 //	public static Cursor<BindingSet> eval(String endpoint, String query) {
-	public static CloseableIteration<BindingSet, QueryEvaluationException> eval(String endpoint, String query) {
+	public static CloseableIteration<BindingSet, QueryEvaluationException> eval(String endpoint, String query, BindingSet bindings) {
 		try {
-			return wrapResult(prepareTupleQuery(query, endpoint), endpoint);
+			return wrapResult(prepareTupleQuery(query, endpoint, bindings), endpoint);
 		} catch (MalformedQueryException e) {
 			LOGGER.error("Malformed query:\n" + query, e.getMessage());
 			throw new IllegalArgumentException("Malformed query:\n" + query, e);
@@ -221,11 +221,14 @@ public final class QueryExecutor {
 	/**
 	 * Prepares a TupleQuery for a SPARQL endpoint.
 	 */
-	public static TupleQuery prepareTupleQuery(String query, String endpoint)
+	public static TupleQuery prepareTupleQuery(String query, String endpoint, BindingSet bindings)
 			throws RepositoryException, MalformedQueryException {  // SESAME 2:
 		
-		if (LOGGER.isDebugEnabled())
-			LOGGER.debug("sending query to endpoint '" + endpoint + "': " + query.replace("\n", " "));
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("query endpoint " + endpoint + ": '" + query.replace("\n", " ") + "'");
+			if (bindings != null  && bindings.size() > 0)
+				LOGGER.debug("with bindings: " + bindings);
+		}
 		
 		try {
 			SPARQLRepository http = httpMap.get(endpoint);
