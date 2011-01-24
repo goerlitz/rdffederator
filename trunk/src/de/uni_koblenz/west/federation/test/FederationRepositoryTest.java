@@ -32,9 +32,9 @@ import org.openrdf.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.helpers.Configuration;
-import de.uni_koblenz.west.federation.helpers.ConfigurationException;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
+import de.uni_koblenz.west.federation.test.config.Configuration;
+import de.uni_koblenz.west.federation.test.config.ConfigurationException;
 
 /**
  * Test Federation repository which is based on the FederationSail.
