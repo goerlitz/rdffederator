@@ -1,0 +1,7 @@
+repository.config=federated/RDFFederator_config.n3
+
+query.directory=federated
+query.extension=CD7.txt
+
+optimizer.strategy=DYNAMIC_PROGRAMMING
+optimizer.estimator=STATISTICS
