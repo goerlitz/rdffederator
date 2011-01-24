@@ -20,8 +20,10 @@
  */
 package de.uni_koblenz.west.federation;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -136,12 +138,15 @@ public class FederationSail extends SailBase {
 			try {
 				if (rep instanceof VoidRepository) {
 					VoidRepository voidRep = (VoidRepository) rep;
+//					System.out.println("file: " + new File(voidRep.getVoidUrl().toURI()).getAbsoluteFile());
 					URI context = stats.load(voidRep.getVoidUrl());
 					stats.setEndpoint(voidRep.getEndpoint(), context);
 				}
 				rep.initialize();
+//			} catch (URISyntaxException e) {
+//				throw new SailException("can not read voiD description: " + e.getMessage(), e);
 			} catch (IOException e) {
-				LOGGER.error("can not read voiD description: " + e.getMessage());
+				LOGGER.error("can not read voiD description " + ((VoidRepository) rep).getVoidUrl(), e.getMessage());
 //				throw new StoreException("can not read voiD description: " + e.getMessage(), e);
 				throw new SailException("can not read voiD description: " + e.getMessage(), e);
 			} catch (RepositoryException e) {
