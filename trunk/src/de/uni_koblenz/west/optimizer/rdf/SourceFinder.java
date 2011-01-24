@@ -41,7 +41,7 @@ public class SourceFinder<P> {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceFinder.class);
 	
-	protected static final boolean HANDLE_SAMEAS = true;
+	protected static final boolean HANDLE_SAMEAS = false;
 	
 	private ModelAdapter<P, ?> adapter;
 	private RDFStatistics stats;

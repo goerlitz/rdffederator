@@ -24,47 +24,53 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.repository.Repository;
+import org.openrdf.repository.sail.SailRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.FederationSail;
 import de.uni_koblenz.west.federation.helpers.Configuration;
 import de.uni_koblenz.west.federation.helpers.ConfigurationException;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
+import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
- * Test Federation repository which is based on the FederationSail.
- * The federation settings are loaded from a local configuration file.
  * 
  * @author Olaf Goerlitz
  */
-public class FederationRepositoryTest {
+public class SourceFinderTest {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(FederationRepositoryTest.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SourceFinderTest.class);
 	
-	private static final String CONFIG     = "setup/life-science-config.prop";
-	
-//	private static final String STRATEGY   = "optimizer.strategy";
-//	private static final String ESTIMATOR  = "optimizer.estimator";
+	private static final String CONFIG_FILE = "setup/life-science-config.prop";
 	
 	private static Repository REPOSITORY;
 	private static Iterator<String> QUERIES;
-	
-	private String query;
+	private static SourceFinder<StatementPattern> finder;
 	
 	public static void main(String[] args) {
-		setUp();
-		new FederationRepositoryTest().testQueries();
+		
+		// check arguments for name of configuration file
+		String configFile;
+		if (args.length == 0) {
+			LOGGER.info("no config file specified; using default: " + CONFIG_FILE);
+			configFile = CONFIG_FILE;
+		} else {
+			configFile = args[0];
+		}
+		
+		// load configuration file and create repository
+		setup(configFile);
 	}
 	
-    @BeforeClass
-    public static void setUp() {
+	private static void setup(String configFile) {
+		
 		try {
-			Configuration config = Configuration.create(CONFIG);
+			Configuration config = Configuration.create(configFile);
 			REPOSITORY = config.createRepository();
 			QUERIES = config.getQueryIterator();
 		} catch (IOException e) {
@@ -72,43 +78,18 @@ public class FederationRepositoryTest {
 		} catch (ConfigurationException e) {
 			LOGGER.error("failed to create repository: " + e.getMessage());
 		}
-    }
-    
-//	@Test
-	public void testPatternQueries() {
 		
-		query = "SELECT DISTINCT * WHERE { [] a ?type }";
-		QueryExecutor.eval(REPOSITORY, query);
-		
-		query = "SELECT DISTINCT * WHERE { ?x a [] }";
-		QueryExecutor.eval(REPOSITORY, query);
-		
-		// MUST FAIL: unbound predicate
-		query = "SELECT DISTINCT * WHERE { [] ?p [] }";
-//		try {
-			QueryExecutor.eval(REPOSITORY, query);
-//			Assert.fail("Should have raised an UnsupportedOperationException");
-//		} catch (UnsupportedOperationException e) {
-//		}
-
-		// MUST FAIL: unbound predicate
-		query = "SELECT DISTINCT ?p WHERE { ?x a ?type; ?p [] }";
-		try {
-			QueryExecutor.eval(REPOSITORY, query);
-			Assert.fail("Should have raised an UnsupportedOperationException");
-		} catch (UnsupportedOperationException e) {
-		}
-		
-		// MUST FAIL: join over blank nodes is not supported
-		query = "SELECT DISTINCT * WHERE { [] a ?type; ?p [] }";
-		try {
-			QueryExecutor.eval(REPOSITORY, query);
-			Assert.fail("Should have raised an UnsupportedOperationException");
-		} catch (UnsupportedOperationException e) {
-		}
+		FederationSail sail = ((FederationSail) ((SailRepository) REPOSITORY).getSail());
+		finder = sail.getSourceFinder();
 	}
 	
-	@Test
+	// -------------------------------------------------------------------------
+	
+    @BeforeClass
+    public static void setUp() {
+    	setup(CONFIG_FILE);
+    }
+    
 	public void testQueries() {
 		while (QUERIES.hasNext()) {
 			String query = QUERIES.next();
@@ -119,5 +100,5 @@ public class FederationRepositoryTest {
 			LOGGER.info("RESULT SIZE: " + (result != null ? result.size() : -1));
 		}
 	}
-	
+
 }
