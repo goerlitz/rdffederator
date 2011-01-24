@@ -1,0 +1,130 @@
+# -------------------------------------------------------------------
+# [Q1] Find all movies of actors born in Paris.
+# (from DARQ. 375 results @ http://dbpedia.org/sparql)
+# -------------------------------------------------------------------
+PREFIX foaf:        <http://xmlns.com/foaf/0.1/>
+PREFIX dbpedia:     <http://dbpedia.org/resource/>
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+
+SELECT DISTINCT ?person ?movie WHERE {
+  ?person foaf:name ?name .
+  ?person dbpedia-owl:birthPlace dbpedia:Paris .
+  ?movie  dbpedia-owl:starring ?person
+}
+
+# -------------------------------------------------------------------
+# [Q2] Find name and birthday of German musicians born in Berlin.
+# (from DARQ. 2 results @ http://dbpedia.org/sparql)
+# -------------------------------------------------------------------
+PREFIX foaf:        <http://xmlns.com/foaf/0.1/>
+PREFIX skos:        <http://www.w3.org/2004/02/skos/core#>
+PREFIX dbpedia:     <http://dbpedia.org/resource/>
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+PREFIX category:    <http://dbpedia.org/resource/Category:>
+
+SELECT ?name ?born ?person WHERE {
+  ?person foaf:name ?name .
+  ?person dbpedia-owl:birthDate ?born .
+  ?person dbpedia-owl:birthPlace dbpedia:Berlin .
+  ?person skos:subject category:German_musicians .
+}
+
+# -------------------------------------------------------------------
+# [Q3] Find all comedy movies with homepage and actors born in London.
+# (adapted from DARQ, 8 results @ http://dbpedia.org/sparql)
+# -------------------------------------------------------------------
+PREFIX foaf:        <http://xmlns.com/foaf/0.1/>
+PREFIX yago:        <http://dbpedia.org/class/yago/>
+PREFIX dbpedia:     <http://dbpedia.org/resource/>
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+
+SELECT DISTINCT * WHERE {
+  ?person dbpedia-owl:birthPlace dbpedia:London .
+  ?movie rdf:type yago:ComedyFilms .
+  ?movie dbpedia-owl:starring ?person .
+  ?movie rdfs:label ?label .
+  ?movie foaf:homepage ?homepage .
+  FILTER (LANG(?label) = 'en')
+}
+
+# -------------------------------------------------------------------
+# [Q4] Find all movies with actors born in a capital.
+# (adapted from DARQ, 40899 results @ http://dbpedia.org/sparql)
+# -------------------------------------------------------------------
+PREFIX foaf:        <http://xmlns.com/foaf/0.1/>
+PREFIX yago:        <http://dbpedia.org/class/yago/>
+PREFIX dbpedia:     <http://dbpedia.org/resource/>
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+
+SELECT * WHERE {
+  ?movie dbpedia-owl:starring ?person .
+  ?person dbpedia-owl:birthDate ?date .
+  ?person dbpedia-owl:birthPlace ?place .
+  ?state dbpedia-owl:capital ?place .
+}
+
+# -------------------------------------------------------------------
+# [Q5] Find all soccer players, who played as goalkeeper for a club
+# that has a stadium with more than 40.000 seats and who are born in
+# a country with more than 10 million inhabitants.
+# (from http://wiki.dbpedia.org/OnlineAccess#h28-5)
+# (41 results @ http://dbpedia.org/sparql)
+# -------------------------------------------------------------------
+PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
+PREFIX dbpedia: <http://dbpedia.org/resource/>
+PREFIX dbpo:    <http://dbpedia.org/ontology/>
+PREFIX dbpp:    <http://dbpedia.org/property/>
+SELECT DISTINCT ?player
+WHERE {
+  ?s a dbpo:SoccerPlayer .
+  ?s foaf:page ?player.
+  ?s dbpp:position ?position .
+  ?s dbpo:birthPlace ?place .
+  ?s dbpp:clubs ?club .
+  ?club dbpo:capacity ?cap .
+  ?place ?population ?pop.
+  Filter (?population in (dbpp:populationEstimate, dbpp:populationCensus, dbpp:statPop ))
+  Filter (xsd:int(?pop) >10000000 ) .
+  Filter (xsd:int(?cap) <40000 ) .
+  Filter (?position = "Goalkeeper"@en || ?position = <http://dbpedia.org/resource/Goalkeeper_%28association_football%29> || ?position = <http://dbpedia.org/resource/Goalkeeper_%28football%29>)
+}
+
+# -------------------------------------------------------------------
+# [Q6] Find all German musicians who were born in Berlin.
+# (from http://wiki.dbpedia.org/OnlineAccess#h28-5)
+# (1 result @ http://dbpedia.org/sparql)
+# -------------------------------------------------------------------
+PREFIX foaf:     <http://xmlns.com/foaf/0.1/>
+PREFIX rdfs:     <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:     <http://www.w3.org/2004/02/skos/core#>
+PREFIX dbpedia:  <http://dbpedia.org/resource/>
+PREFIX dbpo:     <http://dbpedia.org/ontology/>
+PREFIX dbpp:     <http://dbpedia.org/property/>
+PREFIX category: <http://dbpedia.org/resource/Category:>
+
+SELECT ?name ?birth ?description ?person WHERE {
+     ?person dbpo:birthPlace dbpedia:Berlin .
+     ?person skos:subject category:German_musicians .
+     ?person dbpo:birthDate ?birth .
+     ?person foaf:name ?name .
+     ?person rdfs:comment ?description .
+     FILTER (LANG(?description) = 'en') .
+}
+
+# -------------------------------------------------------------------
+# [Q7] Find all People who were born in Berlin before 1900.
+# (from http://wiki.dbpedia.org/OnlineAccess#h28-5)
+# (22 results @ http://dbpedia.org/sparql)
+# -------------------------------------------------------------------
+PREFIX dbpedia:  <http://dbpedia.org/resource/>
+PREFIX dbpo:     <http://dbpedia.org/ontology/>
+PREFIX dbpp:     <http://dbpedia.org/property/>
+
+SELECT ?name ?birth ?death ?person WHERE {
+     ?person dbpp:birthPlace dbpedia:Berlin .
+     ?person dbpo:birthDate ?birth .
+     ?person foaf:name ?name .
+     ?person dbpo:deathDate ?death
+     FILTER (?birth < "1900-01-01"^^xsd:date) .
+}
+

@@ -1,0 +1,18 @@
+PREFIX owl:      <http://www.w3.org/2002/07/owl#>
+PREFIX rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX drugbank: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/>
+PREFIX kegg:     <http://bio2rdf.org/ns/kegg#>
+PREFIX drugbank-drugs:    <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugs/>
+PREFIX drugbank-category: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugcategory/>
+PREFIX dbpedia-owl:       <http://dbpedia.org/ontology/>
+PREFIX dbpedia-owl-drug:  <http://dbpedia.org/ontology/drug/>
+
+SELECT ?drugDesc ?cpd ?equation WHERE {
+   ?drug drugbank:drugCategory drugbank-category:cathartics .
+   ?drug drugbank:keggCompoundId ?cpd .
+   ?drug drugbank:description ?drugDesc .
+   ?enzyme kegg:xSubstrate ?cpd .
+   ?enzyme rdf:type kegg:Enzyme .
+   ?reaction kegg:xEnzyme ?enzyme .
+   ?reaction kegg:equation ?equation . 
+}
