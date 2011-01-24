@@ -1,0 +1,131 @@
+# -------------------------------------------------------------------
+# [Q1] Return the year of publication of 'Journal 1 (1940)'.
+# Simple star query (1 result)
+# -------------------------------------------------------------------
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+PREFIX dc:      <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX bench:   <http://localhost/vocabulary/bench/>
+
+SELECT ?yr
+WHERE {
+  ?journal rdf:type bench:Journal .
+  ?journal dc:title "Journal 1 (1940)"^^xsd:string .
+  ?journal dcterms:issued ?yr 
+}
+
+# -------------------------------------------------------------------
+# [Q2] Return all proceedings with their properties.
+# (optional abstract and ORDER BY removed)
+# Star query with many joins (965 results @ 50k)
+# -------------------------------------------------------------------
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX swrc:    <http://swrc.ontoware.org/ontology#>
+PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
+PREFIX bench:   <http://localhost/vocabulary/bench/>
+PREFIX dc:      <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?inproc ?author ?booktitle ?title ?proc ?ee ?page ?url ?yr
+WHERE {
+  ?inproc rdf:type bench:Inproceedings .
+  ?inproc dc:creator ?author .
+  ?inproc bench:booktitle ?booktitle .
+  ?inproc dc:title ?title .
+  ?inproc dcterms:partOf ?proc .
+  ?inproc rdfs:seeAlso ?ee .
+  ?inproc swrc:pages ?page .
+  ?inproc foaf:homepage ?url .
+  ?inproc dcterms:issued ?yr 
+}
+
+# -------------------------------------------------------------------
+# [Q3] Return all articles with property pages, month, isbn.
+# pages is satisfied by 96%, month by 0.6%, and isbn by none. 
+# (combined original queries 3a-c)
+# Star query with few joins (0 results @ 50k)
+# -------------------------------------------------------------------
+PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX bench: <http://localhost/vocabulary/bench/>
+PREFIX swrc:  <http://swrc.ontoware.org/ontology#>
+
+SELECT ?article ?pages ?month ?isbn
+WHERE {
+  ?article rdf:type bench:Article .
+  ?article swrc:pages ?pages.
+  ?article swrc:month ?month.
+  ?article swrc:isbn  ?isbn
+}
+
+# -------------------------------------------------------------------
+# [Q4] Select distinct authors that have published in same journal.
+# Long query chain between author names with start around articles.
+# Uses var comparision filter and distinct (104746 results @ 50k)
+# -------------------------------------------------------------------
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX bench:   <http://localhost/vocabulary/bench/>
+PREFIX dc:      <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX foaf:    <http://xmlns.com/foaf/0.1/>
+PREFIX swrc:    <http://swrc.ontoware.org/ontology#>
+
+SELECT DISTINCT ?name1 ?name2 
+WHERE {
+  ?article1 rdf:type bench:Article .
+  ?article2 rdf:type bench:Article .
+  ?article1 dc:creator ?author1 .
+  ?article2 dc:creator ?author2 .
+  ?author1 foaf:name ?name1 .
+  ?author2 foaf:name ?name2 .
+  ?article1 swrc:journal ?journal .
+  ?article2 swrc:journal ?journal
+  FILTER (?name1<?name2)
+}
+
+# -------------------------------------------------------------------
+# [Q5] Return names of authors that have published at least one
+# article and at least one inproceedings.
+# Query chain from article to inproceedings over person.
+# Uses distinct (1085 results @ 50k)
+# -------------------------------------------------------------------
+PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX foaf:  <http://xmlns.com/foaf/0.1/>
+PREFIX bench: <http://localhost/vocabulary/bench/>
+PREFIX dc:    <http://purl.org/dc/elements/1.1/>
+
+SELECT DISTINCT ?person ?name
+WHERE {
+  ?article rdf:type bench:Article .
+  ?article dc:creator ?person .
+  ?inproc rdf:type bench:Inproceedings .
+  ?inproc dc:creator ?person .
+  ?person foaf:name ?name
+}
+
+# -------------------------------------------------------------------
+# [Q8] Return authors that have published with an author that
+# has published with 'Paul Erdoes'.
+# Chain query with duplicate triple patterns, self joins, and
+# var filters (109 results @ 50k)
+# -------------------------------------------------------------------
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#> 
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX dc:   <http://purl.org/dc/elements/1.1/>
+
+SELECT DISTINCT ?name
+WHERE {
+  ?erdoes rdf:type foaf:Person .
+  ?erdoes foaf:name "Paul Erdoes"^^xsd:string .
+  ?document dc:creator ?erdoes .
+  ?document dc:creator ?author .
+  ?document2 dc:creator ?author .
+  ?document2 dc:creator ?author2 .
+  ?author2 foaf:name ?name
+  FILTER (?author!=?erdoes &&
+          ?document2!=?document &&
+          ?author2!=?erdoes &&
+          ?author2!=?author)
+}
