@@ -31,17 +31,22 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
+ * Source selection for the supplied basic graph patterns.
+ * Pattern subsets are built for the same set of matched sources. 
+ * 
  * @author Olaf Goerlitz
  */
 public class SourceFinder<P> {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceFinder.class);
 	
-	protected static final boolean HANDLE_SAMEAS = false;
+	private boolean handleRDFType = false; 
+	private boolean handleOWLSameAs = false;
 	
 	private ModelAdapter<P, ?> adapter;
 	private RDFStatistics stats;
@@ -55,6 +60,22 @@ public class SourceFinder<P> {
 	public SourceFinder(RDFStatistics stats, ModelAdapter<P, ?> adapter) {
 		this.adapter = adapter;
 		this.stats = stats;
+	}
+
+	public boolean isHandleRDFType() {
+		return handleRDFType;
+	}
+	
+	public void setHandleRDFType(boolean handleRDFType) {
+		this.handleRDFType = handleRDFType;
+	}
+	
+	public boolean isHandleOWLSameAs() {
+		return handleOWLSameAs;
+	}
+
+	public void setHandleOWLSameAs(boolean handleOWLSameAs) {
+		this.handleOWLSameAs = handleOWLSameAs;
 	}
 	
 	/**
@@ -75,13 +96,21 @@ public class SourceFinder<P> {
 			String[] values = adapter.getPatternConstants(pattern);
 
 			// add owl:sameAs patterns to extra list for special treatment
-			if (HANDLE_SAMEAS && "http://www.w3.org/2002/07/owl#sameAs".equals(values[1])) {
+			if (handleOWLSameAs && "http://www.w3.org/2002/07/owl#sameAs".equals(values[1])) {
 				sameAsPatterns.add(pattern);
 				continue;
 			}
 
 			// get sources for current pattern 
-			Set<Graph> sources = stats.findSources(values[0], values[1], values[2]);
+			Set<Graph> sources = stats.findSources(values[0], values[1], values[2], handleRDFType);
+			
+			// check returned sources
+			if (sources.size() == 0) {
+				if (handleRDFType && values[2] != null)
+					LOGGER.warn("cannot find sources for rdf:type " + values[2]);
+				else
+					LOGGER.warn("cannot find sources for predicate " + values[1]);
+			}
 			
 			// add current pattern with matched sources to the mapping
 			List<P> patternList = graphSets.get(sources);
@@ -95,7 +124,7 @@ public class SourceFinder<P> {
 		// special treatment of owl:sameAs patterns:
 		// can be added to patterns which contain the subject variable
 		// e.g. {x? a Type . x? sameAs ?y} or {ME knows ?x . x? sameAs ?y} 
-		if (HANDLE_SAMEAS) {
+		if (handleOWLSameAs) {
 
 			Iterator<P> iterator = sameAsPatterns.iterator();
 			while (iterator.hasNext()) {

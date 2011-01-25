@@ -22,10 +22,8 @@ package de.uni_koblenz.west.federation.test.config;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -34,6 +32,7 @@ import java.util.Properties;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.impl.GraphImpl;
+import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfig;
@@ -41,6 +40,7 @@ import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.config.RepositoryRegistry;
+import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -51,8 +51,12 @@ import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.FederationSail;
+import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
+
 /**
- * Configuration object for test scenarios.
+ * Configuration object holding all setting for a test scenarios.
+ * Provides methods to create the corresponding repository etc.
  * 
  * @author Olaf Goerlitz
  */
@@ -63,6 +67,9 @@ public class Configuration {
 	private static final String PROP_REP_CONFIG = "repository.config";
 	private static final String PROP_QUERY_DIR  = "query.directory";
 	private static final String PROP_QUERY_EXT  = "query.extension";
+	
+	private static final String PROP_RDF_TYPE   = "source.select_by_type";
+	private static final String PROP_SAME_AS    = "source.merge_sameAs";
 	
 	private File cfgFile;
 	private Properties props = new Properties();
@@ -77,6 +84,12 @@ public class Configuration {
 		return new Configuration(configFile);
 	}
 	
+	/**
+	 * Creates a new repository for the supplied configuration.
+	 * 
+	 * @return the initialized repository.
+	 * @throws ConfigurationException if an error occurs during the repository configuration.
+	 */
 	public Repository createRepository() throws ConfigurationException {
 		
 		// get repository config file
@@ -88,7 +101,7 @@ public class Configuration {
 		// create repository
     	try {
     		// using configuration directory as base for resolving relative URIs
-			RepositoryConfig repConf = RepositoryConfig.create(loadRDFConfig(cfgFile.toURI().resolve(repConfig), cfgFile.toURI().toString()), null);
+    		RepositoryConfig repConf = RepositoryConfig.create(loadRDFConfig(repConfig), null);
 			repConf.validate();
 			RepositoryImplConfig implConf = repConf.getRepositoryImplConfig();
 			RepositoryRegistry registry = RepositoryRegistry.getInstance();
@@ -104,6 +117,25 @@ public class Configuration {
 		} catch (RepositoryException e) {
 			throw new ConfigurationException("cannot initialize repository: " + e.getMessage());
 		}
+	}
+
+	/**
+	 * Returns the source finder for the supplied repository configuration.
+	 * 
+	 * @return the source finder.
+	 * @throws ConfigurationException if an error occurs during the repository configuration.
+	 */
+	public SourceFinder<StatementPattern> getSourceFinder() throws ConfigurationException {
+
+		boolean handleRDFType = Boolean.parseBoolean(props.getProperty(PROP_RDF_TYPE));
+		boolean handleSameAs = Boolean.parseBoolean(props.getProperty(PROP_SAME_AS));
+
+		Repository rep = createRepository();
+		FederationSail sail = ((FederationSail) ((SailRepository) rep).getSail());
+		SourceFinder<StatementPattern> finder = sail.getSourceFinder();
+		finder.setHandleRDFType(handleRDFType);
+		finder.setHandleOWLSameAs(handleSameAs);
+		return finder;
 	}
 	
 	public Iterator<String> getQueryIterator() throws ConfigurationException {
@@ -144,6 +176,11 @@ public class Configuration {
 	
 	// -------------------------------------------------------------------------
 	
+	/**
+	 * Returns the list of matching query files in the specified directory.
+	 * 
+	 * @return list of query files.
+	 */
     private List<File> getQueryList() throws ConfigurationException {
     	
 		String queryDir = props.getProperty(PROP_QUERY_DIR);
@@ -153,9 +190,9 @@ public class Configuration {
 		if (queryExt == null)
 			throw new ConfigurationException("missing query extension setting '" + PROP_QUERY_EXT + "' in " + cfgFile);
 
-		File dir = new File(queryDir).getAbsoluteFile();
+		File dir = new File(cfgFile.toURI().resolve(queryDir)).getAbsoluteFile();
 		if (!dir.isDirectory() || !dir.canRead())
-			throw new IllegalArgumentException("not a readable query directory: " + dir);
+			throw new ConfigurationException("cannot read query directory: " + dir);
 		
 		List<File> queries = new ArrayList<File>();
 		for (File file : dir.listFiles()) {
@@ -169,7 +206,7 @@ public class Configuration {
     }
     
 	/**
-	 * Read a query from a file.
+	 * Reads a SPARQL query from a file.
 	 * 
 	 * @param file the file to read.
 	 * @return the query.
@@ -187,17 +224,15 @@ public class Configuration {
 	/**
 	 * Loads the repository configuration.
 	 * 
-	 * @param configFile the name of the repository configuration file.
-	 * @param baseURI for resolving relative URIs in the configuration file.
+	 * @param repConfig the name of the repository configuration file.
 	 * @return the repository configuration model.
 	 * @throws ConfigurationException
 	 */
-//	private Graph loadRDFConfig(String configFile, String baseURI) throws ConfigurationException {
-	private Graph loadRDFConfig(URI configFile, String baseURI) throws ConfigurationException {
+	private Graph loadRDFConfig(String repConfig) throws ConfigurationException {
 		
-		File file = new File(configFile).getAbsoluteFile();
-//		RDFFormat format = Rio.getParserFormatForFileName(configFile);
-		RDFFormat format = Rio.getParserFormatForFileName(configFile.getPath());
+		String baseURI = cfgFile.toURI().toString();
+		File file = new File(cfgFile.toURI().resolve(repConfig)).getAbsoluteFile();
+		RDFFormat format = Rio.getParserFormatForFileName(repConfig);
 		if (format == null)
 			throw new ConfigurationException("unknown RDF format of repository config: " + file);
 		
@@ -206,8 +241,7 @@ public class Configuration {
 			Graph model = new GraphImpl();
 			RDFParser parser = Rio.createParser(format);
 			parser.setRDFHandler(new StatementCollector(model));
-//			parser.parse(new FileReader(file), baseURI);
-			parser.parse(configFile.toURL().openStream(), baseURI);
+			parser.parse(new FileReader(file), baseURI);
 			return model;
 			
 		} catch (UnsupportedRDFormatException e) {

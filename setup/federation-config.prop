@@ -1,7 +1,0 @@
-repository.config=federated/RDF-Rep-cross-domain_config.n3
-
-query.directory=federated/cd
-query.extension=.txt
-
-optimizer.strategy=DYNAMIC_PROGRAMMING
-optimizer.estimator=STATISTICS

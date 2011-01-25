@@ -29,7 +29,6 @@
          fed:member [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/dbpedia3.5.1_subset-void.n3> ;
-#            fed:voidDescription <file:void/dbpedia3.5.1_subset-void.n3> ;
             void:sparqlEndpoint <http://dbpedia.org/sparql>
          ], [
             rep:repositoryType "west:VoidRepository" ;

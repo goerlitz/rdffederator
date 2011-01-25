@@ -86,18 +86,18 @@ public class Void2StatisticsTest {
 	public void test() throws URISyntaxException {
 		
 //		Set<Graph> sources = voidStats.findGraphs(RDF_TYPE.toString());
-		Set<Graph> sources = voidStats.findSources(null,RDF_TYPE.toString(), null);
+		Set<Graph> sources = voidStats.findSources(null, RDF_TYPE.toString(), null, false);
 		Assert.assertTrue(sources.size() == 2);
 
 //		sources = voidStats.findGraphs(GEO_LAT.toString());
-		sources = voidStats.findSources(null, GEO_LAT.toString(), null);
+		sources = voidStats.findSources(null, GEO_LAT.toString(), null, false);
 		Assert.assertTrue(sources.size() == 1);
 		Assert.assertTrue(15000 == voidStats.getSize(sources.iterator().next()));
 		Assert.assertTrue(5000 == (Long) voidStats.pCard(sources.iterator().next(), GEO_LAT));
 		Assert.assertTrue(5000 == (Long) voidStats.typeCard(sources.iterator().next(), GML_FEATURE));
 		
 //		sources = voidStats.findGraphs(FOAF_NAME.toString());
-		sources = voidStats.findSources(null, FOAF_NAME.toString(), null);
+		sources = voidStats.findSources(null, FOAF_NAME.toString(), null, false);
 		Assert.assertTrue(sources.size() == 1);
 		Assert.assertTrue(19000 == voidStats.getSize(sources.iterator().next()));
 		Assert.assertTrue(9000 == (Long) voidStats.pCard(sources.iterator().next(), FOAF_NAME));

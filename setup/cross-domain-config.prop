@@ -1,7 +1,7 @@
-repository.config=federated/RDFFederator_config.n3
+repository.config=sesame/RDF-Rep-cross-domain_config.n3
 
-query.directory=federated
+query.directory=queries/cd
 query.extension=CD7.txt
 
-optimizer.strategy=DYNAMIC_PROGRAMMING
-optimizer.estimator=STATISTICS
+#optimizer.strategy=DYNAMIC_PROGRAMMING
+#optimizer.estimator=STATISTICS
