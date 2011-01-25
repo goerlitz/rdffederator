@@ -136,18 +136,18 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 		baseOperators = new ArrayList<BGPOperator<P,F>>();
 		Map<Set<Graph>, List<P>> graphSets = sourceFinder.findPlanSetsPerSource(getAllPatterns());
 		
-		// evaluation
-		Set<Graph> graphs = new HashSet<Graph>();
-		int planCount = 0;
-		for (Set<Graph> graphSet : graphSets.keySet()) {
-			graphs.addAll(graphSet);
-//			if (graphSet.size() == 1) {
-//				planCount++;
-//			} else {
-				planCount += graphSet.size() * graphSets.get(graphSet).size();
-//			}
-		}
-		System.out.println(planCount + " plans for " + graphs.size() + " graphs: " + graphs);
+//		// evaluation
+//		Set<Graph> graphs = new HashSet<Graph>();
+//		int planCount = 0;
+//		for (Set<Graph> graphSet : graphSets.keySet()) {
+//			graphs.addAll(graphSet);
+////			if (graphSet.size() == 1) {
+////				planCount++;
+////			} else {
+//				planCount += graphSet.size() * graphSets.get(graphSet).size();
+////			}
+//		}
+//		System.out.println(planCount + " plans for " + graphs.size() + " graphs: " + graphs);
 		
 		
 		for (Set<Graph> graphSet : graphSets.keySet()) {
