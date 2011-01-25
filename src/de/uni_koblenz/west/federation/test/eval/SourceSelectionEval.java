@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.federation.test.eval;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +60,21 @@ public class SourceSelectionEval {
 				continue;
 			}
 			List<StatementPattern> patterns = StatementPatternCollector.process(expr);
-			Map<Set<Graph>, List<StatementPattern>> sourceSets = this.finder.findPlanSetsPerSource(patterns);
+			Map<Set<Graph>, List<StatementPattern>> graphSets = this.finder.findPlanSetsPerSource(patterns);
+			
+			// evaluation
+			Set<Graph> graphs = new HashSet<Graph>();
+			int planCount = 0;
+			for (Set<Graph> graphSet : graphSets.keySet()) {
+				graphs.addAll(graphSet);
+//				if (graphSet.size() == 1) {
+//					planCount++;
+//				} else {
+					planCount += graphSet.size() * graphSets.get(graphSet).size();
+//				}
+			}
+			System.out.println(planCount + " plans for " + graphs.size() + " graphs: " + graphs);
+			
 		}
 	}
 	
