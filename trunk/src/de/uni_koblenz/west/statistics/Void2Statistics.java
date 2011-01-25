@@ -43,8 +43,6 @@ public abstract class Void2Statistics implements RDFStatistics {
 	
 	protected static final String VOID_PREFIX = "PREFIX void: <http://rdfs.org/ns/void#>\n";
 	
-	protected static final boolean CHECK_TYPE = true;
-	
 	// -------------------------------------------------------------------------
 	
 	protected abstract List<String> evalVar(String query, String var);
@@ -65,27 +63,23 @@ public abstract class Void2Statistics implements RDFStatistics {
 	// -------------------------------------------------------------------------
 	
 	@Override
-	public Set<Graph> findSources(String sValue, String pValue, String oValue) {
+	public Set<Graph> findSources(String sValue, String pValue, String oValue, boolean handleType) {
 		
 		if (pValue == null)
 			throw new UnsupportedOperationException("unbound predicates are not supported");
 		
 		String query = null;
-		if (CHECK_TYPE && RDF.type.toString().equals(pValue)) {
-			if (oValue == null) {
-				LOGGER.info("unbound rdf:type");
-			} else {
-				query = concat(
-						VOID_PREFIX,
-						"SELECT ?source WHERE {",
-						"  [] a void:Dataset ;",
-						"     void:sparqlEndpoint ?source ;",
-						"     void:classPartition ?part .",
-						"  ?part void:class <", oValue, ">",
-						"}");
-			}
-		}
-		if (query == null) {
+		// query for RDF type occurrence if rdf:type with bound object is used
+		if (handleType && RDF.type.toString().equals(pValue) && oValue != null) {
+			query = concat(
+					VOID_PREFIX,
+					"SELECT ?source WHERE {",
+					"  [] a void:Dataset ;",
+					"     void:sparqlEndpoint ?source ;",
+					"     void:classPartition ?part .",
+					"  ?part void:class <", oValue, ">",
+					"}");
+		} else { // else query for predicate occurrence
 			query = concat(
 					VOID_PREFIX,
 					"SELECT ?source WHERE {",
@@ -95,14 +89,13 @@ public abstract class Void2Statistics implements RDFStatistics {
 					"  ?part void:property <", pValue, "> .",
 					"}");
 		}
+		
+		// execute query and get all source bindings
 		Set<Graph> sources = new HashSet<Graph>();
 		for (String graph : evalVar(query, "source")) {
 			sources.add(new Graph(graph));
 		}
-		if (sources.size() == 0)
-			LOGGER.warn("can not find sources for predicate: " + pValue);
 		return sources;
-		
 	}
 	
 	@Override

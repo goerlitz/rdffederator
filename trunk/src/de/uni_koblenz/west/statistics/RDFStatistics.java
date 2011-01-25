@@ -26,11 +26,13 @@ import java.util.Set;
 import de.uni_koblenz.west.federation.index.Graph;
 
 /**
+ * Interface for all RDF statistics provider.
+ * 
  * @author Olaf Goerlitz
  */
 public interface RDFStatistics {
 	
-	public Set<Graph> findSources(String sValue, String pValue, String oValue);
+	public Set<Graph> findSources(String sValue, String pValue, String oValue, boolean handleType);
 	
 	public long getSize(Graph g);
 	

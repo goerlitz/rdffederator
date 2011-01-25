@@ -73,6 +73,8 @@ public class SourceFinderTest {
 			Configuration config = Configuration.create(configFile);
 			REPOSITORY = config.createRepository();
 			QUERIES = config.getQueryIterator();
+			SourceFinder<StatementPattern> finder = config.getSourceFinder();
+			System.out.println("finder rdf:type=" + finder.isHandleRDFType());
 		} catch (IOException e) {
 			LOGGER.error("cannot load test config: " + e.getMessage());
 		} catch (ConfigurationException e) {
