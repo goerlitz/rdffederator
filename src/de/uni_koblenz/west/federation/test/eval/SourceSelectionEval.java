@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.federation.test.eval;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -12,12 +13,9 @@ import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.openrdf.query.parser.sparql.SPARQLParser;
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.sail.SailRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.FederationSail;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.test.config.Configuration;
 import de.uni_koblenz.west.federation.test.config.ConfigurationException;
@@ -34,22 +32,19 @@ public class SourceSelectionEval {
 	
 	private static final String CONFIG_FILE = "setup/fed-test.properties";
 	
-//	private Repository rep;
 	private SourceFinder<StatementPattern> finder;
 	private Iterator<String> queries;
 	
 	public SourceSelectionEval(Configuration config) throws ConfigurationException {
-//		this.rep = config.createRepository();
-//		FederationSail sail = ((FederationSail) ((SailRepository) rep).getSail());
-//		this.finder = sail.getSourceFinder();
 		this.queries = config.getQueryIterator();
 		this.finder = config.getSourceFinder();
-		System.out.println("finder: handle rdf:type=" + finder.isHandleRDFType());
-		System.out.println("finder: handle owl:sameAs=" + finder.isHandleOWLSameAs());
 	}
 	
 	public void testQueries() {
-		while (this.queries.hasNext()) {
+		List<Integer> results = new ArrayList<Integer>();
+		
+//		while (this.queries.hasNext()) {
+		for (int i=0; this.queries.hasNext(); i++) {
 			String query = this.queries.next();
 			SPARQLParser parser = new SPARQLParser();
 			TupleExpr expr;
@@ -60,22 +55,26 @@ public class SourceSelectionEval {
 				continue;
 			}
 			List<StatementPattern> patterns = StatementPatternCollector.process(expr);
-			Map<Set<Graph>, List<StatementPattern>> graphSets = this.finder.findPlanSetsPerSource(patterns);
+			Map<Set<Graph>, List<StatementPattern>> sourceMap = this.finder.findPlanSetsPerSource(patterns);
 			
 			// evaluation
-			Set<Graph> graphs = new HashSet<Graph>();
-			int planCount = 0;
-			for (Set<Graph> graphSet : graphSets.keySet()) {
-				graphs.addAll(graphSet);
-//				if (graphSet.size() == 1) {
-//					planCount++;
-//				} else {
-					planCount += graphSet.size() * graphSets.get(graphSet).size();
-//				}
+			Set<Graph> selectedSources = new HashSet<Graph>();
+			int queriesToSend = 0;
+			int patternToSend = 0;
+			for (Set<Graph> sourceSet : sourceMap.keySet()) {
+				selectedSources.addAll(sourceSet);
+				int patternCount = sourceMap.get(sourceSet).size();
+				queriesToSend += sourceSet.size();
+				patternToSend += sourceSet.size() * patternCount;
 			}
-			System.out.println(planCount + " plans for " + graphs.size() + " graphs: " + graphs);
 			
+			results.add(selectedSources.size());
+//			System.out.println(i + "\t" + selectedSources.size());
+//			System.out.println(selectedSources.size() + " sources selected: " + selectedSources);
+//			System.out.println(queriesToSend + " queries, " + patternToSend + " patterns");
 		}
+		
+		System.out.println("result: " + results);
 	}
 	
 	public static void main(String[] args) {
