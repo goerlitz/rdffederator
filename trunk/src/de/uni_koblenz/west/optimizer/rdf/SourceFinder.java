@@ -31,7 +31,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.statistics.RDFStatistics;
 

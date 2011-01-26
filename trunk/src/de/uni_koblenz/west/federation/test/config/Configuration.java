@@ -138,6 +138,12 @@ public class Configuration {
 		return finder;
 	}
 	
+	/**
+	 * Returns an iterator over the specified SPARQL Queries.
+	 * 
+	 * @return the queries wrapped in an iterator.
+	 * @throws ConfigurationException if an error occurs during query reading.
+	 */
 	public Iterator<String> getQueryIterator() throws ConfigurationException {
 		
 		return new Iterator<String>() {
@@ -158,10 +164,10 @@ public class Configuration {
 				try {
 					String query = readQuery(file);
 					
-					if (LOGGER.isDebugEnabled())
-						LOGGER.debug(file + ":\n" + query);
-					else
-						LOGGER.info(file.toString());
+					if (LOGGER.isTraceEnabled())
+						LOGGER.trace(file + ":\n" + query);
+					else if (LOGGER.isDebugEnabled())
+						LOGGER.debug(file.toString());
 					
 					return query;
 				} catch (IOException e) {
