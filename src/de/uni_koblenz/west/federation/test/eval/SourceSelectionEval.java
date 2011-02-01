@@ -54,7 +54,7 @@ public class SourceSelectionEval {
 			try {
 				expr = parser.parseQuery(query.getQuery(), null).getTupleExpr();
 			} catch (MalformedQueryException e) {
-				LOGGER.error("cannot parse Query");
+				LOGGER.error("cannot parse Query " + query.getName() + ": " + e.getMessage());
 				continue;
 			}
 			List<StatementPattern> patterns = StatementPatternCollector.process(expr);
