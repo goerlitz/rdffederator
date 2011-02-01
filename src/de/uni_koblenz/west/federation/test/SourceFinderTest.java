@@ -36,6 +36,7 @@ import de.uni_koblenz.west.federation.FederationSail;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.test.config.Configuration;
 import de.uni_koblenz.west.federation.test.config.ConfigurationException;
+import de.uni_koblenz.west.federation.test.config.Query;
 import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
@@ -49,7 +50,7 @@ public class SourceFinderTest {
 	private static final String CONFIG_FILE = "setup/life-science-config.prop";
 	
 	private static Repository REPOSITORY;
-	private static Iterator<String> QUERIES;
+	private static Iterator<Query> QUERIES;
 	private static SourceFinder<StatementPattern> finder;
 	
 	public static void main(String[] args) {
@@ -94,7 +95,7 @@ public class SourceFinderTest {
     
 	public void testQueries() {
 		while (QUERIES.hasNext()) {
-			String query = QUERIES.next();
+			String query = QUERIES.next().getQuery();
 			
 			long start = System.currentTimeMillis();
 			List<BindingSet> result = QueryExecutor.eval(REPOSITORY, query);

@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.test.config.Configuration;
 import de.uni_koblenz.west.federation.test.config.ConfigurationException;
+import de.uni_koblenz.west.federation.test.config.Query;
 
 /**
  * Test Federation repository which is based on the FederationSail.
@@ -52,7 +53,7 @@ public class FederationRepositoryTest {
 //	private static final String ESTIMATOR  = "optimizer.estimator";
 	
 	private static Repository REPOSITORY;
-	private static Iterator<String> QUERIES;
+	private static Iterator<Query> QUERIES;
 	
 	private String query;
 	
@@ -111,7 +112,7 @@ public class FederationRepositoryTest {
 	@Test
 	public void testQueries() {
 		while (QUERIES.hasNext()) {
-			String query = QUERIES.next();
+			String query = QUERIES.next().getQuery();
 			
 			long start = System.currentTimeMillis();
 			List<BindingSet> result = QueryExecutor.eval(REPOSITORY, query);
