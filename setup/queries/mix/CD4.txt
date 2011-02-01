@@ -1,0 +1,15 @@
+PREFIX owl:         <http://www.w3.org/2002/07/owl#>
+PREFIX rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX nytimes:     <http://data.nytimes.com/elements/>
+PREFIX dbpedia:     <http://dbpedia.org/resource/>
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+PREFIX purl:        <http://purl.org/dc/terms/>
+PREFIX linkedMDB:   <http://data.linkedmdb.org/resource/movie/>
+
+SELECT ?actor ?news WHERE {
+   ?film purl:title 'Tarzan' .
+   ?film linkedMDB:actor ?actor .
+   ?actor owl:sameAs ?x.
+   ?y owl:sameAs ?x .
+   ?y nytimes:topicPage ?news 
+}
