@@ -1,7 +1,7 @@
 package de.uni_koblenz.west.federation.test.eval;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.test.config.Configuration;
 import de.uni_koblenz.west.federation.test.config.ConfigurationException;
+import de.uni_koblenz.west.federation.test.config.Query;
 import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
@@ -33,23 +34,25 @@ public class SourceSelectionEval {
 	private static final String CONFIG_FILE = "setup/fed-test.properties";
 	
 	private SourceFinder<StatementPattern> finder;
-	private Iterator<String> queries;
+	private Iterator<Query> queries;
+	private PrintStream output;
 	
 	public SourceSelectionEval(Configuration config) throws ConfigurationException {
 		this.queries = config.getQueryIterator();
 		this.finder = config.getSourceFinder();
+		this.output = config.getResultStream();
 	}
 	
 	public void testQueries() {
-		List<Integer> results = new ArrayList<Integer>();
 		
-//		while (this.queries.hasNext()) {
-		for (int i=0; this.queries.hasNext(); i++) {
-			String query = this.queries.next();
+		output.println("#query\tsources\treqSent\tpatSent");
+		
+		while (this.queries.hasNext()) {
+			Query query = this.queries.next();
 			SPARQLParser parser = new SPARQLParser();
 			TupleExpr expr;
 			try {
-				expr = parser.parseQuery(query, null).getTupleExpr();
+				expr = parser.parseQuery(query.getQuery(), null).getTupleExpr();
 			} catch (MalformedQueryException e) {
 				LOGGER.error("cannot parse Query");
 				continue;
@@ -68,13 +71,9 @@ public class SourceSelectionEval {
 				patternToSend += sourceSet.size() * patternCount;
 			}
 			
-			results.add(selectedSources.size());
-//			System.out.println(i + "\t" + selectedSources.size());
-//			System.out.println(selectedSources.size() + " sources selected: " + selectedSources);
-//			System.out.println(queriesToSend + " queries, " + patternToSend + " patterns");
+			output.println(query.getName() + "\t" + selectedSources.size() + "\t" + queriesToSend + "\t" + patternToSend);
 		}
-		
-		System.out.println("result: " + results);
+		output.close();
 	}
 	
 	public static void main(String[] args) {
@@ -95,7 +94,7 @@ public class SourceSelectionEval {
 		} catch (IOException e) {
 			LOGGER.error("cannot load test config: " + e.getMessage());
 		} catch (ConfigurationException e) {
-			LOGGER.error("cannot create repository: " + e.getMessage());
+			LOGGER.error("cannot init configuration: " + e.getMessage());
 		}
 		
 	}

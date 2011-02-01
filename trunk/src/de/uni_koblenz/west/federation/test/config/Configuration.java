@@ -22,8 +22,10 @@ package de.uni_koblenz.west.federation.test.config;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -67,6 +69,7 @@ public class Configuration {
 	private static final String PROP_REP_CONFIG = "repository.config";
 	private static final String PROP_QUERY_DIR  = "query.directory";
 	private static final String PROP_QUERY_EXT  = "query.extension";
+	private static final String PROP_OUT_FILE   = "output.file";
 	
 	private static final String PROP_RDF_TYPE   = "source.select_by_type";
 	private static final String PROP_SAME_AS    = "source.merge_sameAs";
@@ -144,9 +147,9 @@ public class Configuration {
 	 * @return the queries wrapped in an iterator.
 	 * @throws ConfigurationException if an error occurs during query reading.
 	 */
-	public Iterator<String> getQueryIterator() throws ConfigurationException {
+	public Iterator<Query> getQueryIterator() throws ConfigurationException {
 		
-		return new Iterator<String>() {
+		return new Iterator<Query>() {
 			
 			private List<File> files = getQueryList();
 
@@ -156,7 +159,7 @@ public class Configuration {
 			}
 
 			@Override
-			public String next() {
+			public Query next() {
 				if (files.size() == 0)
 					throw new IllegalStateException("no more query files");
 				
@@ -169,7 +172,12 @@ public class Configuration {
 					else if (LOGGER.isDebugEnabled())
 						LOGGER.debug(file.toString());
 					
-					return query;
+					// remove extension from query name
+					String name = file.getName();
+					int pos = name.lastIndexOf(".");
+					if (pos > 0)
+						name = name.substring(0, pos);
+					return new Query(name, query);
 				} catch (IOException e) {
 					throw new RuntimeException("can not load query " + file, e);
 				}
@@ -179,6 +187,27 @@ public class Configuration {
 			public void remove() {}
 		};
 	}
+
+	/**
+	 * Returns an output stream for result writing.
+	 *  
+	 * @return the output stream for result writing.
+	 * @throws ConfigurationException if an error occurs when opening the output stream.
+	 */
+	public PrintStream getResultStream() throws ConfigurationException {
+		String outfile = props.getProperty(PROP_OUT_FILE);
+		if (outfile == null) {
+			LOGGER.warn("no output file specified");
+			return System.out;
+		}
+		
+		File file = new File(cfgFile.toURI().resolve(outfile)).getAbsoluteFile();
+		try {
+			return new PrintStream(file);
+		} catch (FileNotFoundException e) {
+			throw new ConfigurationException("cannot open output file: " + e.getMessage());
+		}
+	}
 	
 	// -------------------------------------------------------------------------
 	
@@ -186,6 +215,7 @@ public class Configuration {
 	 * Returns the list of matching query files in the specified directory.
 	 * 
 	 * @return list of query files.
+	 * @throws ConfigurationException if an error occurs during query reading.
 	 */
     private List<File> getQueryList() throws ConfigurationException {
     	
@@ -216,6 +246,7 @@ public class Configuration {
 	 * 
 	 * @param file the file to read.
 	 * @return the query.
+	 * @throws IOException if an error occurs during query reading.
 	 */
 	private String readQuery(File query) throws IOException {
 		StringBuffer buffer = new StringBuffer();
@@ -232,7 +263,7 @@ public class Configuration {
 	 * 
 	 * @param repConfig the name of the repository configuration file.
 	 * @return the repository configuration model.
-	 * @throws ConfigurationException
+	 * @throws ConfigurationException if an error occurs while loading the configuration.
 	 */
 	private Graph loadRDFConfig(String repConfig) throws ConfigurationException {
 		
