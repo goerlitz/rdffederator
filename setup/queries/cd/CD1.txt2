@@ -1,3 +1,6 @@
+PREFIX owl:      <http://www.w3.org/2002/07/owl#>
+PREFIX dbpedia:  <http://dbpedia.org/resource/>
+
 SELECT ?predicate ?object WHERE {
    { dbpedia:Barack_Obama ?predicate ?object }
   UNION
