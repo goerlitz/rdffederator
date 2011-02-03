@@ -1,19 +1,14 @@
-PREFIX owl:      <http://www.w3.org/2002/07/owl#>
 PREFIX rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX drugbank: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/>
 PREFIX kegg:     <http://bio2rdf.org/ns/kegg#>
 PREFIX bio2rdf:  <http://bio2rdf.org/ns/bio2rdf#>
-PREFIX chebi:    <http://bio2rdf.org/ns/chebi#>
-PREFIX purl:     <http://purl.org/dc/terms/>
-PREFIX drugbank-drugs:    <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugs/>
-PREFIX drugbank-category: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugcategory/>
-PREFIX dbpedia-owl:       <http://dbpedia.org/ontology/>
-PREFIX dbpedia-owl-drug:  <http://dbpedia.org/ontology/drug/>
+PREFIX dc:       <http://purl.org/dc/elements/1.1/>
+PREFIX drug-cat: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugcategory/>
 
 SELECT ?drug ?title WHERE {
-   ?drug drugbank:drugCategory drugbank-category:micronutrient .
+   ?drug drugbank:drugCategory drug-cat:micronutrient .
    ?drug drugbank:casRegistryNumber ?id .
    ?keggDrug rdf:type kegg:Drug .
    ?keggDrug bio2rdf:xRef ?id .
-   ?keggDrug purl:title ?title . 
+   ?keggDrug dc:title ?title . 
 }

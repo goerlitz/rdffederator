@@ -1,13 +1,10 @@
 PREFIX owl:      <http://www.w3.org/2002/07/owl#>
 PREFIX rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX drugbank: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/>
-PREFIX drugbank-drugs:    <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugs/>
-PREFIX drugbank-category: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugcategory/>
-PREFIX dbpedia-owl:       <http://dbpedia.org/ontology/>
-PREFIX dbpedia-owl-drug:  <http://dbpedia.org/ontology/drug/>
+PREFIX dbpo:     <http://dbpedia.org/ontology/>
 
 SELECT ?Drug ?IntDrug ?IntEffect WHERE {
-   ?Drug rdf:type dbpedia-owl:Drug .
+   ?Drug rdf:type dbpo:Drug .
    ?y owl:sameAs ?Drug .
    ?Int drugbank:interactionDrug1 ?y .
    ?Int drugbank:interactionDrug2 ?IntDrug .
