@@ -1,8 +1,0 @@
-SELECT ?drug ?keggUrl ?chebiImage WHERE {
-   ?drug rdf:type drugbank:drugs .
-   ?drug drugbank:keggCompoundId ?keggDrug .
-   ?keggDrug bio2rdf:url ?keggUrl .
-   ?drug drugbank:genericName ?drugBankName .
-   ?chebiDrug purl:title ?drugBankName .
-   ?chebiDrug chebi:image ?chebiImage . 
-}

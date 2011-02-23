@@ -1,6 +1,0 @@
-SELECT ?yr
-WHERE {
-  ?journal rdf:type bench:Journal .
-  ?journal dc:title "Journal 1 (1940)"^^xsd:string .
-  ?journal dcterms:issued ?yr 
-}
