@@ -1,5 +1,0 @@
-SELECT ?article
-WHERE {
-  ?article rdf:type bench:Article .
-  ?article swrc:pages ?value 
-}
