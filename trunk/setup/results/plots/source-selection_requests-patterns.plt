@@ -1,12 +1,14 @@
 #set terminal png size 1000, 550
-set terminal png truecolor size 600,350
+set terminal png enhanced truecolor size 900,500 font "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSerif.ttf"
 set size ratio 0.5
 set output "../charts/source-selection_requests-patterns.png"
 
 set title "Number of all requests to send with single query patterns"
+set key box
+set key top right
 
 set ylabel "#requests"
-set yrange [0:20]
+set yrange [0:25]
 
 #set xtics
 #set xtics  norangelimit
@@ -26,6 +28,6 @@ set style histogram cluster gap 1
 set style fill pattern border
 
 plot '../source-selection_baseline.dat' using 4:xtic(1) title "predicate-based" fillstyle pattern 1, \
-     '../source-selection_rdf-type.dat' using 4:xtic(1) title "rdf:type-based", \
-     '../source-selection_same-as.dat' using 4:xtic(1) title "owl:sameAs merge"
+     '../source-selection_with-type.dat' using 4:xtic(1) title "rdf:type-based", \
+     '../source-selection_with-type-and-sameAs.dat' using 4:xtic(1) title "owl:sameAs merge"
 
