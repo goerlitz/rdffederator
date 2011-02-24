@@ -225,17 +225,26 @@ public class Configuration {
 			throw new ConfigurationException("missing query dir setting '" + PROP_QUERY_DIR + "' in " + cfgFile);
 		if (queryExt == null)
 			throw new ConfigurationException("missing query extension setting '" + PROP_QUERY_EXT + "' in " + cfgFile);
-
-		File dir = new File(cfgFile.toURI().resolve(queryDir)).getAbsoluteFile();
-		if (!dir.isDirectory() || !dir.canRead())
-			throw new ConfigurationException("cannot read query directory: " + dir);
 		
+		// split multiple query dirs
+		String[] queryDirs = queryDir.split(";");
 		List<File> queries = new ArrayList<File>();
-		for (File file : dir.listFiles()) {
-			if (file.isFile() && file.getName().endsWith(queryExt)) {
-				queries.add(file);
+		
+		for (String qDir : queryDirs) {
+			File dir = new File(cfgFile.toURI().resolve(qDir)).getAbsoluteFile();
+			if (!dir.isDirectory() || !dir.canRead())
+				LOGGER.warn("cannot read query directory: " + dir);
+//				throw new ConfigurationException("cannot read query directory: " + dir);
+			
+			for (File file : dir.listFiles()) {
+				if (file.isFile() && file.getName().endsWith(queryExt)) {
+					queries.add(file);
+				}
 			}
 		}
+		
+		if (queries.size() == 0)
+			throw new ConfigurationException("found no matching queries");
 		
 		Collections.sort(queries);
 		return queries;
