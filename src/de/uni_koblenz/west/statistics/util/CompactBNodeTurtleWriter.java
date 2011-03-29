@@ -25,41 +25,38 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.openrdf.model.BNode;
-import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.model.vocabulary.XMLSchema;
+import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.turtle.TurtleWriter;
 
-import de.uni_koblenz.west.vocabulary.VOID2;
-
 /**
- * Writes compact turtle output with anonymous [] notation for BNode.
- * Beware: identical BNodes must occur in consecutive Statements. Otherwise,
- * the link between two statement groups with the same BNode is lost due to
- * the omission of the BNode ID.
+ * Writes compact turtle syntax using the [] shorthand notation if a BNode
+ * occurs as object in a triple statement followed by triple statements with
+ * the same BNode in subject position.
+ * 
+ * Beware: if the [] syntax is applied the BNode MUST occur in consecutive
+ *         triple statements. Otherwise, the link between individual statement
+ *         groups would be lost due to the omission of the the BNode ID.
  * 
  * @author Olaf Goerlitz
  */
 public class CompactBNodeTurtleWriter extends TurtleWriter {
 	
-	protected boolean newBNodeBlock = false;
-	protected BNode pendingBNodeObj;
+	protected BNode pendingBNode;
 	protected Deque<Resource> storedSubjects = new ArrayDeque<Resource>();
 	protected Deque<URI> storedPredicates = new ArrayDeque<URI>();
 	protected Deque<Value> storedBNodes = new ArrayDeque<Value>();
@@ -93,34 +90,53 @@ public class CompactBNodeTurtleWriter extends TurtleWriter {
 	 * @param subj the current subject
 	 */
 	private void handlePendingBNode(Resource subj) throws IOException {
-		// special handling of previous BNode object - try to use '[ ... ]'
-		if (pendingBNodeObj != null) {
-			// if current subject is the same as previous BNode object
-			if (pendingBNodeObj.equals(subj)) {
-				storedBNodes.push(pendingBNodeObj);
+		
+		// check if last triple's object was a BNode object
+		if (pendingBNode != null) {
+
+			// if current triple's subject is the same BNode use [] notation
+			if (subj.equals(pendingBNode)) {
+
+				// first, save the internal status to resume an open [] block
+				storedBNodes.push(pendingBNode);
 				storedSubjects.push(lastWrittenSubject);
 				storedPredicates.push(lastWrittenPredicate);
-				lastWrittenSubject = pendingBNodeObj;
-				lastWrittenPredicate = null;
+
+				// then open the new [] block and update the internal status
 				writer.write("[");
 				writer.writeEOL();
 				writer.increaseIndentation();
-				newBNodeBlock = true;
-			} else {
-				closePreviousStatement();
+				lastWrittenSubject = pendingBNode;
+				lastWrittenPredicate = null;
+
+			} // otherwise write pending BNode object
+			else {
+				writeValue(pendingBNode);
 			}
-			pendingBNodeObj = null;
+			pendingBNode = null;
 		}
 	}
 	
+	/**
+	 * Handles a currently open [] block.
+	 * @param subj the current subject
+	 * @throws IOException
+	 */
 	private void handleActiveBNode(Resource subj) throws IOException {
-		// special handling of previous BNode object - try to use '[ ... ]'
+		
+		// check if a [] block is currently open
 		if (storedBNodes.size() > 0) {
-			// if currently a BNode block is active but not continued.
-			if (!subj.equals(storedBNodes.peek())) { // close current block
+			
+			// check if [] block has to be closed due to changed subject
+			if (!subj.equals(storedBNodes.peek())) {
+				
+				// close last statement and finish [] block
+				writer.write(" .");
 				writer.writeEOL();
 				writer.decreaseIndentation();
 				writer.write("]");
+				
+				// resume last internal status before [] block
 				statementClosed = false;
 				storedBNodes.pop();
 				lastWrittenSubject = storedSubjects.pop();
@@ -157,18 +173,20 @@ public class CompactBNodeTurtleWriter extends TurtleWriter {
 			handlePendingBNode(subj);
 			handleActiveBNode(subj);
 			
-			// check if subject and/or predicate were written before
+			// check if subject (and predicate) are identical with last triple
 			if (subj.equals(lastWrittenSubject)) {
+				
+				// "," for identical subject and predicate
 				if (pred.equals(lastWrittenPredicate)) {
 					// Identical subject and predicate
 					writer.write(" , ");
 				}
+				
+				// ";" for identical subject with different predicate
+				// unless last predicate is null (new [] block)
 				else {
-					// check if new BNode block was opened
-					if (newBNodeBlock) {
-						newBNodeBlock = false;
-					} else {
-						// Identical subject, new predicate
+					
+					if (lastWrittenPredicate != null) {
 						writer.write(" ;");
 						writer.writeEOL();
 					}
@@ -200,21 +218,22 @@ public class CompactBNodeTurtleWriter extends TurtleWriter {
 
 			// defer BNode object writing until next statement is checked
 			if (obj instanceof BNode) {
-				pendingBNodeObj = (BNode) obj;
+				pendingBNode = (BNode) obj;
+				
 				// check if this BNode has been processed before
 				// if so the previous id was lost due to the shorthand notation
-				// writing it again would result in two distinct bnodes
-				if (seenBNodes.contains(pendingBNodeObj)) {
+				// writing it again would result in two distinct BNodes
+				if (seenBNodes.contains(pendingBNode)) {
 					throw new IllegalStateException("Same BNode may occur only once in object position: " + st);
 				} else {
-					seenBNodes.add(pendingBNodeObj);
+					seenBNodes.add(pendingBNode);
 				}
 			} else {
 				writeValue(obj);
 			}
 			
-			// Don't close the line just yet. Maybe the next
-			// statement has the same subject and/or predicate.
+			// Don't close the line yet. The next triple statement may have
+			// the same subject and/or predicate.
 		}
 		catch (IOException e) {
 			throw new RDFHandlerException(e);
@@ -232,9 +251,13 @@ public class CompactBNodeTurtleWriter extends TurtleWriter {
 				closePreviousStatement();
 			} else {
 				for (int i = 0; i < storedBNodes.size(); i++) {
+					if (!statementClosed) {
+						writer.write(" .");
+						statementClosed = true;
+					}
 					writer.writeEOL();
 					writer.decreaseIndentation();
-					writer.write("] .");					
+					writer.write("] .");
 				}
 			}
 			writer.flush();
@@ -247,72 +270,46 @@ public class CompactBNodeTurtleWriter extends TurtleWriter {
 		}
 	}
 
-	static ValueFactory vf = ValueFactoryImpl.getInstance();
-	
 	public static void main(String[] args) {
-		
-		Writer write = new StringWriter();
-		RDFWriter writer = new CompactBNodeTurtleWriter(write);
-		
-		BNode dataset = vf.createBNode();
-		
-		URI sparqlEndpoint = vf.createURI("http://localhost");
-		Literal triples    = vf.createLiteral(String.valueOf(100000), XMLSchema.INTEGER);
-		Literal properties = vf.createLiteral(String.valueOf(50), XMLSchema.INTEGER);
+
+		ValueFactory vf = ValueFactoryImpl.getInstance();
+		Writer writer = new StringWriter();
+		RDFWriter rdf = new CompactBNodeTurtleWriter(writer);
 		
 		try {
-			writer.startRDF();
+			rdf.startRDF();
 			
 			// add namespaces which will be automatically shortened
-			writer.handleNamespace("owl", "http://www.w3.org/2002/07/owl#");
-			writer.handleNamespace("xsd", "http://www.w3.org/2001/XMLSchema#");
-			writer.handleNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-			writer.handleNamespace("void", "http://rdfs.org/ns/void#");
-
-			// general void information
-			writer.handleStatement(vf.createStatement(dataset, RDF.TYPE, toURI(VOID2.Dataset)));
-			writer.handleStatement(vf.createStatement(dataset, toURI(VOID2.sparqlEndpoint), sparqlEndpoint));
-			writer.handleStatement(vf.createStatement(dataset, toURI(VOID2.triples), triples));
-			writer.handleStatement(vf.createStatement(dataset, toURI(VOID2.properties), properties));
+			rdf.handleNamespace("owl", "http://www.w3.org/2002/07/owl#");
+			rdf.handleNamespace("xsd", "http://www.w3.org/2001/XMLSchema#");
+			rdf.handleNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+			rdf.handleNamespace("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+			rdf.handleNamespace("test", "http://test.org/");
 			
-			// write predicate statistics
-			List<URI> predicates = new ArrayList<URI>(Arrays.asList(new URI[] {RDF.TYPE}));
-			for (URI p : predicates) {
-				BNode propPartition = vf.createBNode();
-				Literal count = vf.createLiteral(String.valueOf(1000), XMLSchema.INTEGER);
-				writer.handleStatement(vf.createStatement(dataset, toURI(VOID2.propertyPartition), propPartition));
-				writer.handleStatement(vf.createStatement(propPartition, toURI(VOID2.property), p));
-				writer.handleStatement(vf.createStatement(propPartition, toURI(VOID2.triples), count));
-				
-				BNode histogram = vf.createBNode();
-				writer.handleStatement(vf.createStatement(propPartition, toURI(VOID2.histogram), histogram));
-				writer.handleStatement(vf.createStatement(histogram, RDF.TYPE, toURI(VOID2.EquiWidthHist)));
-				writer.handleStatement(vf.createStatement(histogram, toURI(VOID2.buckets), vf.createLiteral(String.valueOf(10), XMLSchema.INTEGER)));
-				for (int i = 0; i <3; i++) {
-					BNode bucket = vf.createBNode();
-					Literal value = vf.createLiteral(String.valueOf(i), XMLSchema.INTEGER);
-					writer.handleStatement(vf.createStatement(histogram, toURI(VOID2.bucketDef), bucket));
-					writer.handleStatement(vf.createStatement(bucket, toURI(VOID2.bucketLoad), value));
-				}
-			}
-			writer.endRDF();
+			// _:#1 rdfs:label "Thing 1"; a test:Thing; owl:sameAs
+			// [ rdfs:label "Thing 2"; a test:Thing; owl:sameAs _:#1,
+			// [ rdfs:label "Thing 3"; a test:Thing; ]] .
+			BNode thing = vf.createBNode();
+			BNode sameThing = vf.createBNode();
+			BNode otherThing = vf.createBNode();
+			rdf.handleStatement(vf.createStatement(thing, RDFS.LABEL, vf.createLiteral("1")));
+			rdf.handleStatement(vf.createStatement(thing, RDF.TYPE, vf.createURI("http://test.org/Thing")));
+			rdf.handleStatement(vf.createStatement(thing, OWL.SAMEAS, sameThing));
+			rdf.handleStatement(vf.createStatement(sameThing, RDFS.LABEL, vf.createLiteral(1l)));
+			rdf.handleStatement(vf.createStatement(sameThing, RDF.TYPE, vf.createURI("http://test.org/Thing")));
+			rdf.handleStatement(vf.createStatement(sameThing, OWL.SAMEAS, thing));
+			rdf.handleStatement(vf.createStatement(sameThing, OWL.SAMEAS, otherThing));
+			rdf.handleStatement(vf.createStatement(otherThing, RDFS.LABEL, vf.createLiteral(1d)));
+			rdf.handleStatement(vf.createStatement(otherThing, RDF.TYPE, vf.createURI("http://test.org/Thing")));
+
+			rdf.endRDF();
 		} catch (RDFHandlerException e) {
 			e.printStackTrace();
 		} catch (UnsupportedOperationException e) {
 			e.printStackTrace();
 		}
 		
-		System.out.println(write.toString());
+		System.out.println(writer.toString());
 	}
 	
-	/**
-	 * Converts an enum URI string to a Sesame URI.
-	 * 
-	 * @param uri the URI string to convert. 
-	 * @return the converted Sesame URI.
-	 */
-	private static URI toURI(Enum<?> uri) {
-		return vf.createURI(uri.toString());
-	}
-
 }
