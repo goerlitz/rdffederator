@@ -30,6 +30,8 @@ public enum VOID2 {
 	// concepts
 	Dataset,
 	Linkset,
+	EquiWidthHist,
+	EuqiDepthHist,
 	
 	// predicates
 	vocabulary,
@@ -44,7 +46,14 @@ public enum VOID2 {
 	propertyPartition,
 	property,
 	target,
-	linkPredicate;
+	linkPredicate,
+	
+	histogram,
+	minValue,
+	maxValue,
+	bucketLoad,
+	buckets,
+	bucketDef;
 	
 	public static final String NAMESPACE = "http://rdfs.org/ns/void#";
 	
