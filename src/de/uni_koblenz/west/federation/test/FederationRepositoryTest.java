@@ -47,7 +47,7 @@ public class FederationRepositoryTest {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationRepositoryTest.class);
 	
-	private static final String CONFIG     = "setup/life-science-config.prop";
+	private static final String CONFIG     = "setup/fed-test.properties";
 	
 //	private static final String STRATEGY   = "optimizer.strategy";
 //	private static final String ESTIMATOR  = "optimizer.estimator";
@@ -112,10 +112,12 @@ public class FederationRepositoryTest {
 	@Test
 	public void testQueries() {
 		while (QUERIES.hasNext()) {
-			String query = QUERIES.next().getQuery();
+			Query query = QUERIES.next();
+			
+			LOGGER.info("next Query: " + query.getName());
 			
 			long start = System.currentTimeMillis();
-			List<BindingSet> result = QueryExecutor.eval(REPOSITORY, query);
+			List<BindingSet> result = QueryExecutor.eval(REPOSITORY, query.getQuery());
 			LOGGER.info("Evaluation time: " + (System.currentTimeMillis() - start));
 			LOGGER.info("RESULT SIZE: " + (result != null ? result.size() : -1));
 		}
