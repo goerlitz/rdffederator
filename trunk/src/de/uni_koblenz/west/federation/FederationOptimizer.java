@@ -42,7 +42,6 @@ import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
 import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
 import de.uni_koblenz.west.optimizer.rdf.util.BGPModelPrinter;
-import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
  * A Sesame specific optimizer for federated query optimization.
@@ -94,18 +93,20 @@ public class FederationOptimizer implements QueryOptimizer {
 			}
 
 			bgp.setSourceFinder(finder);
+			if (this.listener != null)
+				bgp.setListener(this.listener);
 			optimizer.optimize(bgp);
 			
 			if (LOGGER.isDebugEnabled()) {
 				LOGGER.debug("--- OPTIMIZED BGP ---\n{}", bgp);
 			}
-			
-//			if (this.listener != null) {
-//				this.listener.resultObtained(listener.getEvaluator().eval(bgp.getRoot()));
-//			}
 		}
 	}
 	
+	/**
+	 * Sets a listener for the verification of the optimization result.
+	 * @param verifier the verification listener to use
+	 */
 	public void setResultVerifier(QueryModelVerifier<StatementPattern, ValueExpr> verifier) {
 		this.listener = verifier;
 	}

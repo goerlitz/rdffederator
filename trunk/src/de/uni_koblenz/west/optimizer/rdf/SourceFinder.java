@@ -44,8 +44,8 @@ public class SourceFinder<P> {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceFinder.class);
 	
-	private boolean handleRDFType = false; 
-	private boolean handleOWLSameAs = false;
+	private boolean handleRDFType = true; 
+	private boolean handleOWLSameAs = true;
 	
 	private ModelAdapter<P, ?> adapter;
 	private RDFStatistics stats;
