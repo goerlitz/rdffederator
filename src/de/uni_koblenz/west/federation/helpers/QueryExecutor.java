@@ -352,7 +352,7 @@ public final class QueryExecutor {
 							throw new RuntimeException("problem with cannot connect to " + target, e);
 						}
 					}
-					LOGGER.error("cannot evaluate query on " + target + ", " + cause);
+					LOGGER.error("cannot evaluate query on " + target + ", " + cause, e);
 					throw new RuntimeException("cannot evaluate query on " + target, e);
 //					return new EmptyBindingSet();
 				}

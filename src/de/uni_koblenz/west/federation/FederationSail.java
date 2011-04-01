@@ -35,6 +35,7 @@ import java.util.Properties;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
@@ -47,9 +48,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
+import de.uni_koblenz.west.federation.helpers.Format;
 import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
+import de.uni_koblenz.west.optimizer.eval.CostCalculator;
 import de.uni_koblenz.west.optimizer.eval.CostModel;
+import de.uni_koblenz.west.optimizer.eval.QueryModelEvaluator;
+import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
 import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
+import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
@@ -73,7 +79,7 @@ public class FederationSail extends SailBase {
 	private Void2StatsRepository stats = new Void2StatsRepository();
 	private List<Repository> members = new ArrayList<Repository>();
 	private SourceFinder<StatementPattern> finder;
-	private QueryOptimizer optimizer;
+	private FederationOptimizer optimizer;
 	
 	String optStrategy;
 	String estimatorType;
@@ -138,7 +144,6 @@ public class FederationSail extends SailBase {
 			try {
 				if (rep instanceof VoidRepository) {
 					VoidRepository voidRep = (VoidRepository) rep;
-//					System.out.println("file: " + new File(voidRep.getVoidUrl().toURI()).getAbsoluteFile());
 					URI context = stats.load(voidRep.getVoidUrl());
 					stats.setEndpoint(voidRep.getEndpoint(), context);
 				}
@@ -159,13 +164,31 @@ public class FederationSail extends SailBase {
 		this.finder = new SourceFinder<StatementPattern>(stats, new SesameAdapter());
 		
 		// initialize optimizer
+		CostModel costModel = new CostModel();
 		FederationOptimizerFactory factory = new FederationOptimizerFactory();
 		factory.setStatistics(stats);
 		factory.setSourceFinder(finder);
-		factory.setCostmodel(new CostModel());
+		factory.setCostmodel(costModel);
+//		factory.setOptimizationListener(true);
 		this.optimizer = factory.getOptimizer(optStrategy, estimatorType);
 		
+		// enable optimization result verification
+		this.optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(estimatorType), costModel)));
+		
 		initialized = true;
+	}
+	
+	private QueryModelVerifier<StatementPattern, ValueExpr> createOptimizationVeryfier(final CostCalculator<BGPOperator<StatementPattern, ValueExpr>> costEval) {
+		return new QueryModelVerifier<StatementPattern, ValueExpr>() {
+			@Override
+			public QueryModelEvaluator<BGPOperator<StatementPattern, ValueExpr>, ? extends Number> getEvaluator() {
+				return costEval;
+			}
+			@Override
+			public void resultObtained(Number value) {
+				System.out.println(Format.d(value.doubleValue(), 2));
+			}
+		};
 	}
 	
 	/**

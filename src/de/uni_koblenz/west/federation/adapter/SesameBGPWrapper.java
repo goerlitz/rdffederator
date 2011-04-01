@@ -35,6 +35,7 @@ import de.uni_koblenz.west.optimizer.rdf.AccessPlan;
 import de.uni_koblenz.west.optimizer.rdf.BGPJoin;
 import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
 import de.uni_koblenz.west.optimizer.rdf.BGPQueryModel;
+import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
 import de.uni_koblenz.west.optimizer.rdf.util.BGPModelPrinter;
 
 /**
@@ -50,6 +51,7 @@ public class SesameBGPWrapper extends BGPQueryModel<StatementPattern, ValueExpr>
 	protected Set<StatementPattern> patterns = new HashSet<StatementPattern>();
 	protected Set<ValueExpr> conditions = new HashSet<ValueExpr>();
 	
+	protected QueryModelVerifier<StatementPattern, ValueExpr> listener;
 	protected QueryModelNode root;
 	protected QueryModelNode parent;
 	
@@ -60,6 +62,10 @@ public class SesameBGPWrapper extends BGPQueryModel<StatementPattern, ValueExpr>
 		
 		this.root = root;
 		this.parent = rootParent;
+	}
+	
+	public void setListener(QueryModelVerifier<StatementPattern, ValueExpr> verifier) {
+		this.listener = verifier;
 	}
 	
 	// --- OVERRIDE ------------------------------------------------------------
@@ -109,6 +115,11 @@ public class SesameBGPWrapper extends BGPQueryModel<StatementPattern, ValueExpr>
 		
 		this.parent.replaceChildNode(root, newRoot);
 		this.root = newRoot;
+		
+		// verify the optimization result
+		if (this.listener != null) {
+			this.listener.resultObtained(this.listener.getEvaluator().eval(operator));
+		}
 	}
 
 	@Override
