@@ -19,7 +19,10 @@
       sr:sailImpl [
          sail:sailType "west:FederationSail" ;
 
-         # optimizer settings
+         # source selection setting (ASK, Stats, QTree)
+         fed:sourceSelection "ASK" ;
+
+         # optimizer settings (DP, heuristic)
          fed:optimizer "DYNAMIC_PROGRAMMING" ;
 #         fed:optimizer "PATTERN_HEURISTIC" ;
 

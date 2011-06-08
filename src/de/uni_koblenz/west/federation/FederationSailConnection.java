@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.ReadOnlySailConnection;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
@@ -76,7 +77,8 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSailConnection.class);
 
-	private final SourceFinder<StatementPattern> finder;
+//	private final SourceFinder<StatementPattern> finder;
+	private final SourceSelector<StatementPattern> finder;
 //	private final RDFStatistics stats;
 	private final ValueFactory vf;
 	private final QueryOptimizer optimizer;
@@ -96,7 +98,8 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 			throw new IllegalArgumentException("sail must not be NULL");
 		
 		this.optimizer = sail.getFederationOptimizer();
-		this.finder = sail.getSourceFinder();
+//		this.finder = sail.getSourceFinder();
+		this.finder = sail.getSourceSelector();
 
 //		URIFactory uf = sail.getURIFactory();
 //		LiteralFactory lf = sail.getLiteralFactory();

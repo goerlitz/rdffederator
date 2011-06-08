@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
@@ -40,7 +41,7 @@ import de.uni_koblenz.west.statistics.RDFStatistics;
  * 
  * @author Olaf Goerlitz
  */
-public class SourceFinder<P> {
+public class SourceFinder<P> implements SourceSelector<P> {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceFinder.class);
 	
@@ -85,7 +86,8 @@ public class SourceFinder<P> {
 	 * @param patterns the pattern that need to matched to sources.
 	 * @return a map that maps set of sources to sets of patterns.
 	 */
-	public Map<Set<Graph>, List<P>> findPlanSetsPerSource(Collection<P> patterns) {
+//	public Map<Set<Graph>, List<P>> findPlanSetsPerSource(Collection<P> patterns) {
+	public Map<Set<Graph>, List<P>> getSources(Collection<P> patterns) {
 		Map<Set<Graph>, List<P>> graphSets = new HashMap<Set<Graph>, List<P>>();
 		List<P> sameAsPatterns = new ArrayList<P>();
 

@@ -23,22 +23,27 @@ package de.uni_koblenz.west.federation.config;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.ESTIMATOR;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.MEMBER;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPTIMIZER;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.SRC_SLCTN;
 //import static de.uni_koblenz.west.federation.config.FederationSailSchema.STATISTIC;
-import static org.openrdf.repository.config.RepositoryImplConfigBase.create;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.openrdf.model.Graph;
 //import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryImplConfig;
+import org.openrdf.repository.config.RepositoryImplConfigBase;
 import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailImplConfigBase;
 //import org.openrdf.store.StoreConfigException;
@@ -50,9 +55,10 @@ import org.openrdf.sail.config.SailImplConfigBase;
  */
 public class FederationSailConfig extends SailImplConfigBase {
 	
-	private List<RepositoryImplConfig> members = new ArrayList<RepositoryImplConfig>();
+	private List<RepositoryImplConfig> repConfig = new ArrayList<RepositoryImplConfig>();
 	private Properties props = new Properties();
 	
+	private String sourceSelector;
 	private String optimizerType;
 	private String estimatorType;
 //	private String statisticsUrl;
@@ -63,22 +69,34 @@ public class FederationSailConfig extends SailImplConfigBase {
 	 * @return the member configuration settings.
 	 */
 	public List<RepositoryImplConfig> getMemberConfigs() {
-		return members;
+		return repConfig;
 	}
 	
-	/**
-	 * Gets the general federation settings.
-	 * 
-	 * @return the federation settings.
-	 */
-	public Properties getProperties() {
-		if (props.size() == 0) {
-			props.put("optimizer.type", optimizerType);
-			props.put("estimator.type", estimatorType);
-//			props.put("data.statistics", statisticsUrl);
-		}
-		return this.props;
+	public String getSourceSelector() {
+		return this.sourceSelector;
 	}
+	
+	public String getOptimizerType() {
+		return this.optimizerType;
+	}
+	
+	public String getEstimatorType() {
+		return this.estimatorType;
+	}
+	
+//	/**
+//	 * Gets the general federation settings.
+//	 * 
+//	 * @return the federation settings.
+//	 */
+//	public Properties getProperties() {
+//		if (props.size() == 0) {
+//			props.put("optimizer.type", optimizerType);
+//			props.put("estimator.type", estimatorType);
+////			props.put("data.statistics", statisticsUrl);
+//		}
+//		return this.props;
+//	}
 	
 	// -------------------------------------------------------------------------
 
@@ -94,9 +112,10 @@ public class FederationSailConfig extends SailImplConfigBase {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		Resource self = super.export(model);
 		
-		for (RepositoryImplConfig member : this.members) {
+		for (RepositoryImplConfig member : this.repConfig) {
 			model.add(self, MEMBER, member.export(model));
 		}
+		model.add(self, SRC_SLCTN, vf.createLiteral(sourceSelector));
 		model.add(self, OPTIMIZER, vf.createLiteral(optimizerType));
 		model.add(self, ESTIMATOR, vf.createLiteral(estimatorType));
 //		model.add(self, STATISTIC, vf.createLiteral(statisticsUrl));
@@ -115,30 +134,22 @@ public class FederationSailConfig extends SailImplConfigBase {
 	public void parse(Graph model, Resource implNode) throws SailConfigException {
 		super.parse(model, implNode);
 		
-		// get resources for all federation members
-//		for (Value member : model.filter(implNode, MEMBER, null).objects()) {
-//			create repository for the found member definition
-//			this.members.add(create(model, (Resource) member));
-//		}
-		
-		// Sesame 2:
-		Iterator<Statement> objects = model.match(implNode, MEMBER, null);
-		while (objects.hasNext()) {
+		// extract the repository settings for all defined federation members
+		for (Value member : getSubSetting(model, implNode, MEMBER)) {
 			try {
-				this.members.add(create(model, (Resource) objects.next().getObject()));
+				this.repConfig.add(RepositoryImplConfigBase.create(model, (Resource) member));
 			} catch (RepositoryConfigException e) {
 				throw new SailConfigException(e);
 			}
 		}
 		
-		// Sesame 3:
-//		optimizerType = model.filter(implNode, OPTIMIZER, null).objectString();
-//		estimatorType = model.filter(implNode, ESTIMATOR, null).objectString();
-//		statisticsUrl = model.filter(implNode, STATISTIC, null).objectString();
+		// get source selection strategy
+		sourceSelector = getOption(model, implNode, SRC_SLCTN);
+
+		// extract the query processing strategy
+		optimizerType = getOption(model, implNode, OPTIMIZER);
 		
-		// Sesame 2:
-		optimizerType = model.match(implNode, OPTIMIZER, null).next().getObject().stringValue();
-		estimatorType = model.match(implNode, ESTIMATOR, null).next().getObject().stringValue();
+		estimatorType = getOption(model, implNode, ESTIMATOR);
 	}
 
 	/**
@@ -150,21 +161,64 @@ public class FederationSailConfig extends SailImplConfigBase {
 	 *             If the configuration is invalid.
 	 */
 	@Override
-//	public void validate() throws StoreConfigException {
-	public void validate() throws SailConfigException {
+//	public void validate() throws StoreConfigException { // Sesame 3
+	public void validate() throws SailConfigException { // Sesame 2
 		super.validate();
-		if (members.size() == 0) {
+		if (repConfig.size() == 0) {
 //			throw new StoreConfigException("No federation members specified");
 			throw new SailConfigException("No federation members specified");
 		}
-		for (RepositoryImplConfig cfg : members) {
-//			cfg.validate();
+		
+		// validate all member repositories
+		for (RepositoryImplConfig cfg : repConfig) {
 			try {
 				cfg.validate();
 			} catch (RepositoryConfigException e) {
 				throw new SailConfigException(e);
 			}
 		}
+		
+		if (sourceSelector == null)
+			throw new SailConfigException("no source selection strategy specified: use " + SRC_SLCTN);
+		
+		if (optimizerType == null)
+			throw new SailConfigException("no query optimization strategy specified: use " + OPTIMIZER);
+	}
+	
+	// -------------------------------------------------------------------------
+	
+	/**
+	 * Helper method to extract a string-valued configuration option.
+	 * 
+	 * @param model the configuration model
+	 * @param implNode node representing a specific configuration context.
+	 * @param option configuration option to look for.
+	 * @return the string value of the configuration option or null.
+	 */
+//	private String getOption(Model model, Resource implNode, URI option) throws StoreConfigException { // Sesame 3
+	private String getOption(Graph model, Resource implNode, URI option) throws SailConfigException { // Sesame 2
+//		return model.filter(implNode, option, null).objectString(); // Sesame 3
+		return model.match(implNode, option, null).next().getObject().stringValue(); // Sesame 2
+	}
+	
+	/**
+	 * Helper method to extract a configuration's sub setting.
+	 * 
+	 * @param model the configuration model
+	 * @param implNode node representing a specific configuration context.
+	 * @param option configuration option to look for
+	 * @return set of found values for the configuration setting.
+	 */
+//	private Set<Value> getSubConfig(Model model, Resource implNode, URI option) { // Sesame 3
+	private Set<Value> getSubSetting(Graph model, Resource implNode, URI option) { // Sesame 2
+//		return model.filter(implNode, MEMBER, null).objects(); // Sesame 3
+		// Sesame 2:
+		Set<Value> values = new HashSet<Value>();
+		Iterator<Statement> objects = model.match(implNode, option, null);
+		while (objects.hasNext()) {
+			values.add(objects.next().getObject());
+		}
+		return values;
 	}
 
 }

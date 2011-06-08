@@ -42,6 +42,7 @@ import java.util.Map;
 //import org.openrdf.http.client.TupleQueryClient;
 //import org.openrdf.http.client.connections.HTTPConnectionPool;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryLanguage;
@@ -49,6 +50,7 @@ import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.UnsupportedQueryLanguageException;
 //import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.impl.EmptyBindingSet;
@@ -195,6 +197,45 @@ public final class QueryExecutor {
 		return null;
 	}
 	
+	public static boolean ask(String target, String triplePattern) {
+		String query = "ASK { " + triplePattern + " }";
+		try {
+			try {
+				return prepareBooleanQuery(query, target).evaluate();
+			} catch (QueryEvaluationException e) {  // Sesame 3: StoreException
+				// first check for network connection error
+				Throwable cause = e.getCause();
+				for (; cause != null; cause = cause.getCause()) {
+					if (cause instanceof UnknownHostException) {
+						LOGGER.error("cannot resolve endpoint " + target + ", " + cause);
+						throw new RuntimeException("cannot resolve endpoint " + target, e);
+					}
+					if (cause instanceof ConnectException) {
+						LOGGER.error("cannot connect to " + target + ", " + cause);
+						throw new RuntimeException("cannot connect to " + target, e);
+					}
+					if (cause instanceof IOException) {
+						LOGGER.error("problem with connection to " + target + ", " + cause);
+						throw new RuntimeException("problem with cannot connect to " + target, e);
+					}
+				}
+				LOGGER.error("cannot evaluate query on " + target + ", " + cause, e);
+				throw new RuntimeException("cannot evaluate query on " + target, e);
+//				return new EmptyBindingSet();
+			}
+		} catch (MalformedQueryException e) {
+			LOGGER.error("Malformed query:\n" + query, e.getMessage());
+			throw new IllegalArgumentException("Malformed query:\n" + query, e);
+//		} catch (StoreException e) {
+		} catch (RepositoryException e) {
+			System.out.println("ARGGGHH");
+			LOGGER.error("failed to evaluate query on endpoint: " + target + "\n" + query, e);
+//			return EmptyCursor.getInstance();
+			return false;
+		}
+		
+	}
+	
 	/**
 	 * Evaluates a given SPARQL query on the specified SPARQL endpoint.
 	 * 
@@ -215,6 +256,31 @@ public final class QueryExecutor {
 			LOGGER.error("failed to evaluate query on endpoint: " + endpoint + "\n" + query, e);
 //			return EmptyCursor.getInstance();
 			return new EmptyIteration<BindingSet, QueryEvaluationException>();
+		}
+	}
+	
+	/**
+	 * Prepares a TupleQuery for a SPARQL endpoint.
+	 */
+	public static BooleanQuery prepareBooleanQuery(String query, String endpoint)
+			throws RepositoryException, MalformedQueryException {
+		
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("query endpoint " + endpoint + ": '" + query.replace("\n", " ") + "'");
+		}
+		
+		try {
+			SPARQLRepository http = httpMap.get(endpoint);
+			if (http == null) {
+				http = new SPARQLRepository(endpoint);
+				httpMap.put(endpoint, http);
+			}
+			
+			return http.getConnection().prepareBooleanQuery(QueryLanguage.SPARQL, query);
+		} catch (RepositoryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw e;
 		}
 	}
 	

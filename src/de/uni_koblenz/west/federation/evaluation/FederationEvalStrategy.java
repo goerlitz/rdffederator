@@ -63,6 +63,7 @@ import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
@@ -87,7 +88,8 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	private static final boolean MULTI_THREADED = true;
 	private static final boolean COLLECT_BGP_PATTERNS = true;
 	
-	private SourceFinder<StatementPattern> finder;
+//	private SourceFinder<StatementPattern> finder;
+	private SourceSelector<StatementPattern> finder;
 	private Map<StatementPattern, Set<Graph>> graphMap;
 
 	/**
@@ -96,7 +98,8 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	 * @param finder the source finder to use.
 	 * @param vf the value factory to use.
 	 */
-	public FederationEvalStrategy(SourceFinder<StatementPattern> finder, final ValueFactory vf) {
+//	public FederationEvalStrategy(SourceFinder<StatementPattern> finder, final ValueFactory vf) {
+	public FederationEvalStrategy(SourceSelector<StatementPattern> finder, final ValueFactory vf) {
 	
 		// use a dummy triple source
 		// it can handle only single triple patterns but no basic graph patterns
@@ -260,7 +263,8 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 
 			graphMap = new HashMap<StatementPattern, Set<Graph>>();
 			Set<StatementPattern> patterns = PatternCollector.getPattern(expr);
-			Map<Set<Graph>, List<StatementPattern>> graphSets = finder.findPlanSetsPerSource(patterns);
+//			Map<Set<Graph>, List<StatementPattern>> graphSets = finder.findPlanSetsPerSource(patterns);
+			Map<Set<Graph>, List<StatementPattern>> graphSets = finder.getSources(patterns);
 			for (Set<Graph> graphSet : graphSets.keySet()) {
 				for (StatementPattern pattern : graphSets.get(graphSet)) {
 					graphMap.put(pattern, graphSet);
@@ -292,13 +296,16 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 			return new EmptyIteration<BindingSet, QueryEvaluationException>();
 		}
 		
+//		if (expr instanceof StatementPattern)
+//			LOGGER.error("is statement pattern");
+		
 		// TODO: need to know actual projection and join variables to reduce transmitted data
 		
 //		Cursor<BindingSet> cursor;
 		CloseableIteration<BindingSet, QueryEvaluationException> cursor;
 //		List<Cursor<BindingSet>> cursors = new ArrayList<Cursor<BindingSet>>(sources.size());
 		List<CloseableIteration<BindingSet, QueryEvaluationException>> cursors = new ArrayList<CloseableIteration<BindingSet, QueryEvaluationException>>(sources.size());
-		final String query = "SELECT DISTINCT * WHERE {" + SparqlPrinter.print(expr) + "}";
+		final String query = "SELECT REDUCED * WHERE {" + SparqlPrinter.print(expr) + "}";
 		
 		if (LOGGER.isDebugEnabled())
 			LOGGER.debug("Sending SPARQL query to '" + sources + " with bindings " + bindings + "\n" + query);
@@ -309,6 +316,7 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 			else
 				cursors.add(QueryExecutor.eval(rep.toString(), query, bindings));
 		}
+		
 
 		// create union if multiple sources are involved
 		if (cursors.size() > 1) {

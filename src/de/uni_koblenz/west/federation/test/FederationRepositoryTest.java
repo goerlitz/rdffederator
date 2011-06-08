@@ -49,9 +49,6 @@ public class FederationRepositoryTest {
 	
 	private static final String CONFIG     = "setup/fed-test.properties";
 	
-//	private static final String STRATEGY   = "optimizer.strategy";
-//	private static final String ESTIMATOR  = "optimizer.estimator";
-	
 	private static Repository REPOSITORY;
 	private static Iterator<Query> QUERIES;
 	
@@ -65,7 +62,7 @@ public class FederationRepositoryTest {
     @BeforeClass
     public static void setUp() {
 		try {
-			Configuration config = Configuration.create(CONFIG);
+			Configuration config = Configuration.load(CONFIG);
 			REPOSITORY = config.createRepository();
 			QUERIES = config.getQueryIterator();
 		} catch (IOException e) {

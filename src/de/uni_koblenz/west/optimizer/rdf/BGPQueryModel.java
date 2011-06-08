@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.optimizer.QueryModel;
 import de.uni_koblenz.west.optimizer.rdf.util.BGPCollector;
 
@@ -49,7 +50,8 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 	protected List<BGPOperator<P, F>> baseOperators;
 	protected ModelAdapter<P, F> adapter;
 	
-	protected SourceFinder<P> sourceFinder;
+//	protected SourceFinder<P> sourceFinder;
+	protected SourceSelector<P> sourceFinder;
 	
 	public static enum JoinExec {
 		DIRECT,
@@ -67,7 +69,8 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 		this.adapter = adapter;
 	}
 	
-	public void setSourceFinder(SourceFinder<P> sourceFinder) {
+//	public void setSourceFinder(SourceFinder<P> sourceFinder) {
+	public void setSourceSelector(SourceSelector<P> sourceFinder) {
 		this.sourceFinder = sourceFinder;		
 	}
 	
@@ -134,7 +137,8 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 			throw new IllegalArgumentException("source finder must not be null");
 		
 		baseOperators = new ArrayList<BGPOperator<P,F>>();
-		Map<Set<Graph>, List<P>> graphSets = sourceFinder.findPlanSetsPerSource(getAllPatterns());
+//		Map<Set<Graph>, List<P>> graphSets = sourceFinder.findPlanSetsPerSource(getAllPatterns());
+		Map<Set<Graph>, List<P>> graphSets = sourceFinder.getSources(getAllPatterns());
 		
 		for (Set<Graph> graphSet : graphSets.keySet()) {
 			List<P> plans = graphSets.get(graphSet);

@@ -35,6 +35,12 @@ import de.uni_koblenz.west.statistics.RDFValue;
  */
 public interface ModelAdapter<P, F> {
 	
+	public RDFValue getSubjectValue(P pattern);
+	
+	public RDFValue getPredicateValue(P pattern);
+	
+	public RDFValue getObjectValue(P pattern);
+	
 	/**
 	 * Returns the value of a bound subject or null if not bound. 
 	 * @param pattern the pattern

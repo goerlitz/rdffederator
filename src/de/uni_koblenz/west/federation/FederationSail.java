@@ -20,10 +20,8 @@
  */
 package de.uni_koblenz.west.federation;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -39,6 +37,10 @@ import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.config.RepositoryConfigException;
+import org.openrdf.repository.config.RepositoryFactory;
+import org.openrdf.repository.config.RepositoryImplConfig;
+import org.openrdf.repository.config.RepositoryRegistry;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 //import org.openrdf.sail.federation.Federation;
@@ -48,7 +50,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
+import de.uni_koblenz.west.federation.config.FederationSailConfig;
 import de.uni_koblenz.west.federation.helpers.Format;
+import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
+import de.uni_koblenz.west.federation.sources.SparqlAskSelector;
 import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
 import de.uni_koblenz.west.optimizer.eval.CostCalculator;
 import de.uni_koblenz.west.optimizer.eval.CostModel;
@@ -76,9 +82,12 @@ public class FederationSail extends SailBase {
 	private static final String DEFAULT_OPTIMIZER = "DYNAMIC_PROGRAMMING";
 	private static final String DEFAULT_ESTIMATOR = CardinalityEstimatorType.STATISTICS.toString();
 	
-	private Void2StatsRepository stats = new Void2StatsRepository();
+	private FederationSailConfig config;
 	private List<Repository> members = new ArrayList<Repository>();
-	private SourceFinder<StatementPattern> finder;
+	
+	private Void2StatsRepository stats = new Void2StatsRepository();
+//	private SourceFinder<StatementPattern> finder;
+	private SourceSelector<StatementPattern> finder;
 	private FederationOptimizer optimizer;
 	
 	String optStrategy;
@@ -86,10 +95,37 @@ public class FederationSail extends SailBase {
 	private boolean initialized = false;
 	
 	/**
+	 * Create a Federation Sail with the supplied Sail configuration.
+	 * 
+	 * @param config the configuration of the federation sail.
+	 */
+	public FederationSail(FederationSailConfig config) {
+		if (config == null)
+			throw new IllegalArgumentException("config is NULL");
+		this.config = config;
+		
+		// set optimizer type
+		optStrategy = config.getOptimizerType();
+		if (optStrategy == null) {
+			optStrategy = DEFAULT_OPTIMIZER;
+			LOGGER.debug("using default optimization strategy: " + DEFAULT_OPTIMIZER);
+		}
+		
+		// set cardinality estimator type (statistics-based or true counts)
+		estimatorType = config.getEstimatorType();
+		if (estimatorType == null) {
+			estimatorType = DEFAULT_ESTIMATOR;
+			LOGGER.debug("using default estimator: " + DEFAULT_ESTIMATOR);
+		}
+	}
+	
+	/**
 	 * Creates a federation Sail using the properties and federation members.
 	 * 
 	 * @param config the Sail's configuration settings.
 	 * @param members the federation members.
+	 * 
+	 * @deprecated only for testing
 	 */
 	public FederationSail(Properties config, List<Repository> members) {
 		
@@ -120,7 +156,8 @@ public class FederationSail extends SailBase {
 		return this.optimizer;
 	}
 	
-	public SourceFinder<StatementPattern> getSourceFinder() {
+//	public SourceFinder<StatementPattern> getSourceFinder() {
+	public SourceSelector<StatementPattern> getSourceSelector() {
 		return this.finder;
 	}
 	
@@ -139,35 +176,87 @@ public class FederationSail extends SailBase {
 		// only Sesame 2 needs to initialize super class
 		super.initialize();
 		
-		// initialize member repositories
-		for (Repository rep : this.members) {
+//		List<Repository> members = new ArrayList<Repository>();
+		List<Graph> sources = new ArrayList<Graph>();
+		RepositoryRegistry registry = RepositoryRegistry.getInstance();
+		
+		// process all member repository configurations
+		for (RepositoryImplConfig member : config.getMemberConfigs()) {
+			
+			// get factory for repository config
+			RepositoryFactory factory = registry.get(member.getType());
+			if (factory == null)
+//				throw new StoreConfigException("Unsupported repository type: " + member.getType());
+				throw new SailException("Unsupported repository type: " + member.getType());
+			
+			// create and initialize each member repository
 			try {
+				Repository rep = factory.getRepository(member);
 				if (rep instanceof VoidRepository) {
 					VoidRepository voidRep = (VoidRepository) rep;
-					URI context = stats.load(voidRep.getVoidUrl());
+					URI context;
+					try {
+						context = stats.load(voidRep.getVoidUrl());
+					} catch (IOException e) {
+						LOGGER.error("can not read voiD description " + voidRep.getVoidUrl(), e.getMessage());
+//						throw new StoreException("can not read voiD description: " + e.getMessage(), e);
+						throw new SailException("can not read voiD description: " + e.getMessage(), e);
+					}
 					stats.setEndpoint(voidRep.getEndpoint(), context);
+					sources.add(new Graph(voidRep.getEndpoint()));
 				}
 				rep.initialize();
-//			} catch (URISyntaxException e) {
-//				throw new SailException("can not read voiD description: " + e.getMessage(), e);
-			} catch (IOException e) {
-				LOGGER.error("can not read voiD description " + ((VoidRepository) rep).getVoidUrl(), e.getMessage());
-//				throw new StoreException("can not read voiD description: " + e.getMessage(), e);
-				throw new SailException("can not read voiD description: " + e.getMessage(), e);
+				members.add(rep);
+			} catch (RepositoryConfigException e) {
+				throw new SailException("invalid repository configuration:" + e.getMessage(), e);
 			} catch (RepositoryException e) {
 				throw new SailException("can not initialize void repository: " + e.getMessage(), e);
 			} catch (IllegalStateException e) {
 				LOGGER.debug("member repository is already initialized", e);
 			}
 		}
+		
+		
+		
+//		// initialize member repositories
+//		for (Repository rep : this.members) {
+//			try {
+//				if (rep instanceof VoidRepository) {
+//					VoidRepository voidRep = (VoidRepository) rep;
+//					URI context = stats.load(voidRep.getVoidUrl());
+//					stats.setEndpoint(voidRep.getEndpoint(), context);
+//					sources.add(new Graph(voidRep.getEndpoint()));
+//				}
+//				rep.initialize();
+////			} catch (URISyntaxException e) {
+////				throw new SailException("can not read voiD description: " + e.getMessage(), e);
+//			} catch (IOException e) {
+//				LOGGER.error("can not read voiD description " + ((VoidRepository) rep).getVoidUrl(), e.getMessage());
+////				throw new StoreException("can not read voiD description: " + e.getMessage(), e);
+//				throw new SailException("can not read voiD description: " + e.getMessage(), e);
+//			} catch (RepositoryException e) {
+//				throw new SailException("can not initialize void repository: " + e.getMessage(), e);
+//			} catch (IllegalStateException e) {
+//				LOGGER.debug("member repository is already initialized", e);
+//			}
+//		}
 
-		this.finder = new SourceFinder<StatementPattern>(stats, new SesameAdapter());
+		// include choice of source selector in configuration
+		if (config.getSourceSelector().equalsIgnoreCase("ASK"))
+			this.finder = new SparqlAskSelector<StatementPattern>(new SesameAdapter(), sources);
+		else if (config.getSourceSelector().equalsIgnoreCase("STATS"))
+			this.finder = new SourceFinder<StatementPattern>(stats, new SesameAdapter());
+		else {
+			LOGGER.info("using default source selector: ASK");
+			this.finder = new SparqlAskSelector<StatementPattern>(new SesameAdapter(), sources);
+		}
 		
 		// initialize optimizer
 		CostModel costModel = new CostModel();
 		FederationOptimizerFactory factory = new FederationOptimizerFactory();
 		factory.setStatistics(stats);
-		factory.setSourceFinder(finder);
+//		factory.setSourceFinder(finder);
+		factory.setSourceSelector(finder);
 		factory.setCostmodel(costModel);
 //		factory.setOptimizationListener(true);
 		this.optimizer = factory.getOptimizer(optStrategy, estimatorType);
@@ -201,7 +290,6 @@ public class FederationSail extends SailBase {
 //	protected void shutDownInternal() throws StoreException {
 	protected void shutDownInternal() throws SailException {
 		for (Repository rep : this.members) {
-//			rep.shutDown();
 			try {
 				rep.shutDown();
 			} catch (RepositoryException e) {

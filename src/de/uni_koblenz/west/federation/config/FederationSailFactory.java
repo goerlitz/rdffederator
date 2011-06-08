@@ -79,7 +79,7 @@ public class FederationSailFactory implements SailFactory {
 	 * @param config
 	 *            the Sail configuration.
 	 * @return The created (but un-initialized) Sail.
-	 * @throws StoreConfigException
+	 * @throws SailConfigException
 	 *             If no Sail could be created due to invalid or incomplete
 	 *             configuration data.
 	 */
@@ -92,26 +92,34 @@ public class FederationSailFactory implements SailFactory {
 			throw new SailConfigException("Invalid Sail type: " + config.getType());
 		}
 		assert config instanceof FederationSailConfig;
-		FederationSailConfig fedConfig = (FederationSailConfig) config;
-
-		// initialize federation members
-		List<Repository> repositories = new ArrayList<Repository>();
-		RepositoryFactory factory;
-		for (RepositoryImplConfig member : fedConfig.getMemberConfigs()) {
-			factory = RepositoryRegistry.getInstance().get(member.getType());
-			if (factory == null) {
-//				throw new StoreConfigException("Unsupported repository type: " + config.getType());
-				throw new SailConfigException("Unsupported repository type: " + config.getType());
-			}
-//			repositories.add(factory.getRepository(member));
-			try {
-				repositories.add(factory.getRepository(member));
-			} catch (RepositoryConfigException e) {
-				throw new SailConfigException(e);
-			}
-		}
-		
-		return new FederationSail(fedConfig.getProperties(), repositories);
+		return new FederationSail((FederationSailConfig) config);
+//		FederationSailConfig fedConfig = (FederationSailConfig) config;
+//
+//		// initialize federation members
+//		List<Repository> repositories = new ArrayList<Repository>();
+//		RepositoryFactory factory;
+//		for (RepositoryImplConfig member : fedConfig.getMemberConfigs()) {
+//			factory = RepositoryRegistry.getInstance().get(member.getType());
+//			if (factory == null) {
+////				throw new StoreConfigException("Unsupported repository type: " + config.getType());
+//				throw new SailConfigException("Unsupported repository type: " + config.getType());
+//			}
+////			repositories.add(factory.getRepository(member));
+//			try {
+//				repositories.add(factory.getRepository(member));
+//			} catch (RepositoryConfigException e) {
+//				throw new SailConfigException(e);
+//			}
+//		}
+//		
+//		// TODO: prepare a configuration object that holds:
+//		//       * member repositories
+//		//       * source selection settings
+//		//       * statistics settings
+//		//       * optimizer settings
+//		//       * query execution settings
+//		
+//		return new FederationSail(fedConfig.getProperties(), repositories);
 	}
 
 }

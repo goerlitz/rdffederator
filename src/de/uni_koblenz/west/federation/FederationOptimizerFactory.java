@@ -25,6 +25,7 @@ import org.openrdf.query.algebra.ValueExpr;
 
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.adapter.SesameSparqlExecutor;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.optimizer.Optimizer;
 import de.uni_koblenz.west.optimizer.eval.CostModel;
 import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
@@ -39,7 +40,8 @@ import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 public class FederationOptimizerFactory extends BGPOptimizerFactory<StatementPattern, ValueExpr> {
 	
 	private CostModel costModel;
-	private SourceFinder<StatementPattern> finder;
+//	private SourceFinder<StatementPattern> finder;
+	private SourceSelector<StatementPattern> finder;
 	
 	/**
 	 * Creates a Sesame optimizer factory.
@@ -59,7 +61,8 @@ public class FederationOptimizerFactory extends BGPOptimizerFactory<StatementPat
 		this.costModel = costModel;
 	}
 	
-	public void setSourceFinder(SourceFinder<StatementPattern> finder) {
+//	public void setSourceFinder(SourceFinder<StatementPattern> finder) {
+	public void setSourceSelector(SourceSelector<StatementPattern> finder) {
 		this.finder = finder;
 	}
 	

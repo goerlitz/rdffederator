@@ -50,6 +50,30 @@ public class SesameAdapter implements ModelAdapter<StatementPattern, ValueExpr> 
 	}
 	
 	@Override
+	public RDFValue getObjectValue(StatementPattern pattern) {
+		Value value = pattern.getObjectVar().getValue();
+		if (value != null)
+			return new SesameRDFValue(value);
+		return null;
+	}
+
+	@Override
+	public RDFValue getPredicateValue(StatementPattern pattern) {
+		Value value = pattern.getPredicateVar().getValue();
+		if (value != null)
+			return new SesameRDFValue(value);
+		return null;
+	}
+
+	@Override
+	public RDFValue getSubjectValue(StatementPattern pattern) {
+		Value value = pattern.getSubjectVar().getValue();
+		if (value != null)
+			return new SesameRDFValue(value);
+		return null;
+	}
+
+	@Override
 	public RDFValue getOBinding(StatementPattern pattern) {
 		Value value = pattern.getObjectVar().getValue();
 		if (value != null)

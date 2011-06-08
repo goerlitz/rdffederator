@@ -28,16 +28,14 @@ import org.junit.BeforeClass;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.sail.SailRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.FederationSail;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.test.config.Configuration;
 import de.uni_koblenz.west.federation.test.config.ConfigurationException;
 import de.uni_koblenz.west.federation.test.config.Query;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
  * 
@@ -51,7 +49,7 @@ public class SourceFinderTest {
 	
 	private static Repository REPOSITORY;
 	private static Iterator<Query> QUERIES;
-	private static SourceFinder<StatementPattern> finder;
+	private static SourceSelector<StatementPattern> finder;
 	
 	public static void main(String[] args) {
 		
@@ -71,19 +69,17 @@ public class SourceFinderTest {
 	private static void setup(String configFile) {
 		
 		try {
-			Configuration config = Configuration.create(configFile);
+			Configuration config = Configuration.load(configFile);
 			REPOSITORY = config.createRepository();
 			QUERIES = config.getQueryIterator();
-			SourceFinder<StatementPattern> finder = config.getSourceFinder();
-			System.out.println("finder rdf:type=" + finder.isHandleRDFType());
+			// get finder from configuration?
+			finder = config.getSourceSelector();
+//			System.out.println("finder rdf:type=" + finder.isHandleRDFType());
 		} catch (IOException e) {
 			LOGGER.error("cannot load test config: " + e.getMessage());
 		} catch (ConfigurationException e) {
 			LOGGER.error("failed to create repository: " + e.getMessage());
 		}
-		
-		FederationSail sail = ((FederationSail) ((SailRepository) REPOSITORY).getSail());
-		finder = sail.getSourceFinder();
 	}
 	
 	// -------------------------------------------------------------------------

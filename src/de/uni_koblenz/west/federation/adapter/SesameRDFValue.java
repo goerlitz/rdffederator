@@ -80,7 +80,22 @@ public class SesameRDFValue implements RDFValue {
 	
 	@Override
 	public String toString() {
-		return stringValue() + " [" + getDataType() + "]";
+		if (getDataType() != null)
+			return stringValue() + " [" + getDataType() + "]";
+		else
+			return stringValue();
 	}
 
+	public boolean equals(Object obj) {
+		if (obj instanceof SesameRDFValue) {
+			return this.value.equals(((SesameRDFValue) obj).value);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return this.value.hashCode();
+	}
+	
 }
