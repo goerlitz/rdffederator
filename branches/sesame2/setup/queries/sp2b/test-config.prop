@@ -1,0 +1,14 @@
+repository.config=sp2b/sp2b_config.n3
+
+query.directory=sp2b
+query.extension=.sparql
+
+optimizer.strategy=DYNAMIC_PROGRAMMING
+optimizer.estimator=STATISTICS
+
+
+test.queries=queries/test8.sparql
+optimizer.type=DYNAMIC_PROGRAMMING
+#optimizer.type=PATTERN_HEURISTIC
+estimator.type=STATISTICS
+#estimator.type=TRUE_COUNT
