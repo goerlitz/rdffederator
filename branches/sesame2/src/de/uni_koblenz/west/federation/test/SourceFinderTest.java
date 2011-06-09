@@ -49,7 +49,7 @@ public class SourceFinderTest {
 	
 	private static Repository REPOSITORY;
 	private static Iterator<Query> QUERIES;
-	private static SourceSelector<StatementPattern> finder;
+	private static SourceSelector finder;
 	
 	public static void main(String[] args) {
 		

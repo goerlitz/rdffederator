@@ -20,8 +20,10 @@
  */
 package de.uni_koblenz.west.federation.adapter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.query.algebra.QueryModelNode;
@@ -69,6 +71,28 @@ public class SesameBGPWrapper extends BGPQueryModel<StatementPattern, ValueExpr>
 	}
 	
 	// --- OVERRIDE ------------------------------------------------------------
+	
+	protected void createBaseRelations() {
+		if (sourceFinder == null)
+			throw new IllegalArgumentException("source finder must not be null");
+		
+		baseOperators = new ArrayList<BGPOperator<StatementPattern, ValueExpr>>();
+//		Map<Set<Graph>, List<P>> graphSets = sourceFinder.findPlanSetsPerSource(getAllPatterns());
+		Map<Set<Graph>, List<StatementPattern>> graphSets = sourceFinder.getSources(getAllPatterns());
+		
+		for (Set<Graph> graphSet : graphSets.keySet()) {
+			List<StatementPattern> plans = graphSets.get(graphSet);
+			// combine all operators for one source
+			if (graphSet.size() == 1) {
+				baseOperators.add(joinPatterns(plans, graphSet));				
+			} else {
+				// or create separate operators for each source
+				for (StatementPattern pattern : plans) {
+					baseOperators.add(createPlan(pattern, graphSet));
+				}
+			}
+		}
+	}
 	
 	/**
 	 * Sesame specific class providing string representation for DEBUGGING.

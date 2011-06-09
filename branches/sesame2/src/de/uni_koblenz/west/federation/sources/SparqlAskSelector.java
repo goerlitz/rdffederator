@@ -57,7 +57,7 @@ public class SparqlAskSelector extends SourceSelectorBase {
 	}
 
 	@Override
-	public Set<Graph> getSources(StatementPattern pattern) {
+	protected Set<Graph> getSources(StatementPattern pattern) {
 		Set<Graph> sourceSet = new HashSet<Graph>();
 		
 		// ask each source for current pattern

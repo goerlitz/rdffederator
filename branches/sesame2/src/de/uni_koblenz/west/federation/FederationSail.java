@@ -53,6 +53,7 @@ import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.config.FederationSailConfig;
 import de.uni_koblenz.west.federation.helpers.Format;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.sources.SourceFinder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.sources.SparqlAskSelector;
 import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
@@ -60,7 +61,6 @@ import de.uni_koblenz.west.optimizer.eval.CostCalculator;
 import de.uni_koblenz.west.optimizer.eval.CostModel;
 import de.uni_koblenz.west.optimizer.eval.QueryModelEvaluator;
 import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
@@ -87,7 +87,7 @@ public class FederationSail extends SailBase {
 	
 	private Void2StatsRepository stats = new Void2StatsRepository();
 //	private SourceFinder<StatementPattern> finder;
-	private SourceSelector<StatementPattern> finder;
+	private SourceSelector finder;
 	private FederationOptimizer optimizer;
 	
 	String optStrategy;
@@ -157,7 +157,7 @@ public class FederationSail extends SailBase {
 	}
 	
 //	public SourceFinder<StatementPattern> getSourceFinder() {
-	public SourceSelector<StatementPattern> getSourceSelector() {
+	public SourceSelector getSourceSelector() {
 		return this.finder;
 	}
 	
@@ -243,12 +243,12 @@ public class FederationSail extends SailBase {
 
 		// include choice of source selector in configuration
 		if (config.getSourceSelector().equalsIgnoreCase("ASK"))
-			this.finder = new SparqlAskSelector<StatementPattern>(new SesameAdapter(), sources);
+			this.finder = new SparqlAskSelector(sources);
 		else if (config.getSourceSelector().equalsIgnoreCase("STATS"))
-			this.finder = new SourceFinder<StatementPattern>(stats, new SesameAdapter());
+			this.finder = new SourceFinder(stats);
 		else {
 			LOGGER.info("using default source selector: ASK");
-			this.finder = new SparqlAskSelector<StatementPattern>(new SesameAdapter(), sources);
+			this.finder = new SparqlAskSelector(sources);
 		}
 		
 		// initialize optimizer

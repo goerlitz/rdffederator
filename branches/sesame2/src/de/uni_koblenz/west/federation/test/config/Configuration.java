@@ -110,13 +110,13 @@ public class Configuration {
 	 * @return the source selector.
 	 * @throws ConfigurationException if an error occurs during the repository configuration.
 	 */
-	public SourceSelector<StatementPattern> getSourceSelector() throws ConfigurationException {
+	public SourceSelector getSourceSelector() throws ConfigurationException {
 		
 		if (this.repository == null)
 			createRepository();
 
 		FederationSail sail = ((FederationSail) ((SailRepository) this.repository).getSail());
-		SourceSelector<StatementPattern> finder = sail.getSourceSelector();
+		SourceSelector finder = sail.getSourceSelector();
 		
 		boolean handleRDFType = Boolean.parseBoolean(props.getProperty(PROP_RDF_TYPE));
 		boolean handleSameAs = Boolean.parseBoolean(props.getProperty(PROP_SAME_AS));		

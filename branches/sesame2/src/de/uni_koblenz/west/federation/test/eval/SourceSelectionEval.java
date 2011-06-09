@@ -19,11 +19,11 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.sources.SourceFinder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.test.config.Configuration;
 import de.uni_koblenz.west.federation.test.config.ConfigurationException;
 import de.uni_koblenz.west.federation.test.config.Query;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
  * Evaluation of the source selection.
@@ -37,7 +37,7 @@ public class SourceSelectionEval {
 	private static final String CONFIG_FILE = "setup/fed-test.properties";
 	
 //	private SourceFinder<StatementPattern> finder;
-	private SourceSelector<StatementPattern> finder;
+	private SourceSelector finder;
 	private Iterator<Query> queries;
 	private PrintStream output;
 	

@@ -59,8 +59,8 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.ReadOnlySailConnection;
+import de.uni_koblenz.west.federation.sources.SourceFinder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
  * Wraps multiple remote repositories with SPARQL endpoints into one
@@ -78,7 +78,7 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSailConnection.class);
 
 //	private final SourceFinder<StatementPattern> finder;
-	private final SourceSelector<StatementPattern> finder;
+	private final SourceSelector finder;
 //	private final RDFStatistics stats;
 	private final ValueFactory vf;
 	private final QueryOptimizer optimizer;
