@@ -39,17 +39,19 @@ import de.uni_koblenz.west.federation.index.Graph;
 /**
  * Basic behavior of a source selector.
  * First aggregates the triple patterns in groups with same constant values.
- * Then the sources are selected and optimization for sameAs may be applied.
+ * Then the sources are selected and optimizations for sameAs may be applied.
  * 
  * @author Olaf Goerlitz
  */
 public abstract class SourceSelectorBase implements SourceSelector {
 	
-	private boolean organizeSameAs = true;
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceSelectorBase.class);
 	
-	public abstract Set<Graph> getSources(StatementPattern pattern);
+	private boolean organizeSameAs = true;
+	
+	protected abstract Set<Graph> getSources(StatementPattern pattern);
+	
+	// -------------------------------------------------------------------------
 
 	@Override
 	public Map<Set<Graph>, List<StatementPattern>> getSources(Collection<StatementPattern> patterns) {

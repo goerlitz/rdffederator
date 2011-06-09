@@ -63,8 +63,8 @@ import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.sources.SourceFinder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
  * Implementation of the evaluation strategy for querying distributed data
@@ -89,7 +89,7 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	private static final boolean COLLECT_BGP_PATTERNS = true;
 	
 //	private SourceFinder<StatementPattern> finder;
-	private SourceSelector<StatementPattern> finder;
+	private SourceSelector finder;
 	private Map<StatementPattern, Set<Graph>> graphMap;
 
 	/**
@@ -99,7 +99,7 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	 * @param vf the value factory to use.
 	 */
 //	public FederationEvalStrategy(SourceFinder<StatementPattern> finder, final ValueFactory vf) {
-	public FederationEvalStrategy(SourceSelector<StatementPattern> finder, final ValueFactory vf) {
+	public FederationEvalStrategy(SourceSelector finder, final ValueFactory vf) {
 	
 		// use a dummy triple source
 		// it can handle only single triple patterns but no basic graph patterns

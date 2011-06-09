@@ -51,7 +51,7 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 	protected ModelAdapter<P, F> adapter;
 	
 //	protected SourceFinder<P> sourceFinder;
-	protected SourceSelector<P> sourceFinder;
+	protected SourceSelector sourceFinder;
 	
 	public static enum JoinExec {
 		DIRECT,
@@ -70,7 +70,7 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 	}
 	
 //	public void setSourceFinder(SourceFinder<P> sourceFinder) {
-	public void setSourceSelector(SourceSelector<P> sourceFinder) {
+	public void setSourceSelector(SourceSelector sourceFinder) {
 		this.sourceFinder = sourceFinder;		
 	}
 	
@@ -98,7 +98,9 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 	
 	// -------------------------------------------------------------------------
 	
-	private BGPOperator<P, F> joinPatterns(List<P> patterns, Set<Graph> sources) {
+	protected abstract void createBaseRelations();
+	
+	protected BGPOperator<P, F> joinPatterns(List<P> patterns, Set<Graph> sources) {
 		// join order is not relevant - just avoid cross products
 		
 		P pattern = patterns.remove(0);
@@ -132,27 +134,27 @@ public abstract class BGPQueryModel<P, F> implements QueryModel<BGPOperator<P, F
 		return joinPatterns;
 	}
 	
-	private void createBaseRelations() {
-		if (sourceFinder == null)
-			throw new IllegalArgumentException("source finder must not be null");
-		
-		baseOperators = new ArrayList<BGPOperator<P,F>>();
-//		Map<Set<Graph>, List<P>> graphSets = sourceFinder.findPlanSetsPerSource(getAllPatterns());
-		Map<Set<Graph>, List<P>> graphSets = sourceFinder.getSources(getAllPatterns());
-		
-		for (Set<Graph> graphSet : graphSets.keySet()) {
-			List<P> plans = graphSets.get(graphSet);
-			// combine all operators for one source
-			if (graphSet.size() == 1) {
-				baseOperators.add(joinPatterns(plans, graphSet));				
-			} else {
-				// or create separate operators for each source
-				for (P pattern : plans) {
-					baseOperators.add(createPlan(pattern, graphSet));
-				}
-			}
-		}
-	}
+//	private void createBaseRelations() {
+//		if (sourceFinder == null)
+//			throw new IllegalArgumentException("source finder must not be null");
+//		
+//		baseOperators = new ArrayList<BGPOperator<P,F>>();
+////		Map<Set<Graph>, List<P>> graphSets = sourceFinder.findPlanSetsPerSource(getAllPatterns());
+//		Map<Set<Graph>, List<P>> graphSets = sourceFinder.getSources(getAllPatterns());
+//		
+//		for (Set<Graph> graphSet : graphSets.keySet()) {
+//			List<P> plans = graphSets.get(graphSet);
+//			// combine all operators for one source
+//			if (graphSet.size() == 1) {
+//				baseOperators.add(joinPatterns(plans, graphSet));				
+//			} else {
+//				// or create separate operators for each source
+//				for (P pattern : plans) {
+//					baseOperators.add(createPlan(pattern, graphSet));
+//				}
+//			}
+//		}
+//	}
 	
 	// --- OVERRIDE ------------------------------------------------------------
 	

@@ -36,11 +36,11 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.adapter.SesameBGPWrapper;
 import de.uni_koblenz.west.federation.helpers.BasicGraphPatternCollector;
+import de.uni_koblenz.west.federation.sources.SourceFinder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.optimizer.Optimizer;
 import de.uni_koblenz.west.optimizer.eval.QueryModelEvaluator;
 import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
 import de.uni_koblenz.west.optimizer.rdf.util.BGPModelPrinter;
 
@@ -55,7 +55,7 @@ public class FederationOptimizer implements QueryOptimizer {
 	
 	protected Optimizer<BGPOperator<StatementPattern, ValueExpr>> optimizer;
 //	protected SourceFinder<StatementPattern> finder;
-	protected SourceSelector<StatementPattern> finder;
+	protected SourceSelector finder;
 	
 	protected QueryModelVerifier<StatementPattern, ValueExpr> listener;
 	protected BGPModelPrinter<StatementPattern, ValueExpr> printer = new BGPModelPrinter<StatementPattern, ValueExpr>(new SesameAdapter());
@@ -67,7 +67,7 @@ public class FederationOptimizer implements QueryOptimizer {
 	 * @param finder the source finder to use.
 	 */
 //	protected FederationOptimizer(Optimizer<BGPOperator<StatementPattern, ValueExpr>> optimizer, SourceFinder<StatementPattern> finder) {
-	protected FederationOptimizer(Optimizer<BGPOperator<StatementPattern, ValueExpr>> optimizer, SourceSelector<StatementPattern> finder) {
+	protected FederationOptimizer(Optimizer<BGPOperator<StatementPattern, ValueExpr>> optimizer, SourceSelector finder) {
 		if (optimizer == null)
 			throw new IllegalArgumentException("the optimizer must not be null");
 		if (finder == null)
