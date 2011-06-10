@@ -79,8 +79,8 @@ public class VoidRepositoryConfig extends RepositoryImplConfigBase {
 	 * @return the resource representing this repository configuration.
 	 */
 	@Override
-//	public Resource export(Model model) {
-	public Resource export(Graph model) {
+//	public Resource export(Model model) { // Sesame 3
+	public Resource export(Graph model) { // Sesame 2
 		Resource implNode = super.export(model);
 		ValueFactoryImpl vf = ValueFactoryImpl.getInstance();
 
@@ -103,8 +103,8 @@ public class VoidRepositoryConfig extends RepositoryImplConfigBase {
 	 * @param implNode the resource representing this void repository.
 	 */
 	@Override
-//	public void parse(Model model, Resource implNode) throws StoreConfigException {
-	public void parse(Graph model, Resource implNode) throws RepositoryConfigException {
+//	public void parse(Model model, Resource implNode) throws StoreConfigException { // Sesame 3
+	public void parse(Graph model, Resource implNode) throws RepositoryConfigException { // Sesame 2
 		super.parse(model, implNode);
 		
 //		try {

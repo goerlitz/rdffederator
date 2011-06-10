@@ -24,17 +24,14 @@ import static de.uni_koblenz.west.federation.config.FederationSailSchema.ESTIMAT
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.MEMBER;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPTIMIZER;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.SRC_SLCTN;
-//import static de.uni_koblenz.west.federation.config.FederationSailSchema.STATISTIC;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 
 import org.openrdf.model.Graph;
-//import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -45,35 +42,37 @@ import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.config.RepositoryImplConfigBase;
 import org.openrdf.sail.config.SailConfigException;
-import org.openrdf.sail.config.SailImplConfigBase;
-//import org.openrdf.store.StoreConfigException;
 
 /**
  * Configuration details for federation setup including member descriptions.
  * 
  * @author Olaf Goerlitz
  */
-public class FederationSailConfig extends SailImplConfigBase {
+public class FederationSailConfig extends AbstractSailConfig {
 	
-	private List<RepositoryImplConfig> repConfig = new ArrayList<RepositoryImplConfig>();
-	private Properties props = new Properties();
+	private final List<RepositoryImplConfig> memberConfig = new ArrayList<RepositoryImplConfig>();
+	private SourceSelectorConfig selectorConfig;
 	
-	private String sourceSelector;
 	private String optimizerType;
 	private String estimatorType;
 //	private String statisticsUrl;
 	
 	/**
-	 * Gets the configuration settings of the federation members.
+	 * Returns the configuration settings of the federation members.
 	 * 
-	 * @return the member configuration settings.
+	 * @return the member repository configuration settings.
 	 */
 	public List<RepositoryImplConfig> getMemberConfigs() {
-		return repConfig;
+		return this.memberConfig;
 	}
 	
-	public String getSourceSelector() {
-		return this.sourceSelector;
+	/**
+	 * Returns the configuration settings of the source selector.
+	 * 
+	 * @return the source selection configuration settings.
+	 */
+	public SourceSelectorConfig getSelectorConfig() {
+		return this.selectorConfig;
 	}
 	
 	public String getOptimizerType() {
@@ -84,20 +83,6 @@ public class FederationSailConfig extends SailImplConfigBase {
 		return this.estimatorType;
 	}
 	
-//	/**
-//	 * Gets the general federation settings.
-//	 * 
-//	 * @return the federation settings.
-//	 */
-//	public Properties getProperties() {
-//		if (props.size() == 0) {
-//			props.put("optimizer.type", optimizerType);
-//			props.put("estimator.type", estimatorType);
-////			props.put("data.statistics", statisticsUrl);
-//		}
-//		return this.props;
-//	}
-	
 	// -------------------------------------------------------------------------
 
 	/**
@@ -107,15 +92,16 @@ public class FederationSailConfig extends SailImplConfigBase {
 	 * @return the resource representing this Sail configuration.
 	 */
 	@Override
-//	public Resource export(Model model) {
-	public Resource export(Graph model) {
+//	public Resource export(Model model) { // Sesame 3
+	public Resource export(Graph model) { // Sesame 2
 		ValueFactory vf = ValueFactoryImpl.getInstance();
+		
 		Resource self = super.export(model);
 		
-		for (RepositoryImplConfig member : this.repConfig) {
+		for (RepositoryImplConfig member : this.memberConfig) {
 			model.add(self, MEMBER, member.export(model));
 		}
-		model.add(self, SRC_SLCTN, vf.createLiteral(sourceSelector));
+		model.add(self, SRC_SLCTN, this.selectorConfig.export(model));
 		model.add(self, OPTIMIZER, vf.createLiteral(optimizerType));
 		model.add(self, ESTIMATOR, vf.createLiteral(estimatorType));
 //		model.add(self, STATISTIC, vf.createLiteral(statisticsUrl));
@@ -130,22 +116,28 @@ public class FederationSailConfig extends SailImplConfigBase {
 	 * @param implNode the resource representing this federation sail.
 	 */
 	@Override
-//	public void parse(Model model, Resource implNode) throws StoreConfigException {
-	public void parse(Graph model, Resource implNode) throws SailConfigException {
+//	public void parse(Model model, Resource implNode) throws StoreConfigException { // Sesame 3
+	public void parse(Graph model, Resource implNode) throws SailConfigException { // Sesame 2
 		super.parse(model, implNode);
 		
 		// extract the repository settings for all defined federation members
-		for (Value member : getSubSetting(model, implNode, MEMBER)) {
-			try {
-				this.repConfig.add(RepositoryImplConfigBase.create(model, (Resource) member));
-			} catch (RepositoryConfigException e) {
-				throw new SailConfigException(e);
+//		for (Value member : model.filter(implNode, MEMBER, null).objects()) { // Sesame 3
+		for (Value member : filter(model, implNode, MEMBER)) { // Sesame 2
+			if (member instanceof Resource) {
+				try {
+					this.memberConfig.add(RepositoryImplConfigBase.create(model, (Resource) member));
+				} catch (RepositoryConfigException e) {
+					throw new SailConfigException(e);
+				}
+			}
+			else {
+				throw new SailConfigException("Found literal for federation member node, expected a resource");
 			}
 		}
 		
 		// get source selection strategy
-		sourceSelector = getOption(model, implNode, SRC_SLCTN);
-
+		selectorConfig = SourceSelectorFactory.createConfig(model, getObjectResource(model, implNode, SRC_SLCTN));
+		
 		// extract the query processing strategy
 		optimizerType = getOption(model, implNode, OPTIMIZER);
 		
@@ -164,13 +156,13 @@ public class FederationSailConfig extends SailImplConfigBase {
 //	public void validate() throws StoreConfigException { // Sesame 3
 	public void validate() throws SailConfigException { // Sesame 2
 		super.validate();
-		if (repConfig.size() == 0) {
-//			throw new StoreConfigException("No federation members specified");
-			throw new SailConfigException("No federation members specified");
+		if (memberConfig.size() == 0) {
+//			throw new StoreConfigException("No federation members specified"); // Sesame 3
+			throw new SailConfigException("No federation members specified"); // Sesame 2
 		}
 		
 		// validate all member repositories
-		for (RepositoryImplConfig cfg : repConfig) {
+		for (RepositoryImplConfig cfg : memberConfig) {
 			try {
 				cfg.validate();
 			} catch (RepositoryConfigException e) {
@@ -178,8 +170,10 @@ public class FederationSailConfig extends SailImplConfigBase {
 			}
 		}
 		
-		if (sourceSelector == null)
-			throw new SailConfigException("no source selection strategy specified: use " + SRC_SLCTN);
+		this.selectorConfig.validate();
+		
+//		if (sourceSelector == null)
+//			throw new SailConfigException("no source selection strategy specified: use " + SRC_SLCTN);
 		
 		if (optimizerType == null)
 			throw new SailConfigException("no query optimization strategy specified: use " + OPTIMIZER);
@@ -209,8 +203,8 @@ public class FederationSailConfig extends SailImplConfigBase {
 	 * @param option configuration option to look for
 	 * @return set of found values for the configuration setting.
 	 */
-//	private Set<Value> getSubConfig(Model model, Resource implNode, URI option) { // Sesame 3
-	private Set<Value> getSubSetting(Graph model, Resource implNode, URI option) { // Sesame 2
+//	private Set<Value> filter(Model model, Resource implNode, URI option) { // Sesame 3
+	private Set<Value> filter(Graph model, Resource implNode, URI option) { // Sesame 2
 //		return model.filter(implNode, MEMBER, null).objects(); // Sesame 3
 		// Sesame 2:
 		Set<Value> values = new HashSet<Value>();

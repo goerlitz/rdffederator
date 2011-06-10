@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.config.FederationSailConfig;
+import de.uni_koblenz.west.federation.config.SourceSelectorFactory;
 import de.uni_koblenz.west.federation.helpers.Format;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.sources.SourceFinder;
@@ -242,9 +243,10 @@ public class FederationSail extends SailBase {
 //		}
 
 		// include choice of source selector in configuration
-		if (config.getSourceSelector().equalsIgnoreCase("ASK"))
+		String type = config.getSelectorConfig().getType();
+		if ("ASK".equalsIgnoreCase(type))
 			this.finder = new SparqlAskSelector(sources);
-		else if (config.getSourceSelector().equalsIgnoreCase("STATS"))
+		else if ("STATS".equalsIgnoreCase(type))
 			this.finder = new SourceFinder(stats);
 		else {
 			LOGGER.info("using default source selector: ASK");
