@@ -31,13 +31,6 @@ import de.uni_koblenz.west.federation.sources.SourceSelector;
  */
 public class SourceSelectorFactory {
 	
-//	private SourceSelectorFactory() {
-//	}
-//	
-//	public static SourceSelectorFactory newInstance() {
-//		return new SourceSelectorFactory();
-//	}
-	
 	public static SourceSelectorConfig createConfig(Graph model, Resource implNode) throws SailConfigException {
 		SourceSelectorConfig config = new SourceSelectorConfig();
 		config.parse(model, implNode);
@@ -46,20 +39,8 @@ public class SourceSelectorFactory {
 	}
 	
 	public static SourceSelector getSourceSelector(SourceSelectorConfig config) {
+		// TODO: need sparql endpoints or statistics!
 		throw new UnsupportedOperationException("not yet implemented");
 	}
 	
-	// -------------------------------------------------------------------------
-	
-//	protected static String getObjectString(Graph model, Resource implNode, URI property) throws SailConfigException {
-//		Iterator<Statement> objects = model.match(implNode, property, null);
-//		if (!objects.hasNext())
-//			throw new SailConfigException("found no value for " + implNode);
-//		Statement st = objects.next();
-//		if (objects.hasNext())
-//			throw new SailConfigException("found multiple values for " + implNode);
-//		return st.getObject().stringValue();
-//	}
-		
-
 }

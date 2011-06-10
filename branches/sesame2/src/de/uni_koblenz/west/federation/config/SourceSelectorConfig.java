@@ -20,32 +20,60 @@
  */
 package de.uni_koblenz.west.federation.config;
 
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.ATTACH_SAME_AS;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.SLCT_TYPE;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_TYPE_STATS;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.sail.config.SailConfigException;
 
 /**
- * @author goerlitz
- *
+ * Setting details for the sources selector configuration.
+ * 
+ * @author Olaf Goerlitz
  */
 public class SourceSelectorConfig extends AbstractSailConfig {
 	
+	private boolean useTypeStats;
+	private boolean attachSameAs;
+	
 	protected SourceSelectorConfig() {
 		super(SLCT_TYPE);
+	}
+	
+	public boolean isUseTypeStats() {
+		return this.useTypeStats;
+	}
+	
+	public boolean isAttachSameAs() {
+		return this.attachSameAs;
+	}
+	
+	@Override
+	public Resource export(Graph model) {
+		ValueFactory vf = ValueFactoryImpl.getInstance();
+		
+		Resource self = super.export(model);
+		
+		model.add(self, USE_TYPE_STATS, vf.createLiteral(this.useTypeStats));
+		model.add(self, ATTACH_SAME_AS, vf.createLiteral(this.attachSameAs));
+		
+		return self;
 	}
 
 	@Override
 	public void parse(Graph model, Resource implNode) throws SailConfigException {
 		super.parse(model, implNode);
 		
-		
+		useTypeStats = getObjectLiteral(model, implNode, USE_TYPE_STATS).booleanValue();
+		attachSameAs = getObjectLiteral(model, implNode, ATTACH_SAME_AS).booleanValue();
 	}
 
 	@Override
 	public void validate() throws SailConfigException {
-		// TODO Auto-generated method stub
 		super.validate();
 	}
 

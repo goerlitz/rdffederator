@@ -36,6 +36,10 @@ import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailImplConfig;
 
 /**
+ * Flexible configuration object for managing sail settings.
+ * In contrast to SailImplConfigBase, which only supports sail:sailType,
+ * it can be used for arbitrary configuration types. 
+ * 
  * @author Olaf Goerlitz
  */
 public abstract class AbstractSailConfig implements SailImplConfig {
@@ -86,6 +90,15 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 	
 	// -------------------------------------------------------------------------
 	
+	/**
+	 * Returns the object resource of the triple matching the supplied predicate.
+	 * 
+	 * @param model the model of the configuration settings.
+	 * @param implNode the model representing a configuration setting.
+	 * @param predicate the predicate defining a configuration attribute.
+	 * @return the resource representing the configuration attribute.
+	 * @throws SailConfigException if there is no (single) resource to return.
+	 */
 	protected Literal getObjectLiteral(Graph model, Resource implNode, URI property) throws SailConfigException {
 		Iterator<Statement> objects = model.match(implNode, property, null);
 		if (!objects.hasNext())
@@ -100,17 +113,26 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 			throw new SailConfigException("no a literal object: " + property + " " + object); 
 	}
 	
-	protected URI getObjectURI(Graph model, Resource implNode, URI property) throws SailConfigException {
-		Iterator<Statement> objects = model.match(implNode, property, null);
+	/**
+	 * Returns the object resource of the triple matching the supplied predicate.
+	 * 
+	 * @param model the model of the configuration settings.
+	 * @param implNode the model representing a configuration setting.
+	 * @param predicate the predicate defining a configuration attribute.
+	 * @return the resource representing the configuration attribute.
+	 * @throws SailConfigException if there is no (single) resource to return.
+	 */
+	protected Resource getObjectResource(Graph model, Resource implNode, URI predicate) throws SailConfigException {
+		Iterator<Statement> objects = model.match(implNode, predicate, null);
 		if (!objects.hasNext())
-			throw new SailConfigException("found no object value for " + property);
+			throw new SailConfigException("found no object value for " + predicate);
 		Statement st = objects.next();
 		if (objects.hasNext())
-			throw new SailConfigException("found multiple object values for " + property);
+			throw new SailConfigException("found multiple object values for " + predicate);
 		Value object = st.getObject();
-		if (object instanceof URI)
-			return (URI) object;
+		if (object instanceof Resource)
+			return (Resource) object;
 		else
-			throw new SailConfigException("not a URI object: " + property + " " + object); 
+			throw new SailConfigException("not a Resource object: " + predicate + " " + object); 
 	}
 }

@@ -20,19 +20,10 @@
  */
 package de.uni_koblenz.west.federation.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.config.RepositoryConfigException;
-import org.openrdf.repository.config.RepositoryFactory;
-import org.openrdf.repository.config.RepositoryImplConfig;
-import org.openrdf.repository.config.RepositoryRegistry;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
-//import org.openrdf.store.StoreConfigException;
 
 import de.uni_koblenz.west.federation.FederationSail;
 
@@ -84,42 +75,13 @@ public class FederationSailFactory implements SailFactory {
 	 *             configuration data.
 	 */
 	@Override
-//	public Sail getSail(SailImplConfig config) throws StoreConfigException {
 	public Sail getSail(SailImplConfig config) throws SailConfigException {
 
 		if (!SAIL_TYPE.equals(config.getType())) {
-//			throw new StoreConfigException("Invalid Sail type: " + config.getType());
 			throw new SailConfigException("Invalid Sail type: " + config.getType());
 		}
 		assert config instanceof FederationSailConfig;
 		return new FederationSail((FederationSailConfig) config);
-//		FederationSailConfig fedConfig = (FederationSailConfig) config;
-//
-//		// initialize federation members
-//		List<Repository> repositories = new ArrayList<Repository>();
-//		RepositoryFactory factory;
-//		for (RepositoryImplConfig member : fedConfig.getMemberConfigs()) {
-//			factory = RepositoryRegistry.getInstance().get(member.getType());
-//			if (factory == null) {
-////				throw new StoreConfigException("Unsupported repository type: " + config.getType());
-//				throw new SailConfigException("Unsupported repository type: " + config.getType());
-//			}
-////			repositories.add(factory.getRepository(member));
-//			try {
-//				repositories.add(factory.getRepository(member));
-//			} catch (RepositoryConfigException e) {
-//				throw new SailConfigException(e);
-//			}
-//		}
-//		
-//		// TODO: prepare a configuration object that holds:
-//		//       * member repositories
-//		//       * source selection settings
-//		//       * statistics settings
-//		//       * optimizer settings
-//		//       * query execution settings
-//		
-//		return new FederationSail(fedConfig.getProperties(), repositories);
 	}
 
 }
