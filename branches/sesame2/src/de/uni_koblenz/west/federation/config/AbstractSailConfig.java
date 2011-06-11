@@ -96,13 +96,13 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 	 * @param model the model of the configuration settings.
 	 * @param implNode the model representing a configuration setting.
 	 * @param predicate the predicate defining a configuration attribute.
-	 * @return the resource representing the configuration attribute.
+	 * @return the resource representing the configuration attribute or null.
 	 * @throws SailConfigException if there is no (single) resource to return.
 	 */
 	protected Literal getObjectLiteral(Graph model, Resource implNode, URI property) throws SailConfigException {
 		Iterator<Statement> objects = model.match(implNode, property, null);
 		if (!objects.hasNext())
-			throw new SailConfigException("found no object value for " + property);
+			return null;
 		Statement st = objects.next();
 		if (objects.hasNext())
 			throw new SailConfigException("found multiple object values for " + property);
@@ -110,7 +110,7 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 		if (object instanceof Literal)
 			return (Literal) object;
 		else
-			throw new SailConfigException("no a literal object: " + property + " " + object); 
+			throw new SailConfigException("object value is not a Literal: " + property + " " + object); 
 	}
 	
 	/**
@@ -119,7 +119,7 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 	 * @param model the model of the configuration settings.
 	 * @param implNode the model representing a configuration setting.
 	 * @param predicate the predicate defining a configuration attribute.
-	 * @return the resource representing the configuration attribute.
+	 * @return the resource representing the configuration attribute or null.
 	 * @throws SailConfigException if there is no (single) resource to return.
 	 */
 	protected Resource getObjectResource(Graph model, Resource implNode, URI predicate) throws SailConfigException {
@@ -133,6 +133,6 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 		if (object instanceof Resource)
 			return (Resource) object;
 		else
-			throw new SailConfigException("not a Resource object: " + predicate + " " + object); 
+			throw new SailConfigException("object value is not a Resource: " + predicate + " " + object); 
 	}
 }

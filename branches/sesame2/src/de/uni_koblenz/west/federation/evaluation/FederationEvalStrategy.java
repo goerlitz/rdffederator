@@ -63,14 +63,14 @@ import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.federation.sources.SourceFinder;
+import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 
 /**
  * Implementation of the evaluation strategy for querying distributed data
  * sources. This strategy prefers parallel execution of query operators.
  * 
- * A {@link SourceFinder} is used to provide connections to suitable remote
+ * A {@link IndexSelector} is used to provide connections to suitable remote
  * repositories. Sesame's {@link TripleSource}s are not applicable, since
  * they only allow for matching single statement patterns. Hence, a dummy
  * {@link TripleSource} is provided to the {@link EvaluationStrategyImpl}

@@ -47,12 +47,17 @@ public abstract class SourceSelectorBase implements SourceSelector {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceSelectorBase.class);
 	
-	private boolean organizeSameAs = true;
+	private boolean attachSameAs;
+	
+	public SourceSelectorBase(boolean attachSameAs) {
+		this.attachSameAs = attachSameAs;
+	}
 	
 	protected abstract Set<Graph> getSources(StatementPattern pattern);
 	
-	// -------------------------------------------------------------------------
-
+	/**
+	 * Implementation of basic source selection.
+	 */
 	@Override
 	public Map<Set<Graph>, List<StatementPattern>> getSources(Collection<StatementPattern> patterns) {
 		
@@ -78,7 +83,7 @@ public abstract class SourceSelectorBase implements SourceSelector {
 			
 			// handle owl:sameAs triple patterns separately if necessary
 			// (if the pattern's predicate is owl:sameAs and the subject variable is unbound) 
-			if (organizeSameAs && !pattern.getSubjectVar().hasValue()
+			if (attachSameAs && !pattern.getSubjectVar().hasValue()
 					&& OWL.SAMEAS.equals(pattern.getPredicateVar().getValue())) {
 				sameAsMapping.put(patternGroup, sources);
 			} else {
@@ -96,7 +101,7 @@ public abstract class SourceSelectorBase implements SourceSelector {
 		// Combine patterns, if the subject variable of a owl:sameAs Pattern,
 		// i.e. ?s in {?s owl:sameAs ?o} is found in the subject or object
 		// position of another pattern, which is mapped to the same sources
-		if (organizeSameAs) {
+		if (attachSameAs) {
 			for (List<StatementPattern> sameAsList : sameAsMapping.keySet()) {
 				Set<Graph> sameAsSources = sameAsMapping.get(sameAsList);
 				

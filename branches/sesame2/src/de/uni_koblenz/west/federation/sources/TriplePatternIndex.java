@@ -1,6 +1,6 @@
 /*
  * This file is part of RDF Federator.
- * Copyright 2010 Olaf Goerlitz
+ * Copyright 2011 Olaf Goerlitz
  * 
  * RDF Federator is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -75,18 +75,6 @@ public class TriplePatternIndex {
 		}
 	}
 	
-//	public Set<Value> getPSet() {
-//		return pso.keySet();
-//	}
-//	
-//	public Set<Value> getSSet(Value p) {
-//		return pso.get(p).keySet();
-//	}
-//	
-//	public Set<Value> getOSet(Value p, Value s) {
-//		return pso.get(p).get(s).keySet();
-//	}
-//	
 //	/**
 //	 * Returns all patterns which contain the supplied S,P,O values.
 //	 * Null parameters indicate unbound variables.

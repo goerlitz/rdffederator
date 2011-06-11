@@ -21,7 +21,7 @@
 
          # source selection settings; type={Ask, Stats}
          fed:sourceSelection [
-            fed:selectorType "Ask";
+            fed:selectorType "STATS";
             fed:useTypeStats true ;
             fed:attachSameAs true ;
          ];
@@ -31,11 +31,11 @@
 #         fed:optimizer "PATTERN_HEURISTIC" ;
 
          # optimizer settings; type={PatternSelectivity, DynamicProgramming}
-         fed:queryOptimizer [
+         fed:queryOptimization [
             fed:optimizerType "DynamicProgramming" ;
             fed:cardEstimator "Statistics" ;
-            fed:useBindJoin true ;
-            fed:useSemiJoin false ;
+#            fed:useBindJoin true ;
+#            fed:useSemiJoin false ;
          ];
 
          # cardinality estimator settings

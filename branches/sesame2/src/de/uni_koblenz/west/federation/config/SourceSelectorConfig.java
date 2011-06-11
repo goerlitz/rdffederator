@@ -29,6 +29,8 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.sail.config.SailConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Setting details for the sources selector configuration.
@@ -37,11 +39,19 @@ import org.openrdf.sail.config.SailConfigException;
  */
 public class SourceSelectorConfig extends AbstractSailConfig {
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(SourceSelectorConfig.class);
+	
 	private boolean useTypeStats;
 	private boolean attachSameAs;
 	
 	protected SourceSelectorConfig() {
 		super(SLCT_TYPE);
+	}
+	
+	public static SourceSelectorConfig create(Graph model, Resource implNode) throws SailConfigException {
+		SourceSelectorConfig config = new SourceSelectorConfig();
+		config.parse(model, implNode);
+		return config;
 	}
 	
 	public boolean isUseTypeStats() {
@@ -68,13 +78,24 @@ public class SourceSelectorConfig extends AbstractSailConfig {
 	public void parse(Graph model, Resource implNode) throws SailConfigException {
 		super.parse(model, implNode);
 		
-		useTypeStats = getObjectLiteral(model, implNode, USE_TYPE_STATS).booleanValue();
-		attachSameAs = getObjectLiteral(model, implNode, ATTACH_SAME_AS).booleanValue();
-	}
-
-	@Override
-	public void validate() throws SailConfigException {
-		super.validate();
+		try {
+			useTypeStats = getObjectLiteral(model, implNode, USE_TYPE_STATS).booleanValue();
+		} catch (NullPointerException e) {
+			LOGGER.warn("option 'sourceSelection.useTypeStats' not set: default is TRUE");
+			useTypeStats = true;
+		} catch (IllegalArgumentException e) {
+			throw new SailConfigException("not a boolean value in 'sourceSelection.useTypeStats'");
+		}
+		
+		try {
+			attachSameAs = getObjectLiteral(model, implNode, ATTACH_SAME_AS).booleanValue();
+		} catch (NullPointerException e) {
+			LOGGER.warn("option 'sourceSelection.attachSameAs' not set: default is FALSE");
+			attachSameAs = false;
+		} catch (IllegalArgumentException e) {
+			throw new SailConfigException("not a boolean value in 'sourceSelection.attachSameAs'");
+		}
+		
 	}
 
 }

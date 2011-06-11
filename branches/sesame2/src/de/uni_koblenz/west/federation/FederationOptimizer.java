@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.adapter.SesameBGPWrapper;
 import de.uni_koblenz.west.federation.helpers.BasicGraphPatternCollector;
-import de.uni_koblenz.west.federation.sources.SourceFinder;
+import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.optimizer.Optimizer;
 import de.uni_koblenz.west.optimizer.eval.QueryModelEvaluator;

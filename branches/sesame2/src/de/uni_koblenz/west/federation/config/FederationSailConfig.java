@@ -24,6 +24,7 @@ import static de.uni_koblenz.west.federation.config.FederationSailSchema.ESTIMAT
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.MEMBER;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPTIMIZER;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.SRC_SLCTN;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.QUERY_OPT;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,10 +53,10 @@ public class FederationSailConfig extends AbstractSailConfig {
 	
 	private final List<RepositoryImplConfig> memberConfig = new ArrayList<RepositoryImplConfig>();
 	private SourceSelectorConfig selectorConfig;
+	private QueryOptimizerConfig optimizerConfig;
 	
 	private String optimizerType;
 	private String estimatorType;
-//	private String statisticsUrl;
 	
 	/**
 	 * Returns the configuration settings of the federation members.
@@ -101,10 +102,12 @@ public class FederationSailConfig extends AbstractSailConfig {
 		for (RepositoryImplConfig member : this.memberConfig) {
 			model.add(self, MEMBER, member.export(model));
 		}
+		
 		model.add(self, SRC_SLCTN, this.selectorConfig.export(model));
+		model.add(self, QUERY_OPT, this.optimizerConfig.export(model));
+		
 		model.add(self, OPTIMIZER, vf.createLiteral(optimizerType));
 		model.add(self, ESTIMATOR, vf.createLiteral(estimatorType));
-//		model.add(self, STATISTIC, vf.createLiteral(statisticsUrl));
 		
 		return self;
 	}
@@ -136,7 +139,12 @@ public class FederationSailConfig extends AbstractSailConfig {
 		}
 		
 		// get source selection strategy
-		selectorConfig = SourceSelectorFactory.createConfig(model, getObjectResource(model, implNode, SRC_SLCTN));
+		Resource sourceSelection = getObjectResource(model, implNode, SRC_SLCTN);
+		selectorConfig = SourceSelectorConfig.create(model, sourceSelection);
+		
+		// get query optimization strategy
+		Resource queryOptimization = getObjectResource(model, implNode, QUERY_OPT);
+		optimizerConfig = QueryOptimizerConfig.create(model, queryOptimization);
 		
 		// extract the query processing strategy
 		optimizerType = getOption(model, implNode, OPTIMIZER);
