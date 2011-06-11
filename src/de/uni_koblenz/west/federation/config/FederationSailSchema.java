@@ -39,6 +39,8 @@ public class FederationSailSchema {
 	
 	public static final URI MEMBER    = vf.createURI(NAMESPACE + "member");
 	public static final URI OPTIMIZER = vf.createURI(NAMESPACE + "optimizer");
+	public static final URI QUERY_OPT = vf.createURI(NAMESPACE + "queryOptimization");
+	public static final URI OPT_TYPE  = vf.createURI(NAMESPACE + "optimizerType");
 	public static final URI SRC_SLCTN = vf.createURI(NAMESPACE + "sourceSelection");
 	public static final URI SLCT_TYPE = vf.createURI(NAMESPACE + "selectorType");
 	public static final URI USE_TYPE_STATS = vf.createURI(NAMESPACE + "useTypeStats");

@@ -20,12 +20,39 @@
  */
 package de.uni_koblenz.west.federation.config;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.query.algebra.ValueExpr;
+import org.openrdf.repository.Repository;
+import org.openrdf.repository.config.RepositoryConfigException;
+import org.openrdf.repository.config.RepositoryFactory;
+import org.openrdf.repository.config.RepositoryImplConfig;
+import org.openrdf.repository.config.RepositoryRegistry;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
 
+import de.uni_koblenz.west.federation.FederationOptimizer;
+import de.uni_koblenz.west.federation.FederationOptimizerFactory;
 import de.uni_koblenz.west.federation.FederationSail;
+import de.uni_koblenz.west.federation.VoidRepository;
+import de.uni_koblenz.west.federation.helpers.Format;
+import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.sources.SourceFinder;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
+import de.uni_koblenz.west.federation.sources.SparqlAskSelector;
+import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
+import de.uni_koblenz.west.optimizer.eval.CostCalculator;
+import de.uni_koblenz.west.optimizer.eval.CostModel;
+import de.uni_koblenz.west.optimizer.eval.QueryModelEvaluator;
+import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
+import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
+import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
  * A {@link SailFactory} that creates {@link FederationSail}s
@@ -75,13 +102,89 @@ public class FederationSailFactory implements SailFactory {
 	 *             configuration data.
 	 */
 	@Override
-	public Sail getSail(SailImplConfig config) throws SailConfigException {
+//	public Sail getSail(SailImplConfig config) throws StoreConfigException { // Sesame 3
+	public Sail getSail(SailImplConfig config) throws SailConfigException { // Sesame 2
 
 		if (!SAIL_TYPE.equals(config.getType())) {
 			throw new SailConfigException("Invalid Sail type: " + config.getType());
 		}
 		assert config instanceof FederationSailConfig;
-		return new FederationSail((FederationSailConfig) config);
+		FederationSailConfig cfg = (FederationSailConfig)config;
+		
+		RepositoryRegistry registry = RepositoryRegistry.getInstance();
+		List<Repository> members = new ArrayList<Repository>();
+		List<Graph> sources = new ArrayList<Graph>();
+		Void2StatsRepository stats = new Void2StatsRepository();
+		
+		// create all member repositories
+		for (RepositoryImplConfig repConfig : cfg.getMemberConfigs()) {
+			RepositoryFactory factory = registry.get(repConfig.getType());
+			if (factory == null) {
+				throw new SailConfigException("Unsupported repository type: " + repConfig.getType());
+			}
+			try {
+				members.add(factory.getRepository(repConfig));
+			} catch (RepositoryConfigException e) {
+				throw new SailConfigException("invalid repository configuration: " + e.getMessage(), e);
+			}
+		}
+
+		// create void statistics for member repositories
+		for (Repository rep : members) {
+			if (rep instanceof VoidRepository) {
+				VoidRepository voidRep = (VoidRepository) rep;
+				URI context;
+				try {
+					context = stats.load(voidRep.getVoidUrl());
+				} catch (IOException e) {
+					throw new SailConfigException("can not read voiD description: " + voidRep.getVoidUrl() + e.getMessage(), e);
+				}
+				stats.setEndpoint(voidRep.getEndpoint(), context);
+				sources.add(new Graph(voidRep.getEndpoint()));
+			}
+			
+		}
+		
+		SourceSelector finder;
+		FederationOptimizer optimizer;
+		CostModel costModel = new CostModel();
+		
+		// include choice of source selector in configuration
+		String type = cfg.getSelectorConfig().getType();
+		if ("ASK".equalsIgnoreCase(type))
+			finder = new SparqlAskSelector(sources);
+		else if ("STATS".equalsIgnoreCase(type))
+			finder = new SourceFinder(stats);
+		else {
+//			LOGGER.info("using default source selector: ASK");
+			finder = new SparqlAskSelector(sources);
+		}
+		
+		// initialize optimizer
+		FederationOptimizerFactory factory = new FederationOptimizerFactory();
+		factory.setStatistics(stats);
+		factory.setSourceSelector(finder);
+		factory.setCostmodel(costModel);
+//		factory.setOptimizationListener(true);
+		optimizer = factory.getOptimizer(cfg.getOptimizerType(), cfg.getEstimatorType());
+		
+		// enable optimization result verification
+		optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(cfg.getEstimatorType()), costModel)));
+		
+		return new FederationSail(members, optimizer, finder);
+	}
+	
+	private QueryModelVerifier<StatementPattern, ValueExpr> createOptimizationVeryfier(final CostCalculator<BGPOperator<StatementPattern, ValueExpr>> costEval) {
+		return new QueryModelVerifier<StatementPattern, ValueExpr>() {
+			@Override
+			public QueryModelEvaluator<BGPOperator<StatementPattern, ValueExpr>, ? extends Number> getEvaluator() {
+				return costEval;
+			}
+			@Override
+			public void resultObtained(Number value) {
+				System.out.println(Format.d(value.doubleValue(), 2));
+			}
+		};
 	}
 
 }
