@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.federation.sources.SourceFinder;
+import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.test.config.Configuration;
 import de.uni_koblenz.west.federation.test.config.ConfigurationException;

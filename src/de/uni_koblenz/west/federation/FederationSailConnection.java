@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.ReadOnlySailConnection;
-import de.uni_koblenz.west.federation.sources.SourceFinder;
+import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 
 /**

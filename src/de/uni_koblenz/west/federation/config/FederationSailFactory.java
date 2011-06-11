@@ -43,7 +43,7 @@ import de.uni_koblenz.west.federation.FederationSail;
 import de.uni_koblenz.west.federation.VoidRepository;
 import de.uni_koblenz.west.federation.helpers.Format;
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.federation.sources.SourceFinder;
+import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.sources.SparqlAskSelector;
 import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
@@ -115,6 +115,9 @@ public class FederationSailFactory implements SailFactory {
 		List<Repository> members = new ArrayList<Repository>();
 		List<Graph> sources = new ArrayList<Graph>();
 		Void2StatsRepository stats = new Void2StatsRepository();
+		CostModel costModel = new CostModel();
+		SourceSelector selector;
+		FederationOptimizer optimizer;
 		
 		// create all member repositories
 		for (RepositoryImplConfig repConfig : cfg.getMemberConfigs()) {
@@ -145,25 +148,21 @@ public class FederationSailFactory implements SailFactory {
 			
 		}
 		
-		SourceSelector finder;
-		FederationOptimizer optimizer;
-		CostModel costModel = new CostModel();
-		
 		// include choice of source selector in configuration
-		String type = cfg.getSelectorConfig().getType();
+		SourceSelectorConfig selConf = cfg.getSelectorConfig();
+		String type = selConf.getType();
 		if ("ASK".equalsIgnoreCase(type))
-			finder = new SparqlAskSelector(sources);
+			selector = new SparqlAskSelector(sources, selConf.isAttachSameAs());
 		else if ("STATS".equalsIgnoreCase(type))
-			finder = new SourceFinder(stats);
+			selector = new IndexSelector(stats, selConf.isAttachSameAs(), selConf.isUseTypeStats());
 		else {
-//			LOGGER.info("using default source selector: ASK");
-			finder = new SparqlAskSelector(sources);
+			throw new SailConfigException("no source selector specified");
 		}
 		
 		// initialize optimizer
 		FederationOptimizerFactory factory = new FederationOptimizerFactory();
 		factory.setStatistics(stats);
-		factory.setSourceSelector(finder);
+		factory.setSourceSelector(selector);
 		factory.setCostmodel(costModel);
 //		factory.setOptimizationListener(true);
 		optimizer = factory.getOptimizer(cfg.getOptimizerType(), cfg.getEstimatorType());
@@ -171,7 +170,7 @@ public class FederationSailFactory implements SailFactory {
 		// enable optimization result verification
 		optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(cfg.getEstimatorType()), costModel)));
 		
-		return new FederationSail(members, optimizer, finder);
+		return new FederationSail(members, optimizer, selector);
 	}
 	
 	private QueryModelVerifier<StatementPattern, ValueExpr> createOptimizationVeryfier(final CostCalculator<BGPOperator<StatementPattern, ValueExpr>> costEval) {

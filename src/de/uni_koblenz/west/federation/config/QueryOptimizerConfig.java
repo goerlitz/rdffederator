@@ -20,27 +20,47 @@
  */
 package de.uni_koblenz.west.federation.config;
 
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPT_TYPE;
+
 import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.sail.config.SailConfigException;
-
-import de.uni_koblenz.west.federation.sources.SourceSelector;
 
 /**
  * @author Olaf Goerlitz
  */
-public class SourceSelectorFactory {
+public class QueryOptimizerConfig extends AbstractSailConfig {
 	
-	public static SourceSelectorConfig createConfig(Graph model, Resource implNode) throws SailConfigException {
-		SourceSelectorConfig config = new SourceSelectorConfig();
+	protected QueryOptimizerConfig() {
+		super(OPT_TYPE);
+	}
+	
+	public static QueryOptimizerConfig create(Graph model, Resource implNode) throws SailConfigException {
+		QueryOptimizerConfig config = new QueryOptimizerConfig();
 		config.parse(model, implNode);
-		config.validate();
 		return config;
 	}
-	
-	public static SourceSelector getSourceSelector(SourceSelectorConfig config) {
-		// TODO: need sparql endpoints or statistics!
-		throw new UnsupportedOperationException("not yet implemented");
+
+	@Override
+	public Resource export(Graph model) {
+		ValueFactory vf = ValueFactoryImpl.getInstance();
+		
+		Resource self = super.export(model);
+		
+		return self;
 	}
-	
+
+	@Override
+	public void parse(Graph model, Resource implNode) throws SailConfigException {
+		super.parse(model, implNode);
+		
+	}
+
+	@Override
+	public void validate() throws SailConfigException {
+		super.validate();
+	}
+
 }

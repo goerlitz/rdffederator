@@ -52,7 +52,8 @@ public class SparqlAskSelector extends SourceSelectorBase {
 	 * @param adapter the model adapter to use.
 	 * @param sources the list of data sources to contact. 
 	 */
-	public SparqlAskSelector(List<Graph> sources) {
+	public SparqlAskSelector(List<Graph> sources, boolean attachSameAs) {
+		super(attachSameAs);
 		this.sources = sources;
 	}
 
@@ -78,7 +79,7 @@ public class SparqlAskSelector extends SourceSelectorBase {
 		try {
 			ParsedQuery model = parser.parseQuery(query, null);
 			patterns = StatementPatternCollector.process(model.getTupleExpr());
-			SparqlAskSelector ask = new SparqlAskSelector(sources);
+			SparqlAskSelector ask = new SparqlAskSelector(sources, true);
 			Map<Set<Graph>, List<StatementPattern>> map = ask.getSources(patterns);
 			
 			// print results
