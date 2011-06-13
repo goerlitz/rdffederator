@@ -26,11 +26,11 @@ import java.util.List;
 
 import org.junit.BeforeClass;
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.FederationSail;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.test.config.Configuration;
@@ -72,8 +72,9 @@ public class SourceFinderTest {
 			Configuration config = Configuration.load(configFile);
 			REPOSITORY = config.createRepository();
 			QUERIES = config.getQueryIterator();
-			// get finder from configuration?
-			finder = config.getSourceSelector();
+			// get finder from configuration
+			FederationSail fedSail = config.getFederationSail();
+			finder = fedSail.getSourceSelector();
 //			System.out.println("finder rdf:type=" + finder.isHandleRDFType());
 		} catch (IOException e) {
 			LOGGER.error("cannot load test config: " + e.getMessage());

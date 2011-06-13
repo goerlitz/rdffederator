@@ -104,26 +104,34 @@ public class Configuration {
 	
 	// -------------------------------------------------------------------------
 	
-	/**
-	 * Returns the source selector for the supplied repository configuration.
-	 * 
-	 * @return the source selector.
-	 * @throws ConfigurationException if an error occurs during the repository configuration.
-	 */
-	public SourceSelector getSourceSelector() throws ConfigurationException {
+	public FederationSail getFederationSail() throws ConfigurationException {
 		
 		if (this.repository == null)
 			createRepository();
 
-		FederationSail sail = ((FederationSail) ((SailRepository) this.repository).getSail());
-		SourceSelector finder = sail.getSourceSelector();
-		
-		boolean handleRDFType = Boolean.parseBoolean(props.getProperty(PROP_RDF_TYPE));
-		boolean handleSameAs = Boolean.parseBoolean(props.getProperty(PROP_SAME_AS));		
-//		finder.setHandleRDFType(handleRDFType);
-//		finder.setHandleOWLSameAs(handleSameAs);
-		return finder;
+		return ((FederationSail) ((SailRepository) this.repository).getSail());
 	}
+	
+//	/**
+//	 * Returns the source selector for the supplied repository configuration.
+//	 * 
+//	 * @return the source selector.
+//	 * @throws ConfigurationException if an error occurs during the repository configuration.
+//	 */
+//	public SourceSelector getSourceSelector() throws ConfigurationException {
+//		
+//		if (this.repository == null)
+//			createRepository();
+//
+//		FederationSail sail = ((FederationSail) ((SailRepository) this.repository).getSail());
+//		SourceSelector finder = sail.getSourceSelector();
+//		
+//		boolean handleRDFType = Boolean.parseBoolean(props.getProperty(PROP_RDF_TYPE));
+//		boolean handleSameAs = Boolean.parseBoolean(props.getProperty(PROP_SAME_AS));		
+////		finder.setHandleRDFType(handleRDFType);
+////		finder.setHandleOWLSameAs(handleSameAs);
+//		return finder;
+//	}
 	
 	/**
 	 * Creates a new repository for the supplied configuration.
