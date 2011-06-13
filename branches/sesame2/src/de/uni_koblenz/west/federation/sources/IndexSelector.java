@@ -57,6 +57,7 @@ public class IndexSelector extends SourceSelectorBase {
 	 * @param patterns the pattern that need to matched to sources.
 	 * @return the set of source which can contribute results for the pattern.
 	 */
+	@Override
 	protected Set<Graph> getSources(StatementPattern pattern) {
 		Value s = pattern.getSubjectVar().getValue();
 		Value p = pattern.getPredicateVar().getValue();

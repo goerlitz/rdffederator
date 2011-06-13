@@ -34,7 +34,6 @@ import java.util.Properties;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.impl.GraphImpl;
-import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfig;
@@ -54,7 +53,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.FederationSail;
-import de.uni_koblenz.west.federation.sources.SourceSelector;
 
 /**
  * Configuration object holding all settings for a test scenarios.
@@ -70,9 +68,6 @@ public class Configuration {
 	private static final String PROP_QUERY_DIR  = "query.directory";
 	private static final String PROP_QUERY_EXT  = "query.extension";
 	private static final String PROP_OUT_FILE   = "output.file";
-	
-	private static final String PROP_RDF_TYPE   = "source.select_by_type";
-	private static final String PROP_SAME_AS    = "source.merge_sameAs";
 	
 	private File cfgFile;
 	private Properties props = new Properties();
@@ -111,27 +106,6 @@ public class Configuration {
 
 		return ((FederationSail) ((SailRepository) this.repository).getSail());
 	}
-	
-//	/**
-//	 * Returns the source selector for the supplied repository configuration.
-//	 * 
-//	 * @return the source selector.
-//	 * @throws ConfigurationException if an error occurs during the repository configuration.
-//	 */
-//	public SourceSelector getSourceSelector() throws ConfigurationException {
-//		
-//		if (this.repository == null)
-//			createRepository();
-//
-//		FederationSail sail = ((FederationSail) ((SailRepository) this.repository).getSail());
-//		SourceSelector finder = sail.getSourceSelector();
-//		
-//		boolean handleRDFType = Boolean.parseBoolean(props.getProperty(PROP_RDF_TYPE));
-//		boolean handleSameAs = Boolean.parseBoolean(props.getProperty(PROP_SAME_AS));		
-////		finder.setHandleRDFType(handleRDFType);
-////		finder.setHandleOWLSameAs(handleSameAs);
-//		return finder;
-//	}
 	
 	/**
 	 * Creates a new repository for the supplied configuration.
