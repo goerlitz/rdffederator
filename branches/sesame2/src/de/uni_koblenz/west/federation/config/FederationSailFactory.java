@@ -64,6 +64,9 @@ import de.uni_koblenz.west.statistics.Void2StatsRepository;
  * @author Olaf Goerlitz
  */
 public class FederationSailFactory implements SailFactory {
+	
+//	private static final String DEFAULT_OPTIMIZER = "DYNAMIC_PROGRAMMING";
+//	private static final String DEFAULT_ESTIMATOR = CardinalityEstimatorType.STATISTICS.toString();
 
 	/**
 	 * The type of repositories that are created by this factory.
@@ -110,16 +113,12 @@ public class FederationSailFactory implements SailFactory {
 		}
 		assert config instanceof FederationSailConfig;
 		FederationSailConfig cfg = (FederationSailConfig)config;
+		FederationSail sail = new FederationSail();
 		
-		RepositoryRegistry registry = RepositoryRegistry.getInstance();
+		// Create all member repositories
 		List<Repository> members = new ArrayList<Repository>();
-		List<Graph> sources = new ArrayList<Graph>();
-		Void2StatsRepository stats = new Void2StatsRepository();
-		CostModel costModel = new CostModel();
-		SourceSelector selector;
-		FederationOptimizer optimizer;
+		RepositoryRegistry registry = RepositoryRegistry.getInstance();
 		
-		// create all member repositories
 		for (RepositoryImplConfig repConfig : cfg.getMemberConfigs()) {
 			RepositoryFactory factory = registry.get(repConfig.getType());
 			if (factory == null) {
@@ -131,8 +130,12 @@ public class FederationSailFactory implements SailFactory {
 				throw new SailConfigException("invalid repository configuration: " + e.getMessage(), e);
 			}
 		}
+		sail.setMembers(members);
 
-		// create void statistics for member repositories
+		// Create void statistics for member repositories
+		List<Graph> sources = new ArrayList<Graph>();
+		Void2StatsRepository stats = new Void2StatsRepository();
+		
 		for (Repository rep : members) {
 			if (rep instanceof VoidRepository) {
 				VoidRepository voidRep = (VoidRepository) rep;
@@ -145,12 +148,14 @@ public class FederationSailFactory implements SailFactory {
 				stats.setEndpoint(voidRep.getEndpoint(), context);
 				sources.add(new Graph(voidRep.getEndpoint()));
 			}
-			
 		}
+		sail.setStatistics(stats);
 		
-		// include choice of source selector in configuration
+		// Create source selector from configuration settings
+		SourceSelector selector;
 		SourceSelectorConfig selConf = cfg.getSelectorConfig();
 		String type = selConf.getType();
+		
 		if ("ASK".equalsIgnoreCase(type))
 			selector = new SparqlAskSelector(sources, selConf.isAttachSameAs());
 		else if ("STATS".equalsIgnoreCase(type))
@@ -158,19 +163,23 @@ public class FederationSailFactory implements SailFactory {
 		else {
 			throw new SailConfigException("no source selector specified");
 		}
+		sail.setSourceSelector(selector);
 		
-		// initialize optimizer
+		// Create optimizer from configuration settings
+		FederationOptimizer optimizer;
+		CostModel costModel = new CostModel();
 		FederationOptimizerFactory factory = new FederationOptimizerFactory();
 		factory.setStatistics(stats);
 		factory.setSourceSelector(selector);
 		factory.setCostmodel(costModel);
-//		factory.setOptimizationListener(true);
 		optimizer = factory.getOptimizer(cfg.getOptimizerType(), cfg.getEstimatorType());
 		
 		// enable optimization result verification
 		optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(cfg.getEstimatorType()), costModel)));
 		
-		return new FederationSail(members, optimizer, selector);
+		sail.setFederationOptimizer(optimizer);
+		
+		return sail;
 	}
 	
 	private QueryModelVerifier<StatementPattern, ValueExpr> createOptimizationVeryfier(final CostCalculator<BGPOperator<StatementPattern, ValueExpr>> costEval) {

@@ -21,7 +21,7 @@
 
          # source selection settings; type={Ask, Stats}
          fed:sourceSelection [
-            fed:selectorType "STATS";
+            fed:selectorType "Ask";
             fed:useTypeStats true ;
             fed:attachSameAs true ;
          ];
