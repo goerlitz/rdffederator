@@ -22,7 +22,9 @@ package de.uni_koblenz.west.federation.config;
 
 import static org.openrdf.sail.config.SailConfigSchema.SAILTYPE;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.openrdf.model.BNode;
 import org.openrdf.model.Graph;
@@ -84,7 +86,7 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 	@Override
 	public void validate() throws SailConfigException {
 		if (type == null) {
-			throw new SailConfigException("No type specified for implementation");
+			throw new SailConfigException("No implementation type specified: use " + this.typePredicate);
 		}
 	}
 	
@@ -135,4 +137,25 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 		else
 			throw new SailConfigException("object value is not a Resource: " + predicate + " " + object); 
 	}
+	
+	/**
+	 * Helper method to extract a configuration's sub setting.
+	 * 
+	 * @param model the configuration model
+	 * @param implNode node representing a specific configuration context.
+	 * @param option configuration option to look for
+	 * @return set of found values for the configuration setting.
+	 */
+//	protected Set<Value> filter(Model model, Resource implNode, URI option) { // Sesame 3
+	protected Set<Value> filter(Graph model, Resource implNode, URI option) { // Sesame 2
+//		return model.filter(implNode, MEMBER, null).objects(); // Sesame 3
+		// Sesame 2:
+		Set<Value> values = new HashSet<Value>();
+		Iterator<Statement> objects = model.match(implNode, option, null);
+		while (objects.hasNext()) {
+			values.add(objects.next().getObject());
+		}
+		return values;
+	}
+
 }

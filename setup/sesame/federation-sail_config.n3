@@ -26,20 +26,11 @@
             fed:attachSameAs true ;
          ];
 
-         # optimizer settings (DP, heuristic)
-         fed:optimizer "DYNAMIC_PROGRAMMING" ;
-#         fed:optimizer "PATTERN_HEURISTIC" ;
-
-         # optimizer settings; type={PatternSelectivity, DynamicProgramming}
+         # optimizer settings; type={DYNAMIC_PROGRAMMING, PATTERN_HEURISTIC}
          fed:queryOptimization [
-            fed:optimizerType "DynamicProgramming" ;
-            fed:cardEstimator "Statistics" ;
-#            fed:useBindJoin true ;
-#            fed:useSemiJoin false ;
+            fed:optimizerType "DYNAMIC_PROGRAMMING" ;
+            fed:cardEstimator "STATISTICS" ;
          ];
-
-         # cardinality estimator settings
-         fed:estimator "STATISTICS" ;
 
          # sparql endpoints
          fed:member [
