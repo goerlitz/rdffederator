@@ -20,9 +20,11 @@
  */
 package de.uni_koblenz.west.federation.config;
 
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.ESTIMATOR;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPT_TYPE;
 
 import org.openrdf.model.Graph;
+import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
@@ -33,6 +35,11 @@ import org.openrdf.sail.config.SailConfigException;
  */
 public class QueryOptimizerConfig extends AbstractSailConfig {
 	
+//	private static final String DEFAULT_OPTIMIZER = "DYNAMIC_PROGRAMMING";
+//	private static final String DEFAULT_ESTIMATOR = CardinalityEstimatorType.STATISTICS.toString();
+	
+	private String estimatorType;
+	
 	protected QueryOptimizerConfig() {
 		super(OPT_TYPE);
 	}
@@ -42,12 +49,18 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		config.parse(model, implNode);
 		return config;
 	}
+	
+	public String getEstimatorType() {
+		return this.estimatorType;
+	}
 
 	@Override
 	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		
 		Resource self = super.export(model);
+		
+		model.add(self, ESTIMATOR, vf.createLiteral(this.estimatorType));
 		
 		return self;
 	}
@@ -56,11 +69,20 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 	public void parse(Graph model, Resource implNode) throws SailConfigException {
 		super.parse(model, implNode);
 		
+		Literal estimator = getObjectLiteral(model, implNode, ESTIMATOR);
+		if (estimator != null) {
+			this.estimatorType = estimator.getLabel();
+		}
 	}
 
 	@Override
 	public void validate() throws SailConfigException {
 		super.validate();
+		// TODO: check for valid optimizer setting
+		
+		if (this.estimatorType == null)
+			throw new SailConfigException("no cardinality estimator specified: use " + ESTIMATOR);
+		// TODO: check for valid estimator setting
 	}
 
 }

@@ -65,9 +65,6 @@ import de.uni_koblenz.west.statistics.Void2StatsRepository;
  */
 public class FederationSailFactory implements SailFactory {
 	
-//	private static final String DEFAULT_OPTIMIZER = "DYNAMIC_PROGRAMMING";
-//	private static final String DEFAULT_ESTIMATOR = CardinalityEstimatorType.STATISTICS.toString();
-
 	/**
 	 * The type of repositories that are created by this factory.
 	 * 
@@ -154,11 +151,11 @@ public class FederationSailFactory implements SailFactory {
 		// Create source selector from configuration settings
 		SourceSelector selector;
 		SourceSelectorConfig selConf = cfg.getSelectorConfig();
-		String type = selConf.getType();
+		String selectorType = selConf.getType();
 		
-		if ("ASK".equalsIgnoreCase(type))
+		if ("ASK".equalsIgnoreCase(selectorType))
 			selector = new SparqlAskSelector(sources, selConf.isAttachSameAs());
-		else if ("STATS".equalsIgnoreCase(type))
+		else if ("STATS".equalsIgnoreCase(selectorType))
 			selector = new IndexSelector(stats, selConf.isAttachSameAs(), selConf.isUseTypeStats());
 		else {
 			throw new SailConfigException("no source selector specified");
@@ -167,15 +164,19 @@ public class FederationSailFactory implements SailFactory {
 		
 		// Create optimizer from configuration settings
 		FederationOptimizer optimizer;
+		QueryOptimizerConfig optConf = cfg.getOptimizerConfig();
+		String optimizerType = optConf.getType();
+		String estimatorType = optConf.getEstimatorType();
+		
 		CostModel costModel = new CostModel();
 		FederationOptimizerFactory factory = new FederationOptimizerFactory();
 		factory.setStatistics(stats);
 		factory.setSourceSelector(selector);
 		factory.setCostmodel(costModel);
-		optimizer = factory.getOptimizer(cfg.getOptimizerType(), cfg.getEstimatorType());
+		optimizer = factory.getOptimizer(optimizerType, estimatorType);
 		
 		// enable optimization result verification
-		optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(cfg.getEstimatorType()), costModel)));
+		optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(estimatorType), costModel)));
 		
 		sail.setFederationOptimizer(optimizer);
 		

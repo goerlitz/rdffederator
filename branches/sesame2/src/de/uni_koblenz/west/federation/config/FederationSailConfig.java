@@ -20,25 +20,16 @@
  */
 package de.uni_koblenz.west.federation.config;
 
-import static de.uni_koblenz.west.federation.config.FederationSailSchema.ESTIMATOR;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.MEMBER;
-import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPTIMIZER;
-import static de.uni_koblenz.west.federation.config.FederationSailSchema.SRC_SLCTN;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.QUERY_OPT;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.SRC_SLCTN;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.config.RepositoryImplConfigBase;
@@ -54,9 +45,6 @@ public class FederationSailConfig extends AbstractSailConfig {
 	private final List<RepositoryImplConfig> memberConfig = new ArrayList<RepositoryImplConfig>();
 	private SourceSelectorConfig selectorConfig;
 	private QueryOptimizerConfig optimizerConfig;
-	
-	private String optimizerType;
-	private String estimatorType;
 	
 	/**
 	 * Returns the configuration settings of the federation members.
@@ -76,12 +64,8 @@ public class FederationSailConfig extends AbstractSailConfig {
 		return this.selectorConfig;
 	}
 	
-	public String getOptimizerType() {
-		return this.optimizerType;
-	}
-	
-	public String getEstimatorType() {
-		return this.estimatorType;
+	public QueryOptimizerConfig getOptimizerConfig() {
+		return this.optimizerConfig;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -95,7 +79,6 @@ public class FederationSailConfig extends AbstractSailConfig {
 	@Override
 //	public Resource export(Model model) { // Sesame 3
 	public Resource export(Graph model) { // Sesame 2
-		ValueFactory vf = ValueFactoryImpl.getInstance();
 		
 		Resource self = super.export(model);
 		
@@ -105,9 +88,6 @@ public class FederationSailConfig extends AbstractSailConfig {
 		
 		model.add(self, SRC_SLCTN, this.selectorConfig.export(model));
 		model.add(self, QUERY_OPT, this.optimizerConfig.export(model));
-		
-		model.add(self, OPTIMIZER, vf.createLiteral(optimizerType));
-		model.add(self, ESTIMATOR, vf.createLiteral(estimatorType));
 		
 		return self;
 	}
@@ -145,11 +125,6 @@ public class FederationSailConfig extends AbstractSailConfig {
 		// get query optimization strategy
 		Resource queryOptimization = getObjectResource(model, implNode, QUERY_OPT);
 		optimizerConfig = QueryOptimizerConfig.create(model, queryOptimization);
-		
-		// extract the query processing strategy
-		optimizerType = getOption(model, implNode, OPTIMIZER);
-		
-		estimatorType = getOption(model, implNode, ESTIMATOR);
 	}
 
 	/**
@@ -179,48 +154,7 @@ public class FederationSailConfig extends AbstractSailConfig {
 		}
 		
 		this.selectorConfig.validate();
-		
-//		if (sourceSelector == null)
-//			throw new SailConfigException("no source selection strategy specified: use " + SRC_SLCTN);
-		
-		if (optimizerType == null)
-			throw new SailConfigException("no query optimization strategy specified: use " + OPTIMIZER);
+		this.optimizerConfig.validate();
 	}
 	
-	// -------------------------------------------------------------------------
-	
-	/**
-	 * Helper method to extract a string-valued configuration option.
-	 * 
-	 * @param model the configuration model
-	 * @param implNode node representing a specific configuration context.
-	 * @param option configuration option to look for.
-	 * @return the string value of the configuration option or null.
-	 */
-//	private String getOption(Model model, Resource implNode, URI option) throws StoreConfigException { // Sesame 3
-	private String getOption(Graph model, Resource implNode, URI option) throws SailConfigException { // Sesame 2
-//		return model.filter(implNode, option, null).objectString(); // Sesame 3
-		return model.match(implNode, option, null).next().getObject().stringValue(); // Sesame 2
-	}
-	
-	/**
-	 * Helper method to extract a configuration's sub setting.
-	 * 
-	 * @param model the configuration model
-	 * @param implNode node representing a specific configuration context.
-	 * @param option configuration option to look for
-	 * @return set of found values for the configuration setting.
-	 */
-//	private Set<Value> filter(Model model, Resource implNode, URI option) { // Sesame 3
-	private Set<Value> filter(Graph model, Resource implNode, URI option) { // Sesame 2
-//		return model.filter(implNode, MEMBER, null).objects(); // Sesame 3
-		// Sesame 2:
-		Set<Value> values = new HashSet<Value>();
-		Iterator<Statement> objects = model.match(implNode, option, null);
-		while (objects.hasNext()) {
-			values.add(objects.next().getObject());
-		}
-		return values;
-	}
-
 }
