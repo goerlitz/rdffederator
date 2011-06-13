@@ -1,0 +1,80 @@
+################################################################################
+# Sesame configuration for RDF federator.
+#
+# ATTENTION: the Sail implementing the sail:sailType must be published
+#            in META-INF/services/org.openrdf.sail.SailFactory
+################################################################################
+@prefix void: <http://rdfs.org/ns/void#>.
+@prefix rep:  <http://www.openrdf.org/config/repository#>.
+@prefix sr:   <http://www.openrdf.org/config/repository/sail#>.
+@prefix sail: <http://www.openrdf.org/config/sail#>.
+@prefix fed:  <http://west.uni-koblenz.de/config/federation/sail#>.
+@prefix west:  <http://lodse.west.uni-koblenz.de:8080/openrdf-sesame/repositories/>.
+
+[] a rep:Repository ;
+   rep:repositoryTitle "RDF Federator" ;
+   rep:repositoryID "RDFFederator" ;
+   rep:repositoryImpl [
+      rep:repositoryType "openrdf:SailRepository" ;
+      sr:sailImpl [
+         sail:sailType "west:FederationSail" ;
+
+         # source selection settings; type={Ask, Stats}
+         fed:sourceSelection [
+            fed:selectorType "Stats";
+            fed:useTypeStats true ;
+            fed:attachSameAs false ;
+         ];
+
+         # optimizer settings (DP, heuristic)
+         fed:optimizer "DYNAMIC_PROGRAMMING" ;
+
+         # optimizer settings; type={PatternSelectivity, DynamicProgramming}
+         fed:queryOptimization [
+            fed:optimizerType "DynamicProgramming" ;
+            fed:cardEstimator "Statistics" ;
+         ];
+
+         # cardinality estimator settings
+         fed:estimator "STATISTICS" ;
+
+         # sparql endpoints
+         fed:member [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/dbpedia3.5.1_subset-void.n3> ;
+            void:sparqlEndpoint west:dbpedia351-subset
+         ], [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/nytimes-2010-01-13-void.n3> ;
+            void:sparqlEndpoint west:nyt
+         ], [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/linkedmdb-dump-2010-01-19-void.n3> ;
+            void:sparqlEndpoint west:lmdb
+         ], [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/all-geonames-2010-11-28_cleaned-void.n3> ;
+            void:sparqlEndpoint west:geonames ;
+         ], [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/jamendo-void.n3> ;
+            void:sparqlEndpoint west:jamendo
+         ], [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/semanticwebdog-void.n3> ;
+            void:sparqlEndpoint west:sw-dogfood
+         ], [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/chebi-2010-11-26-void.n3> ;
+            void:sparqlEndpoint west:chebi
+         ], [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/KEGG-2010-11-26-void.n3> ;
+            void:sparqlEndpoint west:kegg
+         ], [
+            rep:repositoryType "west:VoidRepository" ;
+            fed:voidDescription <void/drugbank_dump_cleaned-2010-11.26-void.n3> ;
+            void:sparqlEndpoint west:drugbank
+         ]
+      ]
+   ] .
