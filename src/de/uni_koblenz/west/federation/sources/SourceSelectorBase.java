@@ -53,6 +53,16 @@ public abstract class SourceSelectorBase implements SourceSelector {
 		this.attachSameAs = attachSameAs;
 	}
 	
+	public void setAttachSameAs(boolean attachSameAs) {
+		this.attachSameAs = attachSameAs;
+	}
+	
+	/**
+	 * Return all sources for the supplied pattern.
+	 * 
+	 * @param pattern
+	 * @return a set of sources.
+	 */
 	protected abstract Set<Graph> getSources(StatementPattern pattern);
 	
 	/**

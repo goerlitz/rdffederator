@@ -20,9 +20,7 @@
  */
 package de.uni_koblenz.west.federation;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
@@ -37,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.sources.SourceSelector;
+import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
  * Wraps multiple data sources (remote repositories) within a single
@@ -53,68 +52,53 @@ public class FederationSail extends SailBase {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSail.class);
 	
-//	private static final String DEFAULT_OPTIMIZER = "DYNAMIC_PROGRAMMING";
-//	private static final String DEFAULT_ESTIMATOR = CardinalityEstimatorType.STATISTICS.toString();
-	
-	private List<Repository> members = new ArrayList<Repository>();
-	private SourceSelector finder;
+	private List<Repository> members;
+	private SourceSelector selector;
 	private FederationOptimizer optimizer;
-	
+	private RDFStatistics statistics;
+
 	private boolean initialized = false;
 	
-	/**
-	 * Create a Federation Sail with the supplied Sail configuration.
-	 * 
-	 * @param config the configuration of the federation sail.
-	 */
-	public FederationSail(List<Repository> members, FederationOptimizer optimizer, SourceSelector selector) {
-		
-		this.members = members;
-		this.optimizer = optimizer;
-		this.finder = selector;
-	}
-	
-	/**
-	 * Creates a federation Sail using the properties and federation members.
-	 * 
-	 * @param config the Sail's configuration settings.
-	 * @param members the federation members.
-	 * 
-	 * @deprecated only for testing
-	 */
-	public FederationSail(Properties config, List<Repository> members) {
-		
-		if (config == null)
-			throw new IllegalArgumentException("config is NULL");
-		if (members == null)
-			throw new IllegalArgumentException("member list is NULL");
-		
-		// set federation members
-		this.members = members;
-		
-//		// set optimizer type
-//		optStrategy = config.getProperty("optimizer.type");
-//		if (optStrategy == null) {
-//			optStrategy = DEFAULT_OPTIMIZER;
-//			LOGGER.debug("using default optimization strategy: " + DEFAULT_OPTIMIZER);
-//		}
-//		
-//		// set cardinality estimator type (statistics-based or true counts)
-//		estimatorType = config.getProperty("estimator.type");
-//		if (estimatorType == null) {
-//			estimatorType = DEFAULT_ESTIMATOR;
-//			LOGGER.debug("using default estimator: " + DEFAULT_ESTIMATOR);
-//		}
-	}
+	// -------------------------------------------------------------------------
 	
 	public QueryOptimizer getFederationOptimizer() {
-		// needed for optimizer list in SailConnection.evaluate
 		return this.optimizer;
 	}
 	
+	public void setFederationOptimizer(FederationOptimizer optimizer) {
+		if (optimizer == null)
+			throw new IllegalArgumentException("optimizer is NULL");
+		this.optimizer = optimizer;
+	}
+	
+	public List<Repository> getMembers() {
+		return members;
+	}
+
+	public void setMembers(List<Repository> members) {
+		if (members == null)
+			throw new IllegalArgumentException("members is NULL");
+		this.members = members;
+	}
+
 	public SourceSelector getSourceSelector() {
-		// needed for evaluation strategy in SailConnection
-		return this.finder;
+		return this.selector;
+	}
+	
+	public void setSourceSelector(SourceSelector selector) {
+		if (selector == null)
+			throw new IllegalArgumentException("selector is NULL");
+		this.selector = selector;
+	}
+	
+	public RDFStatistics getStatistics() {
+		if (statistics == null)
+			throw new IllegalArgumentException("statistics is NULL");
+		return statistics;
+	}
+
+	public void setStatistics(RDFStatistics statistics) {
+		this.statistics = statistics;
 	}
 	
 	// -------------------------------------------------------------------------
