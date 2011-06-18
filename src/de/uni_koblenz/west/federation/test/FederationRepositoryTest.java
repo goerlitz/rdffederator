@@ -47,7 +47,7 @@ public class FederationRepositoryTest {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationRepositoryTest.class);
 	
-	private static final String CONFIG     = "setup/fed-test.properties";
+	private static final String CONFIG = "setup/fed-test.properties";
 	
 	private static Repository REPOSITORY;
 	private static Iterator<Query> QUERIES;
