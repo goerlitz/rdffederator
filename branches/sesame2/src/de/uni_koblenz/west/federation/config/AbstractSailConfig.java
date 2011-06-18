@@ -38,9 +38,9 @@ import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailImplConfig;
 
 /**
- * Flexible configuration object for managing sail settings.
- * In contrast to SailImplConfigBase, which only supports sail:sailType,
- * it can be used for arbitrary configuration types. 
+ * Generic configuration object for managing sail configuration settings
+ * of a certain type. In contrast to SailImplConfigBase, which only supports
+ * sail:sailType, it can be used for configuration options of different types. 
  * 
  * @author Olaf Goerlitz
  */

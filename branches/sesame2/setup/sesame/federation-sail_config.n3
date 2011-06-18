@@ -1,5 +1,5 @@
 ################################################################################
-# Sesame configuration for RDF federator.
+# Sesame configuration for the RDF federator.
 #
 # ATTENTION: the Sail implementing the sail:sailType must be published
 #            in META-INF/services/org.openrdf.sail.SailFactory
@@ -25,12 +25,25 @@
             fed:useTypeStats true ;
             fed:attachSameAs true ;
          ];
+         
+         # cardinality estimation settings; type={STATISTICS, TRUE_CARD}
+         fed:cardEstimation [
+            fed:estimatorType "STATISTICS" ;
+            fed:statsEstimation [
+               fed:usePredTypeCount true ;
+            ] ;
+         ] ;
 
          # optimizer settings; type={DYNAMIC_PROGRAMMING, PATTERN_HEURISTIC}
          fed:queryOptimization [
             fed:optimizerType "DYNAMIC_PROGRAMMING" ;
             fed:cardEstimator "STATISTICS" ;
-         ];
+         ] ;
+         
+         fed:queryExecution [
+             fed:useBindJoin true ;
+             fed:useSemiJoin true ;
+         ] ;
 
          # sparql endpoints
          fed:member [
