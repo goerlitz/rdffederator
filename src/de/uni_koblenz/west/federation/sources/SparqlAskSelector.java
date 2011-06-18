@@ -31,6 +31,8 @@ import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.openrdf.query.parser.ParsedQuery;
 import org.openrdf.query.parser.sparql.SPARQLParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
@@ -43,6 +45,8 @@ import de.uni_koblenz.west.federation.index.Graph;
  * @author Olaf Goerlitz
  */
 public class SparqlAskSelector extends SourceSelectorBase {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(SparqlAskSelector.class);
 	
 	private List<Graph> sources;
 	
@@ -60,6 +64,19 @@ public class SparqlAskSelector extends SourceSelectorBase {
 	@Override
 	protected Set<Graph> getSources(StatementPattern pattern) {
 		Set<Graph> sourceSet = new HashSet<Graph>();
+		
+		// debugging
+		if (LOGGER.isDebugEnabled()) {
+			StringBuffer buffer = new StringBuffer("ASK {");
+			buffer.append(OperatorTreePrinter.print(pattern));
+			buffer.append("} @[");
+			for (Graph source : sources) {
+				buffer.append(source.getNamespaceURL()).append(", ");
+			}
+			buffer.setLength(buffer.length()-2);
+			buffer.append("]");
+			LOGGER.debug(buffer.toString());
+		}
 		
 		// ask each source for current pattern
 		for (Graph source : sources) {

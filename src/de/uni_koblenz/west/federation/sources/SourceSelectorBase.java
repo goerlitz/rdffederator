@@ -77,7 +77,7 @@ public abstract class SourceSelectorBase implements SourceSelector {
 		// find sources for all distinct patterns
 		for (List<StatementPattern> patternGroup : pso.getDistinctPatterns()) {
 			
-			// get sources for the first group pattern (with same constant values)
+			// get sources for the first pattern in group (with same constants)
 			StatementPattern pattern = patternGroup.get(0);
 			Set<Graph> sources = getSources(pattern);
 			
