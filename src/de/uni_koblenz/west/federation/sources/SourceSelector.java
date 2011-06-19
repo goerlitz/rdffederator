@@ -28,6 +28,7 @@ import java.util.Set;
 import org.openrdf.query.algebra.StatementPattern;
 
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 
 /**
  * Interface for source selection strategies.
@@ -47,5 +48,7 @@ public interface SourceSelector {
 	 * @return a map connecting data sources to triple patterns.
 	 */
 	public Map<Set<Graph>, List<StatementPattern>> getSources(Collection<StatementPattern> patterns);
+	
+	public List<MappedStatementPattern> mapSources(List<StatementPattern> patterns);
 
 }

@@ -20,17 +20,11 @@
  */
 package de.uni_koblenz.west.federation.sources;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.algebra.StatementPattern;
-import org.openrdf.query.algebra.helpers.StatementPatternCollector;
-import org.openrdf.query.parser.ParsedQuery;
-import org.openrdf.query.parser.sparql.SPARQLParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +33,8 @@ import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.index.Graph;
 
 /**
- * A source selector which contacts all SPARQL endpoints asking them whether
- * they can answer the given triple pattern or not. 
+ * A source selector which contacts SPARQL Endpoints asking them whether
+ * they can return results for a triple pattern or not. 
  * 
  * @author Olaf Goerlitz
  */
@@ -51,13 +45,11 @@ public class SparqlAskSelector extends SourceSelectorBase {
 	private List<Graph> sources;
 	
 	/**
-	 * Creates a source selector using the supplied statistics and model adapter.
+	 * Creates a new ASK selector.
 	 * 
-	 * @param adapter the model adapter to use.
-	 * @param sources the list of data sources to contact. 
+	 * @param sources the list of data sources to ask. 
 	 */
 	public SparqlAskSelector(List<Graph> sources, boolean attachSameAs) {
-		super(attachSameAs);
 		this.sources = sources;
 	}
 
@@ -65,18 +57,8 @@ public class SparqlAskSelector extends SourceSelectorBase {
 	protected Set<Graph> getSources(StatementPattern pattern) {
 		Set<Graph> sourceSet = new HashSet<Graph>();
 		
-		// debugging
-		if (LOGGER.isDebugEnabled()) {
-			StringBuffer buffer = new StringBuffer("ASK {");
-			buffer.append(OperatorTreePrinter.print(pattern));
-			buffer.append("} @[");
-			for (Graph source : sources) {
-				buffer.append(source.getNamespaceURL()).append(", ");
-			}
-			buffer.setLength(buffer.length()-2);
-			buffer.append("]");
-			LOGGER.debug(buffer.toString());
-		}
+		if (LOGGER.isDebugEnabled())
+			LOGGER.debug(debugAskRequest(pattern));
 		
 		// ask each source for current pattern
 		for (Graph source : sources) {
@@ -86,27 +68,17 @@ public class SparqlAskSelector extends SourceSelectorBase {
 		}
 		return sourceSet;
 	}
-
-	public static void main(String[] args) {
-		String query = "SELECT * WHERE { ?x a <http://xmlns.com/foaf/0.1/Person> } ";
-		List<Graph> sources = Arrays.asList( new Graph[] { new Graph("http://dbpedia.org/sparql") } );
-		
-		SPARQLParser parser = new SPARQLParser();
-		List<StatementPattern> patterns;
-		try {
-			ParsedQuery model = parser.parseQuery(query, null);
-			patterns = StatementPatternCollector.process(model.getTupleExpr());
-			SparqlAskSelector ask = new SparqlAskSelector(sources, true);
-			Map<Set<Graph>, List<StatementPattern>> map = ask.getSources(patterns);
-			
-			// print results
-			for (Set<Graph> key : map.keySet()) {
-				System.out.println(key + " -> " + map.get(key));
-			}
-			
-		} catch (MalformedQueryException e) {
-			e.printStackTrace();
+	
+	private String debugAskRequest(StatementPattern pattern) {
+		StringBuffer buffer = new StringBuffer("ASK {");
+		buffer.append(OperatorTreePrinter.print(pattern));
+		buffer.append("} @[");
+		for (Graph source : sources) {
+			buffer.append(source.getNamespaceURL()).append(", ");
 		}
+		buffer.setLength(buffer.length()-2);
+		buffer.append("]");
+		return buffer.toString();
 	}
 
 }

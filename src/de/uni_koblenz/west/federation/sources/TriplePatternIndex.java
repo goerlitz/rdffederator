@@ -43,9 +43,18 @@ public class TriplePatternIndex {
 		= new HashMap<Value, Map<Value, Map<Value, List<StatementPattern>>>>();
 	
 	/**
+	 * Creates an index and adds the supplied patterns.
+	 * 
+	 * @param patterns the patterns to be added.
+	 */
+	public TriplePatternIndex(Collection<StatementPattern> patterns) {
+		this.add(patterns);
+	}
+	
+	/**
 	 * Adds the supplied set of patterns to the triple pattern index .
 	 *  
-	 * @param patterns the triple patterns to be added.
+	 * @param patterns the patterns to be added.
 	 */
 	public void add(Collection<StatementPattern> patterns) {
 		
@@ -74,37 +83,6 @@ public class TriplePatternIndex {
 			patternSet.add(pattern);
 		}
 	}
-	
-//	/**
-//	 * Returns all patterns which contain the supplied S,P,O values.
-//	 * Null parameters indicate unbound variables.
-//	 *  
-//	 * @param p the predicate value or null for unbound predicate variable.
-//	 * @param s the subject value or null for unbound subject variable.
-//	 * @param o the object value or null for unbound object variable.
-//	 * @return all triple patterns containing supplied the S,P,O values.
-//	 */
-//	public Set<StatementPattern> getPatterns(Value p, Value s, Value o) {
-//		return pso.get(p).get(s).get(o);
-//	}
-	
-//	/**
-//	 * Returns all patterns which contain the supplied predicate value.
-//	 * Triple patterns with an unbound predicate variable are obtained
-//	 * by supplied null as the parameters.
-//	 *  
-//	 * @param p the predicate value or null for unbound predicate variable. 
-//	 * @return all triple patterns containing the supplied predicate value.
-//	 */
-//	public List<StatementPattern> getPatterns(Value p) {
-//		List<StatementPattern> patterns = new ArrayList<StatementPattern>();
-//		for (Value s : pso.get(p).keySet()) {
-//			for (Value o : pso.get(p).get(s).keySet()) {
-//				patterns.addAll(pso.get(p).get(s).get(o));
-//			}
-//		}
-//		return patterns;
-//	}
 	
 	/**
 	 * Returns a list of distinct pattern groups, i.e. pattern which share

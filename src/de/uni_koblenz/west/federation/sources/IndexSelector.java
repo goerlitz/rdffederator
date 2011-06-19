@@ -46,7 +46,7 @@ public class IndexSelector extends SourceSelectorBase {
 	 * @param stats the statistics to use.
 	 */
 	public IndexSelector(RDFStatistics stats, boolean attachSameAs, boolean useTypeStats) {
-		super(attachSameAs);
+//		super(attachSameAs);
 		this.useTypeStats = useTypeStats;
 		this.stats = stats;
 	}
