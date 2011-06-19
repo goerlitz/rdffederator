@@ -35,23 +35,30 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 
 /**
  * Basic behavior of a source selector.
- * First aggregates the triple patterns in groups with same constant values.
- * Then the sources are selected and optimizations for sameAs may be applied.
+ * Aggregates query patterns in groups with same constant values but different
+ * variables before the source selection is done.
  * 
  * @author Olaf Goerlitz
  */
 public abstract class SourceSelectorBase implements SourceSelector {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceSelectorBase.class);
-	
+
+	/** @deprecated */
 	private boolean attachSameAs;
 	
-	public SourceSelectorBase(boolean attachSameAs) {
-		this.attachSameAs = attachSameAs;
-	}
+//	/**
+//	 * Creates a Source Selector.
+//	 * @param attachSameAs
+//	 * @deprecated 
+//	 */
+//	public SourceSelectorBase(boolean attachSameAs) {
+//		this.attachSameAs = attachSameAs;
+//	}
 	
 	/**
 	 * Return all sources for the supplied pattern.
@@ -62,7 +69,45 @@ public abstract class SourceSelectorBase implements SourceSelector {
 	protected abstract Set<Graph> getSources(StatementPattern pattern);
 	
 	/**
+	 * Assigns data sources to query patterns.
+	 * 
+	 * @param patterns the list of patterns to be processed.
+	 * @return the list of patterns with data source mappings.
+	 */
+	public List<MappedStatementPattern> mapSources(List<StatementPattern> patterns) {
+		
+		List<MappedStatementPattern> pMap = new ArrayList<MappedStatementPattern>();
+		
+		// group patterns with same constant values but different variables
+		TriplePatternIndex pso = new TriplePatternIndex(patterns);
+		
+		// determine sources for all distinct pattern groups
+		for (List<StatementPattern> patternGroup : pso.getDistinctPatterns()) {
+			
+			// get sources for the first pattern in group (with same constants)
+			StatementPattern firstPattern = patternGroup.get(0);
+			Set<Graph> sources = getSources(firstPattern);
+			
+			// check returned sources
+			if (sources.size() == 0) {
+				LOGGER.warn("cannot find sources for: " + OperatorTreePrinter.print(firstPattern));
+				continue;
+			}
+			
+			for (StatementPattern pattern : patternGroup) {
+				pMap.add(new MappedStatementPattern(pattern, sources));
+				
+				if (LOGGER.isDebugEnabled())
+					LOGGER.debug(OperatorTreePrinter.print(pattern) + " -> " + sources);
+			}
+		}
+		return pMap;
+	}
+	
+	/**
 	 * Implementation of basic source selection.
+	 * 
+	 * @deprecated
 	 */
 	@Override
 	public Map<Set<Graph>, List<StatementPattern>> getSources(Collection<StatementPattern> patterns) {
@@ -71,8 +116,7 @@ public abstract class SourceSelectorBase implements SourceSelector {
 		Map<List<StatementPattern>, Set<Graph>> sameAsMapping = new HashMap<List<StatementPattern>, Set<Graph>>();
 		
 		// aggregate patterns with the same constants (but different vars)
-		TriplePatternIndex pso = new TriplePatternIndex();
-		pso.add(patterns);
+		TriplePatternIndex pso = new TriplePatternIndex(patterns);
 		
 		// find sources for all distinct patterns
 		for (List<StatementPattern> patternGroup : pso.getDistinctPatterns()) {
@@ -152,6 +196,13 @@ public abstract class SourceSelectorBase implements SourceSelector {
 		return sourceMapping;
 	}
 	
+	/**
+	 * 
+	 * @param sameAsVar
+	 * @param pattern
+	 * @return
+	 * @deprecated
+	 */
 	private boolean containsSameAsVar(Var sameAsVar, StatementPattern pattern) {
 		String varName = sameAsVar.getName();
 		Var sVar = pattern.getSubjectVar();
