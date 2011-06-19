@@ -20,8 +20,9 @@
  */
 package de.uni_koblenz.west.federation.config;
 
-import static de.uni_koblenz.west.federation.config.FederationSailSchema.ATTACH_SAME_AS;
-import static de.uni_koblenz.west.federation.config.FederationSailSchema.SLCT_TYPE;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.GROUP_BY_SAMEAS;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.GROUP_BY_SOURCE;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.SELECTOR_TYPE;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_TYPE_STATS;
 
 import org.openrdf.model.Graph;
@@ -29,8 +30,6 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.sail.config.SailConfigException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Setting details for the sources selector configuration.
@@ -39,13 +38,12 @@ import org.slf4j.LoggerFactory;
  */
 public class SourceSelectorConfig extends AbstractSailConfig {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(SourceSelectorConfig.class);
-	
 	private boolean useTypeStats;
-	private boolean attachSameAs;
+	private boolean groupBySameAs;
+	private boolean groupBySource;
 	
 	protected SourceSelectorConfig() {
-		super(SLCT_TYPE);
+		super(SELECTOR_TYPE);
 	}
 	
 	public static SourceSelectorConfig create(Graph model, Resource implNode) throws SailConfigException {
@@ -58,8 +56,12 @@ public class SourceSelectorConfig extends AbstractSailConfig {
 		return this.useTypeStats;
 	}
 	
-	public boolean isAttachSameAs() {
-		return this.attachSameAs;
+	public boolean isGroupBySameAs() {
+		return this.groupBySameAs;
+	}
+	
+	public boolean isGroupBySource() {
+		return this.groupBySource;
 	}
 	
 	@Override
@@ -69,7 +71,8 @@ public class SourceSelectorConfig extends AbstractSailConfig {
 		Resource self = super.export(model);
 		
 		model.add(self, USE_TYPE_STATS, vf.createLiteral(this.useTypeStats));
-		model.add(self, ATTACH_SAME_AS, vf.createLiteral(this.attachSameAs));
+		model.add(self, GROUP_BY_SAMEAS, vf.createLiteral(this.groupBySameAs));
+		model.add(self, GROUP_BY_SOURCE, vf.createLiteral(this.groupBySource));
 		
 		return self;
 	}
@@ -78,24 +81,9 @@ public class SourceSelectorConfig extends AbstractSailConfig {
 	public void parse(Graph model, Resource implNode) throws SailConfigException {
 		super.parse(model, implNode);
 		
-		try {
-			useTypeStats = getObjectLiteral(model, implNode, USE_TYPE_STATS).booleanValue();
-		} catch (NullPointerException e) {
-			LOGGER.warn("option 'sourceSelection.useTypeStats' not set: default is TRUE");
-			useTypeStats = true;
-		} catch (IllegalArgumentException e) {
-			throw new SailConfigException("not a boolean value in 'sourceSelection.useTypeStats'");
-		}
-		
-		try {
-			attachSameAs = getObjectLiteral(model, implNode, ATTACH_SAME_AS).booleanValue();
-		} catch (NullPointerException e) {
-			LOGGER.warn("option 'sourceSelection.attachSameAs' not set: default is FALSE");
-			attachSameAs = false;
-		} catch (IllegalArgumentException e) {
-			throw new SailConfigException("not a boolean value in 'sourceSelection.attachSameAs'");
-		}
-		
+		useTypeStats = getObjectBoolean(model, implNode, USE_TYPE_STATS, true);
+		groupBySameAs = getObjectBoolean(model, implNode, GROUP_BY_SAMEAS, false);
+		groupBySource = getObjectBoolean(model, implNode, GROUP_BY_SOURCE, false);
 	}
 
 }
