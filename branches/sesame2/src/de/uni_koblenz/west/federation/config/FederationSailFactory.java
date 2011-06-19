@@ -154,9 +154,9 @@ public class FederationSailFactory implements SailFactory {
 		String selectorType = selConf.getType();
 		
 		if ("ASK".equalsIgnoreCase(selectorType))
-			selector = new SparqlAskSelector(sources, selConf.isAttachSameAs());
+			selector = new SparqlAskSelector(sources, selConf.isGroupBySameAs());
 		else if ("STATS".equalsIgnoreCase(selectorType))
-			selector = new IndexSelector(stats, selConf.isAttachSameAs(), selConf.isUseTypeStats());
+			selector = new IndexSelector(stats, selConf.isUseTypeStats());
 		else {
 			throw new SailConfigException("no source selector specified");
 		}

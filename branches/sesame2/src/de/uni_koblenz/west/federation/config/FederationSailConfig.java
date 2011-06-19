@@ -22,7 +22,7 @@ package de.uni_koblenz.west.federation.config;
 
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.MEMBER;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.QUERY_OPT;
-import static de.uni_koblenz.west.federation.config.FederationSailSchema.SRC_SLCTN;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.SRC_SELECTION;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +86,7 @@ public class FederationSailConfig extends AbstractSailConfig {
 			model.add(self, MEMBER, member.export(model));
 		}
 		
-		model.add(self, SRC_SLCTN, this.selectorConfig.export(model));
+		model.add(self, SRC_SELECTION, this.selectorConfig.export(model));
 		model.add(self, QUERY_OPT, this.optimizerConfig.export(model));
 		
 		return self;
@@ -119,7 +119,7 @@ public class FederationSailConfig extends AbstractSailConfig {
 		}
 		
 		// get source selection strategy
-		Resource sourceSelection = getObjectResource(model, implNode, SRC_SLCTN);
+		Resource sourceSelection = getObjectResource(model, implNode, SRC_SELECTION);
 		selectorConfig = SourceSelectorConfig.create(model, sourceSelection);
 		
 		// get query optimization strategy

@@ -40,10 +40,11 @@ public class FederationSailSchema {
 	public static final URI MEMBER    = vf.createURI(NAMESPACE + "member");
 	public static final URI QUERY_OPT = vf.createURI(NAMESPACE + "queryOptimization");
 	public static final URI OPT_TYPE  = vf.createURI(NAMESPACE + "optimizerType");
-	public static final URI SRC_SLCTN = vf.createURI(NAMESPACE + "sourceSelection");
-	public static final URI SLCT_TYPE = vf.createURI(NAMESPACE + "selectorType");
+	public static final URI SRC_SELECTION = vf.createURI(NAMESPACE + "sourceSelection");
+	public static final URI SELECTOR_TYPE = vf.createURI(NAMESPACE + "selectorType");
 	public static final URI USE_TYPE_STATS = vf.createURI(NAMESPACE + "useTypeStats");
-	public static final URI ATTACH_SAME_AS = vf.createURI(NAMESPACE + "attachSameAs");
+	public static final URI GROUP_BY_SAMEAS = vf.createURI(NAMESPACE + "groupBySameAs");
+	public static final URI GROUP_BY_SOURCE = vf.createURI(NAMESPACE + "groupBySource");
 	public static final URI ESTIMATOR = vf.createURI(NAMESPACE + "cardEstimator");
 	public static final URI STATISTIC = vf.createURI(NAMESPACE + "statistic");
 	public static final URI VOID_URI  = vf.createURI(NAMESPACE + "voidDescription");

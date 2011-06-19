@@ -36,6 +36,8 @@ import org.openrdf.model.Value;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailImplConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generic configuration object for managing sail configuration settings
@@ -45,6 +47,8 @@ import org.openrdf.sail.config.SailImplConfig;
  * @author Olaf Goerlitz
  */
 public abstract class AbstractSailConfig implements SailImplConfig {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSailConfig.class);
 	
 	private String type;
 	private URI typePredicate;
@@ -93,13 +97,13 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 	// -------------------------------------------------------------------------
 	
 	/**
-	 * Returns the object resource of the triple matching the supplied predicate.
+	 * Returns the literal value of the triple's object matching the predicate.
 	 * 
 	 * @param model the model of the configuration settings.
 	 * @param implNode the model representing a configuration setting.
 	 * @param predicate the predicate defining a configuration attribute.
-	 * @return the resource representing the configuration attribute or null.
-	 * @throws SailConfigException if there is no (single) resource to return.
+	 * @return the literal value of the object or null.
+	 * @throws SailConfigException if there is no literal to return.
 	 */
 	protected Literal getObjectLiteral(Graph model, Resource implNode, URI property) throws SailConfigException {
 		Iterator<Statement> objects = model.match(implNode, property, null);
@@ -113,6 +117,26 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 			return (Literal) object;
 		else
 			throw new SailConfigException("object value is not a Literal: " + property + " " + object); 
+	}
+	
+	/**
+	 * Returns the boolean value of the triple's object matching the predicate.
+	 * 
+	 * @param model the model of the configuration settings.
+	 * @param implNode the model representing a configuration setting.
+	 * @param predicate the predicate defining a configuration attribute.
+	 * @return the boolean value of the object or the default value.
+	 * @throws SailConfigException if there is no (single) resource to return.
+	 */
+	protected boolean getObjectBoolean(Graph model, Resource implNode, URI property, boolean defaultValue) throws SailConfigException {
+		try {
+			return getObjectLiteral(model, implNode, property).booleanValue();
+		} catch (NullPointerException e) {
+			LOGGER.warn("missing option " + property + ", default is " + defaultValue);
+			return defaultValue;
+		} catch (IllegalArgumentException e) {
+			throw new SailConfigException("not a boolean value in option " + property);
+		}
 	}
 	
 	/**

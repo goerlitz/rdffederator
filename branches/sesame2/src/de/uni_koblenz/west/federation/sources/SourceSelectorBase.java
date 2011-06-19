@@ -49,16 +49,7 @@ public abstract class SourceSelectorBase implements SourceSelector {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceSelectorBase.class);
 
 	/** @deprecated */
-	private boolean attachSameAs;
-	
-//	/**
-//	 * Creates a Source Selector.
-//	 * @param attachSameAs
-//	 * @deprecated 
-//	 */
-//	public SourceSelectorBase(boolean attachSameAs) {
-//		this.attachSameAs = attachSameAs;
-//	}
+	private boolean attachSameAs = true;
 	
 	/**
 	 * Return all sources for the supplied pattern.
