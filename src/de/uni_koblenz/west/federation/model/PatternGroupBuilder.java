@@ -49,7 +49,7 @@ public class PatternGroupBuilder {
 		this.groupBySameAs = groupBySameAs;
 	}
 	
-	public void getGroups(List<MappedStatementPattern> patterns) {
+	public List<List<MappedStatementPattern>> getGroups(List<MappedStatementPattern> patterns) {
 		
 		// sameAs grouping example:
 		// ?city :population ?x  -> [A]
@@ -182,6 +182,7 @@ public class PatternGroupBuilder {
 			System.out.println("GroupBuilder Groups: " + buffer.toString());
 		}
 		
+		return patternGroups;
 	}
 
 	private boolean containsVar(StatementPattern pattern, Var var) {
