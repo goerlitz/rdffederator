@@ -101,15 +101,9 @@ public class BGPCardinalityEstimator<P, F> implements BGPModelEvaluator<P, F, Nu
 
 				// if applicable get the type count
 				if (useTypeStats && RDF_TYPE.equals(p.toString()) && o.isURI()) {
-					try {
-						URI type = new URI(o.stringValue());
-						LOGGER.trace("getting type card for: " + type);
-						return stats.typeCard(source, type);
-					} catch (URISyntaxException e) {
-						// this should never happen
-						throw new IllegalArgumentException("wrong object URI", e);
-					}
-					
+					String type = o.stringValue();
+					LOGGER.trace("getting type card for: " + type);
+					return stats.typeCard(source, type);
 				}
 
 				// check literal with datatype
@@ -128,7 +122,7 @@ public class BGPCardinalityEstimator<P, F> implements BGPModelEvaluator<P, F, Nu
 				}
 
 				// multiply with selectivity
-				return stats.pCard(source, p).doubleValue() / distObjects;
+				return stats.pCard(source, p.toString()).doubleValue() / distObjects;
 			}
 
 			// check if subject is bound too
@@ -144,11 +138,11 @@ public class BGPCardinalityEstimator<P, F> implements BGPModelEvaluator<P, F, Nu
 				}
 
 				// multiply with selectivity
-				return stats.pCard(source, p).doubleValue() / distSubjects;
+				return stats.pCard(source, p.toString()).doubleValue() / distSubjects;
 			}
 
 			// only predicate bound: use predicate count
-			return stats.pCard(source, p);
+			return stats.pCard(source, p.toString());
 		}
 
 		// check if subject is bound (with unbound predicate)
@@ -283,8 +277,8 @@ public class BGPCardinalityEstimator<P, F> implements BGPModelEvaluator<P, F, Nu
 //				throw new UnsupportedOperationException("joins over multiple vars not supported (yet)");
 		
 			// for each join argument get the patterns containing the join variable(s)
-			Map<String, List<AccessPlan<P, F>>> leftList = finder.getPlan(join.getLeft(), false, joinVars);
-			Map<String, List<AccessPlan<P, F>>> rightList = finder.getPlan(join.getRight(), true, joinVars);
+			Map<String, List<AccessPlan<P, F>>> leftList = finder.getPlan(join.getLeft(), joinVars);
+			Map<String, List<AccessPlan<P, F>>> rightList = finder.getPlan(join.getRight(), joinVars);
 			
 			// select one pattern from each join argument to define the join condition
 			String varName = joinVars.iterator().next();
@@ -325,7 +319,7 @@ public class BGPCardinalityEstimator<P, F> implements BGPModelEvaluator<P, F, Nu
 	
 	/**
 	 * Get the selectivity for a (named) variable in the supplied pattern.
-	 * Computes the selectivity a 1/sum(card_i(P)) for all data sources. 
+	 * Computes the selectivity as 1/sum(card_i(P)) for all data sources 'i'. 
 	 * 
 	 * @param plan the access plan to use.
 	 * @param varName the variable name.
@@ -366,15 +360,15 @@ public class BGPCardinalityEstimator<P, F> implements BGPModelEvaluator<P, F, Nu
 	 */
 	class PatternFinder implements BGPVisitor<P, F> {
 		
-		private boolean findFirst;
+//		private boolean findFirst;
 //		private AccessPlan<P, F> plan;
 		private Set<String> vars;
 		
 		private Map<String, List<AccessPlan<P, F>>> plans;
 		
-		protected Map<String, List<AccessPlan<P, F>>> getPlan(BGPOperator<P, F> operator, boolean first, Set<String> vars) {
+		protected Map<String, List<AccessPlan<P, F>>> getPlan(BGPOperator<P, F> operator, Set<String> vars) {
 			synchronized(this) {
-				this.findFirst = first;
+//				this.findFirst = first;
 				this.vars = vars;
 				this.plans = new HashMap<String, List<AccessPlan<P,F>>>();
 				for (String var : vars)

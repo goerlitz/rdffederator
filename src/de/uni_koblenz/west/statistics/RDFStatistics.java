@@ -48,7 +48,7 @@ public interface RDFStatistics {
 	
 	public Number sCard(Graph g, URI subject);
 	
-	public Number pCard(Graph g, URI predicate);
+	public Number pCard(Graph g, String predicate);
 	
 	public Number oCard(Graph g, RDFValue object);
 	
@@ -60,6 +60,6 @@ public interface RDFStatistics {
 	
 	public Number soCard(Graph g, URI subject, RDFValue object);
 	
-	public Number typeCard(Graph g, URI type);
+	public Number typeCard(Graph g, String type);
 	
 }

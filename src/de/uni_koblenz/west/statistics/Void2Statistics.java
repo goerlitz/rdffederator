@@ -119,14 +119,14 @@ public abstract class Void2Statistics implements RDFStatistics {
 	}
 	
 	@Override
-	public Number typeCard(Graph g, URI type) {
+	public Number typeCard(Graph g, String type) {
 		String query = concat(
 				VOID_PREFIX,
 				"SELECT ?card WHERE {",
 				"  [] a void:Dataset ;",
 				"     void:sparqlEndpoint <", g.toString(), "> ;",
 				"     void:classPartition ?part .",
-				"  ?part void:class <", type.toString(), "> ;",
+				"  ?part void:class <", type, "> ;",
 				"        void:entities ?card .",
 				"}");
 		
@@ -232,7 +232,7 @@ public abstract class Void2Statistics implements RDFStatistics {
 	}
 	
 	@Override
-	public Number pCard(Graph g, URI predicate) {
+	public Number pCard(Graph g, String predicate) {
 		String query = concat(
 				VOID_PREFIX,
 				"SELECT ?card WHERE {",
