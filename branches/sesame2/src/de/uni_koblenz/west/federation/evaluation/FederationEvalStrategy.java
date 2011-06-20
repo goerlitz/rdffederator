@@ -26,11 +26,8 @@ import info.aduna.iteration.EmptyIteration;
 import info.aduna.iteration.UnionIteration;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -63,15 +60,13 @@ import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.federation.sources.IndexSelector;
-import de.uni_koblenz.west.federation.sources.SourceSelector;
+import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 
 /**
  * Implementation of the evaluation strategy for querying distributed data
  * sources. This strategy prefers parallel execution of query operators.
  * 
- * A {@link IndexSelector} is used to provide connections to suitable remote
- * repositories. Sesame's {@link TripleSource}s are not applicable, since
+ * Sesame's {@link TripleSource}s are not applicable, since
  * they only allow for matching single statement patterns. Hence, a dummy
  * {@link TripleSource} is provided to the {@link EvaluationStrategyImpl}
  * which demands it in the constructor (in order to have access to the
@@ -88,18 +83,13 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	private static final boolean MULTI_THREADED = true;
 	private static final boolean COLLECT_BGP_PATTERNS = true;
 	
-//	private SourceFinder<StatementPattern> finder;
-	private SourceSelector finder;
-	private Map<StatementPattern, Set<Graph>> graphMap;
-
 	/**
 	 * Creates a new Evaluation strategy using the supplied source finder.
 	 * 
 	 * @param finder the source finder to use.
 	 * @param vf the value factory to use.
 	 */
-//	public FederationEvalStrategy(SourceFinder<StatementPattern> finder, final ValueFactory vf) {
-	public FederationEvalStrategy(SourceSelector finder, final ValueFactory vf) {
+	public FederationEvalStrategy(final ValueFactory vf) {
 	
 		// use a dummy triple source
 		// it can handle only single triple patterns but no basic graph patterns
@@ -114,11 +104,6 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 				throw new UnsupportedOperationException("Statement retrieval is not supported in federation");
 			}
 		});
-		
-		if (finder == null)
-			throw new IllegalArgumentException("source finder must not be null");
-		
-		this.finder = finder;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -243,11 +228,16 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 //	public Cursor<BindingSet> evaluate(StatementPattern sp, BindingSet bindings) throws StoreException {
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(StatementPattern sp, BindingSet bindings) throws QueryEvaluationException {
 
-		Set<Graph> sources = graphMap.get(sp);
-		
-		if (LOGGER.isDebugEnabled())
-			LOGGER.debug("EVAL PATTERN {" + OperatorTreePrinter.print(sp) + "} on sources " + sources);
-		return sendSparqlQuery(sp, sources , bindings);
+		if (sp instanceof MappedStatementPattern) {
+//			Set<Graph> sources = graphMap.get(sp);
+			Set<Graph> sources = ((MappedStatementPattern) sp).getSources();
+			
+			if (LOGGER.isDebugEnabled())
+				LOGGER.debug("EVAL PATTERN {" + OperatorTreePrinter.print(sp) + "} on sources " + sources);
+			return sendSparqlQuery(sp, sources , bindings);
+		}
+		throw new IllegalArgumentException("pattern has no sources");
+
 	}
 	
 	private TupleExpr currentQuery = null;
@@ -258,28 +248,16 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 			throws QueryEvaluationException {
 		
 		synchronized (this) {
-		if (currentQuery == null) {
-			currentQuery = expr;
-
-			graphMap = new HashMap<StatementPattern, Set<Graph>>();
-			Set<StatementPattern> patterns = PatternCollector.getPattern(expr);
-//			Map<Set<Graph>, List<StatementPattern>> graphSets = finder.findPlanSetsPerSource(patterns);
-			Map<Set<Graph>, List<StatementPattern>> graphSets = finder.getSources(patterns);
-			for (Set<Graph> graphSet : graphSets.keySet()) {
-				for (StatementPattern pattern : graphSets.get(graphSet)) {
-					graphMap.put(pattern, graphSet);
-				}
+			if (currentQuery == null) {
+				currentQuery = expr;
 			}
 		}
-		}
-		
-		
 		try {
 			return super.evaluate(expr, bindings);
 		} finally {
 			synchronized (this) {
-			if (currentQuery == expr)
-				currentQuery = null;
+				if (currentQuery == expr)
+					currentQuery = null;
 			}
 		}
 	}
@@ -383,9 +361,11 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 
 		@Override
 		public void meet(StatementPattern pattern) throws RuntimeException {
-			sources.addAll(graphMap.get(pattern));
-//			String[] values = adapter.getPatternConstants(pattern);
-//			sources.addAll(stats.findSources(values[0], values[1], values[2]));
+			if (pattern instanceof MappedStatementPattern) {
+				sources.addAll(((MappedStatementPattern) pattern).getSources());
+			} else {
+				throw new IllegalArgumentException("pattern has no source");
+			}
 		}
 		
 	}
