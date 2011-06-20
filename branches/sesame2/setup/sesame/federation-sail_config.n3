@@ -22,9 +22,12 @@
          # source selection settings; type={Ask, Stats}
          fed:sourceSelection [
             fed:selectorType "Ask";
-            fed:useTypeStats true ;
-            fed:attachSameAs true ;
-         ];
+            fed:useTypeStats true ;  # deprecated
+            
+            # sub query grouping
+            fed:groupBySource true ;
+            fed:groupBySameAs true ;
+         ] ;
          
          # cardinality estimation settings; type={STATISTICS, TRUE_CARD}
          fed:cardEstimation [
