@@ -37,7 +37,6 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
 //import org.openrdf.query.algebra.QueryModel;
-import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.evaluation.TripleSource;
@@ -59,8 +58,6 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.ReadOnlySailConnection;
-import de.uni_koblenz.west.federation.sources.IndexSelector;
-import de.uni_koblenz.west.federation.sources.SourceSelector;
 
 /**
  * Wraps multiple remote repositories with SPARQL endpoints into one
@@ -77,9 +74,6 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSailConnection.class);
 
-//	private final SourceFinder<StatementPattern> finder;
-	private final SourceSelector finder;
-//	private final RDFStatistics stats;
 	private final ValueFactory vf;
 	private final QueryOptimizer optimizer;
 	
@@ -98,8 +92,6 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 			throw new IllegalArgumentException("sail must not be NULL");
 		
 		this.optimizer = sail.getFederationOptimizer();
-//		this.finder = sail.getSourceFinder();
-		this.finder = sail.getSourceSelector();
 
 //		URIFactory uf = sail.getURIFactory();
 //		LiteralFactory lf = sail.getLiteralFactory();
@@ -133,7 +125,7 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluateInternal(TupleExpr query, Dataset dataset,
 			BindingSet bindings, boolean includeInferred) throws SailException {	// Sesame 2:
 		
-		FederationEvalStrategy strategy = new FederationEvalStrategy(this.finder, this.vf);
+		FederationEvalStrategy strategy = new FederationEvalStrategy(this.vf);
 		QueryOptimizerList optimizerList = new QueryOptimizerList();
 		
 		LOGGER.trace("Incoming query model:\n{}", OperatorTreePrinter.print(query));
