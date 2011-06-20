@@ -42,7 +42,7 @@ public class OperatorTreePrinter extends QueryModelVisitorBase<RuntimeException>
 	
 	private static final OperatorTreePrinter printer = new OperatorTreePrinter();
 	
-	private StringBuffer buffer = new StringBuffer();
+	protected StringBuffer buffer = new StringBuffer();
 	private String indent = "";
 	
 	/**
