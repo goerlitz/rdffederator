@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
+import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.ValueExpr;
@@ -95,8 +96,34 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 //			// TODO: need sources first
 //			if (bgp instanceof StatementPattern)
 //				continue;
+			
+			if (LOGGER.isTraceEnabled())
+				LOGGER.trace("BGP before optimization:\n" + OperatorTreePrinter.print(bgp));
 
 			optimizeBGP(bgp);
+			
+			if (LOGGER.isTraceEnabled())
+				LOGGER.trace("BGP after optimization:\n" + OperatorCardPrinter.print(bgp.getParentNode(), estimator));
+		}
+		
+	}
+	
+	// Quick and dirty cardinality printer
+	static class OperatorCardPrinter extends OperatorTreePrinter {
+		
+		VoidCardinalityEstimator estimator;
+		
+		public static String print(QueryModelNode root, VoidCardinalityEstimator estimator) {
+			OperatorCardPrinter printer = new OperatorCardPrinter();
+			printer.estimator = estimator;
+			root.visit(printer);
+			return printer.buffer.toString();
+		}
+
+		@Override
+		public void meet(StatementPattern node) throws RuntimeException {
+			super.meet(node);
+			buffer.append(" [CARD: ").append(estimator.process(node)).append("]");
 		}
 		
 	}
