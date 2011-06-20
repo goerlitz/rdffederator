@@ -37,6 +37,7 @@ import org.openrdf.query.algebra.helpers.VarNameCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
 import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.model.BasicGraphPatternExtractor;
@@ -55,15 +56,19 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 	
 	protected SourceSelector selector;
 	protected PatternGroupBuilder builder;
+	protected VoidCardinalityEstimator estimator;
 	
-	public AbstractFederationOptimizer(SourceSelector selector, PatternGroupBuilder builder) {
+	public AbstractFederationOptimizer(SourceSelector selector, PatternGroupBuilder builder, VoidCardinalityEstimator estimator) {
 		if (selector == null)
 			throw new IllegalArgumentException("source selector must not be null");
 		if (builder == null)
 			throw new IllegalArgumentException("pattern group builder must not be null");
+		if (estimator == null)
+			throw new IllegalArgumentException("cardinality estimator must not be null");
 		
 		this.selector = selector;
 		this.builder = builder;
+		this.estimator = estimator;
 	}
 	
 	public abstract void optimizeBGP(TupleExpr query);
