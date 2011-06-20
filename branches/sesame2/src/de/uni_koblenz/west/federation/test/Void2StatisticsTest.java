@@ -93,15 +93,15 @@ public class Void2StatisticsTest {
 		sources = voidStats.findSources(null, GEO_LAT.toString(), null, false);
 		Assert.assertTrue(sources.size() == 1);
 		Assert.assertTrue(15000 == voidStats.getSize(sources.iterator().next()));
-		Assert.assertTrue(5000 == (Long) voidStats.pCard(sources.iterator().next(), GEO_LAT));
-		Assert.assertTrue(5000 == (Long) voidStats.typeCard(sources.iterator().next(), GML_FEATURE));
+		Assert.assertTrue(5000 == (Long) voidStats.pCard(sources.iterator().next(), GEO_LAT.toString()));
+		Assert.assertTrue(5000 == (Long) voidStats.typeCard(sources.iterator().next(), GML_FEATURE.toString()));
 		
 //		sources = voidStats.findGraphs(FOAF_NAME.toString());
 		sources = voidStats.findSources(null, FOAF_NAME.toString(), null, false);
 		Assert.assertTrue(sources.size() == 1);
 		Assert.assertTrue(19000 == voidStats.getSize(sources.iterator().next()));
-		Assert.assertTrue(9000 == (Long) voidStats.pCard(sources.iterator().next(), FOAF_NAME));
-		Assert.assertTrue(9000 == (Long) voidStats.typeCard(sources.iterator().next(), FOAF_PERSON));
+		Assert.assertTrue(9000 == (Long) voidStats.pCard(sources.iterator().next(), FOAF_NAME.toString()));
+		Assert.assertTrue(9000 == (Long) voidStats.typeCard(sources.iterator().next(), FOAF_PERSON.toString()));
 	}
 	
 }
