@@ -54,7 +54,7 @@ public class FederationSail extends SailBase {
 	
 	private List<Repository> members;
 	private SourceSelector selector;
-	private FederationOptimizer optimizer;
+	private QueryOptimizer optimizer;
 	private RDFStatistics statistics;
 
 	private boolean initialized = false;
@@ -65,7 +65,7 @@ public class FederationSail extends SailBase {
 		return this.optimizer;
 	}
 	
-	public void setFederationOptimizer(FederationOptimizer optimizer) {
+	public void setFederationOptimizer(QueryOptimizer optimizer) {
 		if (optimizer == null)
 			throw new IllegalArgumentException("optimizer is NULL");
 		this.optimizer = optimizer;

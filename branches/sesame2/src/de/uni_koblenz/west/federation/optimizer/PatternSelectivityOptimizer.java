@@ -33,7 +33,7 @@ import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.helpers.VarNameCollector;
 
 import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
-import de.uni_koblenz.west.federation.model.PatternGroupBuilder;
+import de.uni_koblenz.west.federation.model.SubQueryBuilder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 
 /**
@@ -41,7 +41,7 @@ import de.uni_koblenz.west.federation.sources.SourceSelector;
  */
 public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 	
-	public PatternSelectivityOptimizer(SourceSelector selector, PatternGroupBuilder builder, VoidCardinalityEstimator estimator) {
+	public PatternSelectivityOptimizer(SourceSelector selector, SubQueryBuilder builder, VoidCardinalityEstimator estimator) {
 		super(selector, builder, estimator);
 	}
 

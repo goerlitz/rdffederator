@@ -20,20 +20,15 @@
  */
 package de.uni_koblenz.west.federation.optimizer;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
-import org.openrdf.query.algebra.Filter;
-import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
-import org.openrdf.query.algebra.helpers.VarNameCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +37,7 @@ import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.model.BasicGraphPatternExtractor;
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
-import de.uni_koblenz.west.federation.model.PatternGroupBuilder;
+import de.uni_koblenz.west.federation.model.SubQueryBuilder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 
 /**
@@ -55,10 +50,10 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFederationOptimizer.class);
 	
 	protected SourceSelector selector;
-	protected PatternGroupBuilder builder;
+	protected SubQueryBuilder builder;
 	protected VoidCardinalityEstimator estimator;
 	
-	public AbstractFederationOptimizer(SourceSelector selector, PatternGroupBuilder builder, VoidCardinalityEstimator estimator) {
+	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, VoidCardinalityEstimator estimator) {
 		if (selector == null)
 			throw new IllegalArgumentException("source selector must not be null");
 		if (builder == null)
@@ -75,37 +70,14 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 	
 	protected List<TupleExpr> getBaseExpressions(TupleExpr expr) {
 		
-		List<TupleExpr> baseExpressions = new ArrayList<TupleExpr>();
-		
 		// get patterns and filter conditions from query model
 		List<StatementPattern> patterns = StatementPatternCollector.process(expr);
 		List<ValueExpr> conditions = FilterConditionCollector.process(expr);
 		
-		// create patterns with source mappings and group them
+		// create patterns with source mappings
 		List<MappedStatementPattern> mappedPatterns = this.selector.mapSources(patterns);
-		List<List<MappedStatementPattern>> groups = this.builder.getGroups(mappedPatterns);
 		
-		// create list of base expressions from all statement pattern lists
-		for (List<MappedStatementPattern> pList : groups) {
-			TupleExpr baseExpr = null;
-			
-			// join all statements of a list
-			for (MappedStatementPattern pattern : pList) {
-				baseExpr = (baseExpr == null) ? pattern : new Join(baseExpr, pattern);
-			}
-			
-			// add all applicable filters
-			Set<String> varNames = VarNameCollector.process(baseExpr);
-			for (ValueExpr condition : conditions) {
-				if (varNames.containsAll(VarNameCollector.process(condition))) {
-					baseExpr = new Filter(baseExpr, condition);
-				}
-			}
-			
-			baseExpressions.add(baseExpr);
-		}
-		
-		return baseExpressions;
+		return this.builder.createSubQueries(mappedPatterns, conditions);
 	}
 	
 	@Override

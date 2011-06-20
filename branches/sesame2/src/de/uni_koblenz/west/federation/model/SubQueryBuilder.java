@@ -29,24 +29,64 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.vocabulary.OWL;
+import org.openrdf.query.algebra.Filter;
+import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.Var;
+import org.openrdf.query.algebra.helpers.VarNameCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 
 
 /**
+ * Creates sub queries for patterns with assigned sources. 
+ * 
  * @author Olaf Goerlitz
  */
-public class PatternGroupBuilder {
+public class SubQueryBuilder {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(SubQueryBuilder.class);
 	
 	private boolean groupBySameAs;
 	private boolean groupBySource;
 	
-	public PatternGroupBuilder(boolean groupBySource, boolean groupBySameAs) {
+	public SubQueryBuilder(boolean groupBySource, boolean groupBySameAs) {
 		this.groupBySource = groupBySource;
 		this.groupBySameAs = groupBySameAs;
+	}
+	
+	public List<TupleExpr> createSubQueries(List<MappedStatementPattern> patterns, List<ValueExpr> conditions) {
+		
+		List<TupleExpr> subQueries = new ArrayList<TupleExpr>();
+		
+		List<List<MappedStatementPattern>> groups = getGroups(patterns);
+		
+		// create list of base expressions from all statement pattern lists
+		for (List<MappedStatementPattern> pList : groups) {
+			TupleExpr baseExpr = null;
+			
+			// join all statements of a list
+			for (MappedStatementPattern pattern : pList) {
+				baseExpr = (baseExpr == null) ? pattern : new Join(baseExpr, pattern);
+			}
+			
+			// add all applicable filters
+			Set<String> varNames = VarNameCollector.process(baseExpr);
+			for (ValueExpr condition : conditions) {
+				if (varNames.containsAll(VarNameCollector.process(condition))) {
+					baseExpr = new Filter(baseExpr, condition);
+				}
+			}
+			
+			subQueries.add(baseExpr);
+		}
+		
+		return subQueries;
 	}
 	
 	public List<List<MappedStatementPattern>> getGroups(List<MappedStatementPattern> patterns) {
@@ -173,13 +213,13 @@ public class PatternGroupBuilder {
 				if (sources == null) {
 					sources = pattern.getSources();
 				} else {
-					if (!sources.equals(pattern.getSources())) 
-						System.out.println("GroupBuilder: not the same sources: " + sources + " <-> " + pattern.getSources());
+					if (!sources.equals(pattern.getSources()))
+						LOGGER.warn("not the same sources: " + sources + " <-> " + pattern.getSources());
 				}
 			}
 			buffer.setLength(buffer.length()-2);
 			buffer.append("] @" + sources);
-			System.out.println("GroupBuilder Groups: " + buffer.toString());
+			LOGGER.warn(buffer.toString());
 		}
 		
 		return patternGroups;

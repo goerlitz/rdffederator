@@ -28,6 +28,7 @@ import java.util.Set;
 
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
@@ -69,6 +70,14 @@ public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeExcep
 		}
 	}
 	
+	@Override
+	public void meet(StatementPattern pattern) throws RuntimeException {
+		if (pattern instanceof MappedStatementPattern)
+			meet((MappedStatementPattern) pattern);
+		else
+			super.meet(pattern);
+	}
+	
 	public void meet(MappedStatementPattern pattern) throws RuntimeException {
 		
 		// check cardinality index first
@@ -84,6 +93,21 @@ public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeExcep
 		
 		// add cardinality to index
 		cardIndex.put(pattern, card);
+	}
+	
+	@Override
+	public void meet(Filter filter) {
+		
+		// check cardinality index first
+		if (cardIndex.get(filter) != null)
+			return;
+		
+		// TODO: include condition in estimation
+		// for now use same card as sub expression
+		
+		// add cardinality to index
+		cardIndex.put(filter, cardIndex.get(filter.getArg()));
+		
 	}
 	
 	public void meet(Join join) throws RuntimeException {
