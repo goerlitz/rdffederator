@@ -77,7 +77,7 @@ public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 				// (to avoid cross products)
 				Set<String> queryVars = VarNameCollector.process(newQuery);
 				for (TupleExpr expr : queryExpressions) {
-					for (String varName : VarNameCollector.process(newQuery)) {
+					for (String varName : VarNameCollector.process(expr)) {
 						if (queryVars.contains(varName)) {
 							joinCandidates.add(expr);
 							break;
