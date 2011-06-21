@@ -46,9 +46,9 @@ public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 	}
 
 	@Override
-	public void optimizeBGP(TupleExpr query) {
+	public void optimizeBGP(TupleExpr bgp) {
 		
-		List<TupleExpr> queryExpressions = this.getBaseExpressions(query);
+		List<TupleExpr> queryExpressions = this.getBaseExpressions(bgp);
 		final Map<TupleExpr, Double> costs = new HashMap<TupleExpr, Double>();
 		
 		// get cardinality for all query base expressions
@@ -99,7 +99,7 @@ public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 			queryExpressions.remove(joinExpr);
 		}
 		
-		query.replaceWith(newQuery);
+		bgp.replaceWith(newQuery);
 	}
 
 }
