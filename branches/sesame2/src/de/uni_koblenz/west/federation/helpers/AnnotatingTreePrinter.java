@@ -35,6 +35,10 @@ import de.uni_koblenz.west.federation.estimation.ModelEvaluator;
 import de.uni_koblenz.west.federation.model.RemoteQuery;
 
 /**
+ * Prints the tree structure of a query plan.
+ * Can annotate individual nodes with the result of a model evaluator.
+ * Highlights the sub tree marked as a remote query.
+ * 
  * @author Olaf Goerlitz
  */
 public class AnnotatingTreePrinter extends QueryModelVisitorBase<RuntimeException> {
@@ -53,7 +57,8 @@ public class AnnotatingTreePrinter extends QueryModelVisitorBase<RuntimeExceptio
 	public AnnotatingTreePrinter(ModelEvaluator eval) {
 		this.buffer = new StringBuilder(256);
 		this.eval = eval;
-		this.evalLabel = eval.getName();
+		if (eval != null)
+			this.evalLabel = eval.getName();
 	}
 	
 	public static String print(QueryModelNode root) {

@@ -24,12 +24,10 @@ import java.util.List;
 
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
-import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
-import org.openrdf.query.algebra.helpers.QueryModelTreePrinter;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
 import de.uni_koblenz.west.federation.helpers.AnnotatingTreePrinter;
 import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
-import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.model.BasicGraphPatternExtractor;
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 import de.uni_koblenz.west.federation.model.SubQueryBuilder;
@@ -95,36 +92,14 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 //				continue;
 			
 			if (LOGGER.isTraceEnabled())
-				LOGGER.trace("BGP before optimization:\n" + OperatorTreePrinter.print(bgp));
-//				LOGGER.trace("BGP before optimization:\n" + AnnotatedTreePrinter.print(bgp, estimator));
+				LOGGER.trace("BGP before optimization:\n" + AnnotatingTreePrinter.print(bgp));
 
 			optimizeBGP(bgp);
 			
 			if (LOGGER.isTraceEnabled())
-//				LOGGER.trace("BGP after optimization:\n" + OperatorCardPrinter.print(bgp.getParentNode(), estimator));
 				LOGGER.trace("BGP after optimization:\n" + AnnotatingTreePrinter.print(bgp.getParentNode(), estimator));
 		}
 		
 	}
 	
-	// Quick and dirty cardinality printer
-	static class OperatorCardPrinter extends OperatorTreePrinter {
-		
-		VoidCardinalityEstimator estimator;
-		
-		public static String print(QueryModelNode root, VoidCardinalityEstimator estimator) {
-			OperatorCardPrinter printer = new OperatorCardPrinter();
-			printer.estimator = estimator;
-			root.visit(printer);
-			return printer.buffer.toString();
-		}
-
-		@Override
-		public void meet(StatementPattern node) throws RuntimeException {
-			super.meet(node);
-			buffer.append(" [CARD: ").append(estimator.process(node)).append("]");
-		}
-		
-	}
-
 }
