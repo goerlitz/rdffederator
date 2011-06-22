@@ -191,7 +191,21 @@ public class SubQueryBuilder {
 			
 			// finally create pattern groups for all source mappings
 			patternGroups.clear();
-			patternGroups.addAll(sourceMap.values());
+//			patternGroups.addAll(sourceMap.values());
+			
+			// keep groups only if there is no more than one source assigned
+			for (Set<Graph> graphs : sourceMap.keySet()) {
+				List<MappedStatementPattern> pGroup = sourceMap.get(graphs);
+				if (graphs.size() == 1) {
+					patternGroups.add(pGroup);
+				} else {
+					for (MappedStatementPattern pattern : pGroup) {
+						List<MappedStatementPattern> pList = new ArrayList<MappedStatementPattern>();
+						pList.add(pattern);
+						patternGroups.add(pList);
+					}
+				}
+			}
 			
 		} else {
 			
