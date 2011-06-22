@@ -20,16 +20,25 @@
  */
 package de.uni_koblenz.west.federation.model;
 
+import java.util.Set;
+
 import org.openrdf.query.algebra.QueryModelVisitor;
+import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.UnaryTupleOperator;
+import org.openrdf.query.algebra.helpers.StatementPatternCollector;
+
+import de.uni_koblenz.west.federation.index.Graph;
 
 /**
+ * Marker class which defines that all child arguments should be executed
+ * in one block on a SPARQL endpoint.
+ * 
  * @author Olaf Goerlitz
  */
-public class SubQuery extends UnaryTupleOperator {
+public class RemoteQuery extends UnaryTupleOperator {
 	
-	public SubQuery(TupleExpr expr) {
+	public RemoteQuery(TupleExpr expr) {
 		super(expr);
 	}
 
@@ -37,5 +46,13 @@ public class SubQuery extends UnaryTupleOperator {
 	public <X extends Exception> void visit(QueryModelVisitor<X> visitor) throws X {
 		visitor.meetOther(this);
 	}
-
+	
+	public Set<Graph> getSources() {
+		StatementPattern p = StatementPatternCollector.process(this).get(0);
+		if (p instanceof MappedStatementPattern)
+			return ((MappedStatementPattern) p).getSources();
+		else
+			return null;
+	}
+	
 }

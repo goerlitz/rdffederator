@@ -83,7 +83,7 @@ public class SubQueryBuilder {
 				}
 			}
 			
-			subQueries.add(baseExpr);
+			subQueries.add(new RemoteQuery(baseExpr));
 		}
 		
 		return subQueries;

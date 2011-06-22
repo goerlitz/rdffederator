@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.model.BindJoin;
 import de.uni_koblenz.west.federation.model.HashJoin;
 import de.uni_koblenz.west.federation.model.NestedLoopJoin;
-import de.uni_koblenz.west.federation.model.SubQuery;
+import de.uni_koblenz.west.federation.model.RemoteQuery;
 
 /**
  * Calculates the cost for executing the physical operators.
@@ -43,6 +43,10 @@ public class DARQExecCostEstimator extends AbstractExecCostEstimator {
 	private static final int C_TRANSFER_TUPLE = 1;
 	
 	private VoidCardinalityEstimator cardEst;
+	
+	public String getName() {
+		return "DARQCost";
+	}
 	
 	@Override
 	public void meet(Join node) throws RuntimeException {
@@ -64,8 +68,8 @@ public class DARQExecCostEstimator extends AbstractExecCostEstimator {
 			throws RuntimeException {
 		
 		// need to handle sub queries explicitly
-		if (node instanceof SubQuery) {
-			meet((SubQuery) node);
+		if (node instanceof RemoteQuery) {
+			meet((RemoteQuery) node);
 		} else {
 			super.meetUnaryTupleOperator(node);
 		}
@@ -94,7 +98,7 @@ public class DARQExecCostEstimator extends AbstractExecCostEstimator {
 		
 	}
 	
-	protected void meet(SubQuery query) {
+	protected void meet(RemoteQuery query) {
 		
 		// no explicit cost for executing the sub query
 		

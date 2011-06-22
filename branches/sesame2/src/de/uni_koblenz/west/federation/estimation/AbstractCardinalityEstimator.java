@@ -24,7 +24,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
+
+import de.uni_koblenz.west.federation.model.RemoteQuery;
 
 /**
  * @author Olaf Goerlitz
@@ -40,6 +43,23 @@ public abstract class AbstractCardinalityEstimator extends QueryModelVisitorBase
 			expr.visit(this);
 			return cardIndex.get(expr);
 		}
+	}
+	
+	@Override
+	protected void meetUnaryTupleOperator(UnaryTupleOperator node)
+			throws RuntimeException {
+		if (node instanceof RemoteQuery) {
+			meet((RemoteQuery) node);
+		} else {
+			super.meetUnaryTupleOperator(node);
+		}
+	}
+	
+	protected void meet(RemoteQuery node) {
+		if (getCard(node) != null)
+			return;
+		node.getArg().visit(this);
+		setCard(node, getCard(node.getArg()));
 	}
 	
 	protected Double getCard(TupleExpr expr) {
