@@ -47,13 +47,14 @@ import de.uni_koblenz.west.statistics.RDFStatistics;
  * 
  * @author Olaf Goerlitz
  */
-public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeException> {
+//public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeException> {
+public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(VoidCardinalityEstimator.class);
 	
 	protected RDFStatistics stats;
 	
-	protected Map<TupleExpr, Double> cardIndex = new HashMap<TupleExpr, Double>();
+//	protected Map<TupleExpr, Double> cardIndex = new HashMap<TupleExpr, Double>();
 	
 	public VoidCardinalityEstimator(RDFStatistics stats) {
 		if (stats == null)
@@ -62,13 +63,13 @@ public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeExcep
 		this.stats = stats;
 	}
 	
-	public Double process(TupleExpr expr) {
-		synchronized (cardIndex) {
-			cardIndex.clear();
-			expr.visit(this);
-			return cardIndex.get(expr);
-		}
-	}
+//	public Double process(TupleExpr expr) {
+//		synchronized (cardIndex) {
+//			cardIndex.clear();
+//			expr.visit(this);
+//			return cardIndex.get(expr);
+//		}
+//	}
 	
 	@Override
 	public void meet(StatementPattern pattern) throws RuntimeException {
@@ -81,7 +82,8 @@ public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeExcep
 	public void meet(MappedStatementPattern pattern) throws RuntimeException {
 		
 		// check cardinality index first
-		if (cardIndex.get(pattern) != null)
+//		if (cardIndex.get(pattern) != null)
+		if (getCard(pattern) != null)
 			return;
 		
 		double card = 0;
@@ -92,28 +94,31 @@ public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeExcep
 		}
 		
 		// add cardinality to index
-		cardIndex.put(pattern, card);
+//		cardIndex.put(pattern, card);
+		setCard(pattern, card);
 	}
 	
 	@Override
 	public void meet(Filter filter) {
 		
 		// check cardinality index first
-		if (cardIndex.get(filter) != null)
+//		if (cardIndex.get(filter) != null)
+		if (getCard(filter) != null)
 			return;
 		
 		// TODO: include condition in estimation
 		// for now use same card as sub expression
 		
-		// add cardinality to index
-		cardIndex.put(filter, cardIndex.get(filter.getArg()));
-		
+		// add same cardinality as filter argument
+//		cardIndex.put(filter, cardIndex.get(filter.getArg()));
+		setCard(filter, getCard(filter.getArg()));
 	}
 	
 	public void meet(Join join) throws RuntimeException {
 		
 		// check cardinality index first
-		if (cardIndex.get(join) != null)
+//		if (cardIndex.get(join) != null)
+		if (getCard(join) != null)
 			return;
 		
 		// TODO: does the estimated cardinality depend on the current join?
@@ -125,12 +130,15 @@ public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeExcep
 		
 		double joinSelectivity = getJoinSelectivity(join.getLeftArg(), join.getRightArg());
 		
-		double leftCard = cardIndex.get(join.getLeftArg());
-		double rightCard = cardIndex.get(join.getRightArg());
+//		double leftCard = cardIndex.get(join.getLeftArg());
+//		double rightCard = cardIndex.get(join.getRightArg());
+		double leftCard = getCard(join.getLeftArg());
+		double rightCard = getCard(join.getRightArg());
 		double card = joinSelectivity * leftCard * rightCard;
 
 		// add cardinality to index
-		cardIndex.put(join, card);
+//		cardIndex.put(join, card);
+		setCard(join, card);
 	}
 	
 	// -------------------------------------------------------------------------
