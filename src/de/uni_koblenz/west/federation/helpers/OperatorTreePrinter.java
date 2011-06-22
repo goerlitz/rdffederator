@@ -30,6 +30,7 @@ import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.Var;
+import org.openrdf.query.algebra.helpers.QueryModelTreePrinter;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
 /**

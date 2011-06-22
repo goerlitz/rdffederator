@@ -29,11 +29,13 @@ import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
+import org.openrdf.query.algebra.helpers.QueryModelTreePrinter;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
+import de.uni_koblenz.west.federation.helpers.AnnotatingTreePrinter;
 import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.model.BasicGraphPatternExtractor;
@@ -87,11 +89,6 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 		// collect all basic graph patterns
 		for (TupleExpr bgp : BasicGraphPatternExtractor.process(query)) {
 			
-			if (LOGGER.isDebugEnabled())
-				LOGGER.debug("processing BGP:\n" + OperatorTreePrinter.print(bgp));
-			
-//			// TODO: select sources by replacing the patterns in the tree
-//
 //			// a single statement pattern needs no optimization
 //			// TODO: need sources first
 //			if (bgp instanceof StatementPattern)
@@ -99,11 +96,13 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 			
 			if (LOGGER.isTraceEnabled())
 				LOGGER.trace("BGP before optimization:\n" + OperatorTreePrinter.print(bgp));
+//				LOGGER.trace("BGP before optimization:\n" + AnnotatedTreePrinter.print(bgp, estimator));
 
 			optimizeBGP(bgp);
 			
 			if (LOGGER.isTraceEnabled())
-				LOGGER.trace("BGP after optimization:\n" + OperatorCardPrinter.print(bgp.getParentNode(), estimator));
+//				LOGGER.trace("BGP after optimization:\n" + OperatorCardPrinter.print(bgp.getParentNode(), estimator));
+				LOGGER.trace("BGP after optimization:\n" + AnnotatingTreePrinter.print(bgp.getParentNode(), estimator));
 		}
 		
 	}

@@ -32,6 +32,7 @@ import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.openrdf.query.algebra.helpers.VarNameCollector;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
+import de.uni_koblenz.west.federation.model.RemoteQuery;
 import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
@@ -54,8 +56,6 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 	
 	protected RDFStatistics stats;
 	
-//	protected Map<TupleExpr, Double> cardIndex = new HashMap<TupleExpr, Double>();
-	
 	public VoidCardinalityEstimator(RDFStatistics stats) {
 		if (stats == null)
 			throw new IllegalArgumentException("RDF stats must not be NULL.");
@@ -63,13 +63,10 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 		this.stats = stats;
 	}
 	
-//	public Double process(TupleExpr expr) {
-//		synchronized (cardIndex) {
-//			cardIndex.clear();
-//			expr.visit(this);
-//			return cardIndex.get(expr);
-//		}
-//	}
+	@Override
+	public String getName() {
+		return "VoidCard";
+	}
 	
 	@Override
 	public void meet(StatementPattern pattern) throws RuntimeException {
@@ -82,7 +79,6 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 	public void meet(MappedStatementPattern pattern) throws RuntimeException {
 		
 		// check cardinality index first
-//		if (cardIndex.get(pattern) != null)
 		if (getCard(pattern) != null)
 			return;
 		
@@ -94,7 +90,6 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 		}
 		
 		// add cardinality to index
-//		cardIndex.put(pattern, card);
 		setCard(pattern, card);
 	}
 	
@@ -102,7 +97,6 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 	public void meet(Filter filter) {
 		
 		// check cardinality index first
-//		if (cardIndex.get(filter) != null)
 		if (getCard(filter) != null)
 			return;
 		
@@ -110,14 +104,12 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 		// for now use same card as sub expression
 		
 		// add same cardinality as filter argument
-//		cardIndex.put(filter, cardIndex.get(filter.getArg()));
 		setCard(filter, getCard(filter.getArg()));
 	}
 	
 	public void meet(Join join) throws RuntimeException {
 		
 		// check cardinality index first
-//		if (cardIndex.get(join) != null)
 		if (getCard(join) != null)
 			return;
 		
@@ -130,14 +122,11 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 		
 		double joinSelectivity = getJoinSelectivity(join.getLeftArg(), join.getRightArg());
 		
-//		double leftCard = cardIndex.get(join.getLeftArg());
-//		double rightCard = cardIndex.get(join.getRightArg());
 		double leftCard = getCard(join.getLeftArg());
 		double rightCard = getCard(join.getRightArg());
 		double card = joinSelectivity * leftCard * rightCard;
 
 		// add cardinality to index
-//		cardIndex.put(join, card);
 		setCard(join, card);
 	}
 	

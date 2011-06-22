@@ -47,6 +47,7 @@ import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.evaluation.TripleSource;
 //import org.openrdf.query.algebra.evaluation.cursors.DistinctCursor;
 //import org.openrdf.query.algebra.evaluation.cursors.UnionCursor;
@@ -61,6 +62,7 @@ import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
+import de.uni_koblenz.west.federation.model.RemoteQuery;
 
 /**
  * Implementation of the evaluation strategy for querying distributed data
@@ -240,31 +242,28 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 
 	}
 	
-	private TupleExpr currentQuery = null;
-	
-	// TODO move source finding from evaluation to sailconnection
 	@Override
-	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(TupleExpr expr, BindingSet bindings)
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			UnaryTupleOperator expr, BindingSet bindings)
 			throws QueryEvaluationException {
-		
-		synchronized (this) {
-			if (currentQuery == null) {
-				currentQuery = expr;
-			}
-		}
-		try {
+		if (expr instanceof RemoteQuery) {
+			return this.evaluate((RemoteQuery) expr, bindings);
+		} else {
 			return super.evaluate(expr, bindings);
-		} finally {
-			synchronized (this) {
-				if (currentQuery == expr)
-					currentQuery = null;
-			}
 		}
+	}
+	
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(RemoteQuery query, BindingSet bindings) throws QueryEvaluationException {
+		// evaluate query on SPARQL endpoint
+		// 1. pattern group on single source OR
+		// 2. single pattern on multiple sources
+//		return this.evaluate(query.getArg(), bindings);
+		return this.sendSparqlQuery(query.getArg(), query.getSources(), bindings);
 	}
 	
 	// -------------------------------------------------------------------------
 	
-//	private Cursor<BindingSet> sendSparqlQuery(TupleExpr expr, Collection<Repository> sources, BindingSet bindings) {
+	//	private Cursor<BindingSet> sendSparqlQuery(TupleExpr expr, Collection<Repository> sources, BindingSet bindings) {
 	private CloseableIteration<BindingSet, QueryEvaluationException> sendSparqlQuery(TupleExpr expr, Set<Graph> sources, BindingSet bindings) {
 		
 		// check if there are any sources to query

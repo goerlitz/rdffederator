@@ -28,5 +28,7 @@ import org.openrdf.query.algebra.TupleExpr;
 public interface ModelEvaluator {
 	
 	public Double process(TupleExpr expr);
+	
+	public String getName();
 
 }
