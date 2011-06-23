@@ -31,5 +31,20 @@ public class HashJoin extends Join {
 	public HashJoin(TupleExpr leftArg, TupleExpr rightArg) {
 		super(leftArg, rightArg);
 	}
+	
+	@Override
+	public boolean equals(Object other) {
+		return other instanceof HashJoin && super.equals(other);
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode() ^ "HashJoin".hashCode();
+	}
+
+	@Override
+	public HashJoin clone() {
+		return (HashJoin)super.clone();
+	}
 
 }
