@@ -140,6 +140,29 @@ public abstract class Void2Statistics implements RDFStatistics {
 		return Long.parseLong(bindings.get(0));
 	}
 	
+	public long distinctPredicates(Graph g) {
+		String query = concat(
+				VOID_PREFIX,
+				"SELECT ?predicate WHERE {",
+				"  [] a void:Dataset ;",
+				"     void:sparqlEndpoint <", g.toString(), "> ;",
+				"     void:properties ?predicate .",
+				"}");
+		
+		List<String> bindings = evalVar(query, "predicate");
+		if (bindings.size() == 0) {
+			LOGGER.info("unable to find number of distinct predicates in graph " + g.toString());
+			return -1;
+		}
+		if (bindings.size() > 1)
+			LOGGER.warn("found multiple distinct predicates for endpoint: " + g.toString() + ". There exists probably more than one void decription for it.");
+		
+		long value = 0;
+		for (String count : bindings)
+			value += Long.parseLong(count);
+		return value;
+	}
+	
 	public long distinctSubjects(Graph g) {
 		String query = concat(
 				VOID_PREFIX,
@@ -164,14 +187,14 @@ public abstract class Void2Statistics implements RDFStatistics {
 	}
 	
 	@Override
-	public long distinctSubjects(Graph g, URI predicate) {
+	public long distinctSubjects(Graph g, String predicate) {
 		String query = concat(
 				VOID_PREFIX,
 				"SELECT ?subjects WHERE {",
 				"  [] a void:Dataset ;",
 				"     void:sparqlEndpoint <", g.toString(), "> ;",
 				"     void:propertyPartition ?part .",
-				"  ?part void:property <", predicate.toString(), "> ;",
+				"  ?part void:property <", predicate, "> ;",
 				"        void:distinctSubjects ?subjects .",
 				"}");
 		
@@ -205,14 +228,15 @@ public abstract class Void2Statistics implements RDFStatistics {
 	}
 
 	@Override
-	public long distinctObjects(Graph g, URI predicate) {
+//	public long distinctObjects(Graph g, URI predicate) {
+	public long distinctObjects(Graph g, String predicate) {
 		String query = concat(
 				VOID_PREFIX,
 				"SELECT ?objects WHERE {",
 				"  [] a void:Dataset ;",
 				"     void:sparqlEndpoint <", g.toString(), "> ;",
 				"     void:propertyPartition ?part .",
-				"  ?part void:property <", predicate.toString(), "> ;",
+				"  ?part void:property <", predicate, "> ;",
 				"        void:distinctObjects ?objects .",
 				"}");
 		

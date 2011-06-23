@@ -32,7 +32,7 @@ import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.estimation.AbstractCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
 import de.uni_koblenz.west.federation.estimation.ModelEvaluator;
 import de.uni_koblenz.west.federation.helpers.AnnotatingTreePrinter;
 import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
@@ -52,10 +52,11 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 	
 	protected SourceSelector selector;
 	protected SubQueryBuilder builder;
-	protected AbstractCardinalityEstimator estimator;
+	protected AbstractCostEstimator costEstimator;
 	protected ModelEvaluator modelEvaluator;
 	
-	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCardinalityEstimator estimator) {
+//	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCardinalityEstimator estimator) {
+	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator) {
 		if (selector == null)
 			throw new IllegalArgumentException("source selector must not be null");
 		if (builder == null)
@@ -65,7 +66,7 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 		
 		this.selector = selector;
 		this.builder = builder;
-		this.estimator = estimator;
+		this.costEstimator = estimator;
 	}
 	
 	public abstract void optimizeBGP(TupleExpr query);

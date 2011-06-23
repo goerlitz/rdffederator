@@ -36,13 +36,15 @@ public interface RDFStatistics {
 	
 	public long getSize(Graph g);
 	
+	public long distinctPredicates(Graph g);
+	
 	public long distinctSubjects(Graph g);
 	
-	public long distinctSubjects(Graph g, URI predicate);
+	public long distinctSubjects(Graph g, String predicate);
 	
 	public long distinctObjects(Graph g);
 	
-	public long distinctObjects(Graph g, URI predicate);
+	public long distinctObjects(Graph g, String predicate);
 	
 //	public Number patternCard(Graph g, URI s, URI p, RDFTerm o);
 	

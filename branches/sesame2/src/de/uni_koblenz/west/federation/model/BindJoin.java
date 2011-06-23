@@ -21,11 +21,15 @@
 package de.uni_koblenz.west.federation.model;
 
 import org.openrdf.query.algebra.Join;
+import org.openrdf.query.algebra.TupleExpr;
 
 /**
- * @author goerlitz
- *
+ * @author Olaf Goerlitz
  */
 public class BindJoin extends Join {
+	
+	public BindJoin(TupleExpr leftArg, TupleExpr rightArg) {
+		super(leftArg, rightArg);
+	}
 
 }

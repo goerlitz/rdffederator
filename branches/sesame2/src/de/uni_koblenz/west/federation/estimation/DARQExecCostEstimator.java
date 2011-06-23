@@ -35,14 +35,12 @@ import de.uni_koblenz.west.federation.model.RemoteQuery;
  * 
  * @author Olaf Goerlitz
  */
-public class DARQExecCostEstimator extends AbstractExecCostEstimator {
+public class DARQExecCostEstimator extends AbstractCostEstimator {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(DARQExecCostEstimator.class);
 	
 	private static final int C_TRANSFER_QUERY = 1;
 	private static final int C_TRANSFER_TUPLE = 1;
-	
-	private VoidCardinalityEstimator cardEst;
 	
 	public String getName() {
 		return "DARQCost";

@@ -20,55 +20,24 @@
  */
 package de.uni_koblenz.west.federation.estimation;
 
-import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
-import org.openrdf.query.impl.EmptyBindingSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 
 /**
  * @author Olaf Goerlitz
  */
-public class TrueCardinalityEstimator extends AbstractCardinalityEstimator {
+public class CardinalityCostExtimator extends AbstractCostEstimator {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(TrueCardinalityEstimator.class);
-	
-	private EvaluationStrategy evalStrategy;
-	
-	public TrueCardinalityEstimator(EvaluationStrategy evalStrategy) {
-		this.evalStrategy = evalStrategy;
-	}
-	
 	@Override
 	public String getName() {
-		return "TrueCard";
+		return "CardCost";
 	}
-	
+
 	@Override
 	protected void meetNode(QueryModelNode node) throws RuntimeException {
-		if (node instanceof TupleExpr) {
-			TupleExpr expr = (TupleExpr) node;
-			
-			// check cardinality index first
-			if (getIndexCard(expr) != null)
-				return;
-			
-			try {
-				int card = QueryExecutor.getSize(evalStrategy.evaluate(expr, EmptyBindingSet.getInstance()));
-				
-				// add cardinality to index
-				setIndexCard(expr, (double) card);
-				
-			} catch (QueryEvaluationException e) {
-				throw new RuntimeException("query evaluation failed", e);
-			}
-			
-		} else {
-			throw new IllegalArgumentException();
-		}
+		super.meetNode(node);
+		if (node instanceof TupleExpr)
+			cost += cardEst.process((TupleExpr) node);
 	}
+
 }

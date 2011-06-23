@@ -116,7 +116,7 @@ public class BGPCardinalityEstimator<P, F> implements BGPModelEvaluator<P, F, Nu
 
 				// if applicable use average value per predicate
 				if (usePAverage) {
-					distObjects = stats.distinctObjects(source, p);
+					distObjects = stats.distinctObjects(source, p.toString());
 				} else {
 					distObjects = stats.distinctObjects(source);
 				}
@@ -132,7 +132,7 @@ public class BGPCardinalityEstimator<P, F> implements BGPModelEvaluator<P, F, Nu
 
 				// if applicable use average value per predicate
 				if (usePAverage) {
-					distSubjects = stats.distinctSubjects(source, p);
+					distSubjects = stats.distinctSubjects(source, p.toString());
 				} else {
 					distSubjects = stats.distinctSubjects(source);
 				}
