@@ -20,6 +20,8 @@
  */
 package de.uni_koblenz.west.federation.helpers;
 
+import java.util.List;
+
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.algebra.BinaryTupleOperator;
@@ -30,7 +32,10 @@ import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
+import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 
+import de.uni_koblenz.west.federation.estimation.AbstractCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
 import de.uni_koblenz.west.federation.estimation.ModelEvaluator;
 import de.uni_koblenz.west.federation.model.RemoteQuery;
 
@@ -102,7 +107,11 @@ public class AnnotatingTreePrinter extends QueryModelVisitorBase<RuntimeExceptio
 			var.visit(this);
 			buffer.append(" ");
 		}
-		if (eval != null)
+		
+		if (eval instanceof AbstractCostEstimator) {
+			AbstractCardinalityEstimator evalCard = ((AbstractCostEstimator) eval).getCardinalityEstimator();
+			buffer.append(" [").append(evalCard.getName()).append(": ").append(evalCard.process(node)).append("]");
+		} else if (eval != null)
 			buffer.append(" [").append(evalLabel).append(": ").append(eval.process(node)).append("]");
 	}
 
@@ -123,8 +132,14 @@ public class AnnotatingTreePrinter extends QueryModelVisitorBase<RuntimeExceptio
 			throws RuntimeException {
 		addIndent();
 		buffer.append(node.getSignature().toUpperCase());
-		if (eval != null)
+		
+		if (eval != null) {
 			buffer.append(" [").append(evalLabel).append(": ").append(eval.process(node)).append("]");
+			if (eval instanceof AbstractCostEstimator) {
+				AbstractCardinalityEstimator evalCard = ((AbstractCostEstimator) eval).getCardinalityEstimator();
+				buffer.append(" [").append(evalCard.getName()).append(": ").append(evalCard.process(node)).append("]");
+			}
+		}
 		
 		indentLevel++;
 		buffer.append(LINE_SEPARATOR);
@@ -146,8 +161,21 @@ public class AnnotatingTreePrinter extends QueryModelVisitorBase<RuntimeExceptio
 	
 	protected void meet(RemoteQuery node) {
 		addIndent();
-		buffer.append("###REMOTE QUERY### @").append(node.getSources()).append(LINE_SEPARATOR);
-		node.getArg().visit(this);
+		buffer.append("###REMOTE QUERY### @").append(node.getSources());
+		
+		// sub queries have no cost
+		if (eval instanceof AbstractCostEstimator) {
+			AbstractCardinalityEstimator evalCard = ((AbstractCostEstimator) eval).getCardinalityEstimator();
+			buffer.append(" [").append(evalCard.getName()).append(": ").append(evalCard.process(node)).append("]");
+			
+			for (StatementPattern p : StatementPatternCollector.process(node.getArg())) {
+				buffer.append(LINE_SEPARATOR);
+				meet(p);
+			}
+		} else {
+			buffer.append(LINE_SEPARATOR);
+			node.getArg().visit(this);
+		}
 	}
 
 	@Override

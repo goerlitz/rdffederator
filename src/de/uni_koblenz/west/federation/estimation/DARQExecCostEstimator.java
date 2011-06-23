@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.model.BindJoin;
 import de.uni_koblenz.west.federation.model.HashJoin;
-import de.uni_koblenz.west.federation.model.NestedLoopJoin;
 import de.uni_koblenz.west.federation.model.RemoteQuery;
 
 /**
@@ -39,7 +38,7 @@ public class DARQExecCostEstimator extends AbstractCostEstimator {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(DARQExecCostEstimator.class);
 	
-	private static final int C_TRANSFER_QUERY = 1;
+	private static final int C_TRANSFER_QUERY = 5;
 	private static final int C_TRANSFER_TUPLE = 1;
 	
 	public String getName() {
@@ -49,16 +48,16 @@ public class DARQExecCostEstimator extends AbstractCostEstimator {
 	@Override
 	public void meet(Join node) throws RuntimeException {
 		
+		// get cost of children first
+		super.meet(node);
+		
 		if (node instanceof HashJoin) {
 			meet((HashJoin) node);
 		} else if (node instanceof BindJoin) {
 			meet((BindJoin) node);
-		} else if (node instanceof NestedLoopJoin) {
-			meet((NestedLoopJoin) node);
 		} else {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("no accepted join: " + node);
 		}
-		super.meet(node);
 	}
 
 	@Override
@@ -76,24 +75,21 @@ public class DARQExecCostEstimator extends AbstractCostEstimator {
 	// -------------------------------------------------------------------------
 	
 	protected void meet(HashJoin join) {
-		throw new IllegalArgumentException("hash join is not implemented yet");
+		Double leftCard = cardEst.process(join.getLeftArg());
+		Double rightCard = cardEst.process(join.getRightArg());
+		
+		this.cost += (leftCard + rightCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY;
+		
+		LOGGER.warn("HashJoin: " + leftCard + " >< " + rightCard + " :: " + (leftCard + rightCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY);
 	}
 	
 	protected void meet(BindJoin join) {
-		
 		Double leftCard = cardEst.process(join.getLeftArg());
 		Double joinCard = cardEst.process(join);
 		
 		this.cost += leftCard * (C_TRANSFER_TUPLE + C_TRANSFER_QUERY) + joinCard * C_TRANSFER_TUPLE;
 		
-	}
-	
-	protected void meet(NestedLoopJoin join) {
-		Double leftCard = cardEst.process(join.getLeftArg());
-		Double rightCard = cardEst.process(join.getLeftArg());
-		
-		this.cost += (leftCard + rightCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY;
-		
+		LOGGER.warn("BindJoin: " + leftCard + " >< " + joinCard + " :: " + (leftCard + joinCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY);
 	}
 	
 	protected void meet(RemoteQuery query) {

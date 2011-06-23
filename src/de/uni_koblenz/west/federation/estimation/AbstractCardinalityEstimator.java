@@ -39,7 +39,7 @@ public abstract class AbstractCardinalityEstimator extends QueryModelVisitorBase
 	@Override
 	public Double process(TupleExpr expr) {
 		synchronized (this) {
-			cardIndex.clear();
+//			cardIndex.clear();
 			expr.visit(this);
 			return cardIndex.get(expr);
 		}
