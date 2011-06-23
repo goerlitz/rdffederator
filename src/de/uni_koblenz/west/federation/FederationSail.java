@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
@@ -34,6 +35,7 @@ import org.openrdf.sail.helpers.SailBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.statistics.RDFStatistics;
 
@@ -56,13 +58,44 @@ public class FederationSail extends SailBase {
 	private SourceSelector selector;
 	private QueryOptimizer optimizer;
 	private RDFStatistics statistics;
+	private EvaluationStrategy evalStrategy;
 
 	private boolean initialized = false;
 	
-	// -------------------------------------------------------------------------
+	public FederationSail() {
+		this.evalStrategy = new FederationEvalStrategy(this.vf);
+	}
+	
+	// --- GETTER --------------------------------------------------------------
+	
+	public EvaluationStrategy getEvalStrategy() {
+		return evalStrategy;
+	}
 	
 	public QueryOptimizer getFederationOptimizer() {
 		return this.optimizer;
+	}
+	
+	public List<Repository> getMembers() {
+		return members;
+	}
+	
+	public SourceSelector getSourceSelector() {
+		return this.selector;
+	}
+	
+	public RDFStatistics getStatistics() {
+		if (statistics == null)
+			throw new IllegalArgumentException("statistics is NULL");
+		return statistics;
+	}
+	
+	// --- SETTER --------------------------------------------------------------
+
+	public void setEvalStrategy(EvaluationStrategy evalStrategy) {
+		if (evalStrategy == null)
+			throw new IllegalArgumentException("evaluation strategy is NULL");
+		this.evalStrategy = evalStrategy;
 	}
 	
 	public void setFederationOptimizer(QueryOptimizer optimizer) {
@@ -71,32 +104,18 @@ public class FederationSail extends SailBase {
 		this.optimizer = optimizer;
 	}
 	
-	public List<Repository> getMembers() {
-		return members;
-	}
-
 	public void setMembers(List<Repository> members) {
 		if (members == null)
 			throw new IllegalArgumentException("members is NULL");
 		this.members = members;
 	}
 
-	public SourceSelector getSourceSelector() {
-		return this.selector;
-	}
-	
 	public void setSourceSelector(SourceSelector selector) {
 		if (selector == null)
 			throw new IllegalArgumentException("selector is NULL");
 		this.selector = selector;
 	}
 	
-	public RDFStatistics getStatistics() {
-		if (statistics == null)
-			throw new IllegalArgumentException("statistics is NULL");
-		return statistics;
-	}
-
 	public void setStatistics(RDFStatistics statistics) {
 		this.statistics = statistics;
 	}

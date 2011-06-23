@@ -32,7 +32,8 @@ import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.AbstractCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.ModelEvaluator;
 import de.uni_koblenz.west.federation.helpers.AnnotatingTreePrinter;
 import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
 import de.uni_koblenz.west.federation.model.BasicGraphPatternExtractor;
@@ -51,9 +52,10 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 	
 	protected SourceSelector selector;
 	protected SubQueryBuilder builder;
-	protected VoidCardinalityEstimator estimator;
+	protected AbstractCardinalityEstimator estimator;
+	protected ModelEvaluator modelEvaluator;
 	
-	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, VoidCardinalityEstimator estimator) {
+	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCardinalityEstimator estimator) {
 		if (selector == null)
 			throw new IllegalArgumentException("source selector must not be null");
 		if (builder == null)
@@ -80,6 +82,14 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 		return this.builder.createSubQueries(mappedPatterns, conditions);
 	}
 	
+	public ModelEvaluator getModelEvaluator() {
+		return modelEvaluator;
+	}
+
+	public void setModelEvaluator(ModelEvaluator modelEvaluator) {
+		this.modelEvaluator = modelEvaluator;
+	}
+	
 	@Override
 	public void optimize(TupleExpr query, Dataset dataset, BindingSet bindings) {  // Sesame 2
 		
@@ -96,8 +106,8 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 
 			optimizeBGP(bgp);
 			
-			if (LOGGER.isTraceEnabled())
-				LOGGER.trace("BGP after optimization:\n" + AnnotatingTreePrinter.print(bgp.getParentNode(), estimator));
+			if (LOGGER.isTraceEnabled() && modelEvaluator != null)
+				LOGGER.trace("BGP after optimization:\n" + AnnotatingTreePrinter.print(bgp.getParentNode(), modelEvaluator));
 		}
 		
 	}

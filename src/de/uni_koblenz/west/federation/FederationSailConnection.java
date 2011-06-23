@@ -38,6 +38,7 @@ import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
 //import org.openrdf.query.algebra.QueryModel;
 import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.evaluation.TripleSource;
 import org.openrdf.query.algebra.evaluation.impl.BindingAssigner;
@@ -76,6 +77,7 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 
 	private final ValueFactory vf;
 	private final QueryOptimizer optimizer;
+	private final EvaluationStrategy strategy;
 	
 	/**
 	 * Create a Sail connection which wraps the members repository connections.
@@ -92,6 +94,7 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 			throw new IllegalArgumentException("sail must not be NULL");
 		
 		this.optimizer = sail.getFederationOptimizer();
+		this.strategy = sail.getEvalStrategy();
 
 //		URIFactory uf = sail.getURIFactory();
 //		LiteralFactory lf = sail.getLiteralFactory();
@@ -125,7 +128,7 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluateInternal(TupleExpr query, Dataset dataset,
 			BindingSet bindings, boolean includeInferred) throws SailException {	// Sesame 2:
 		
-		FederationEvalStrategy strategy = new FederationEvalStrategy(this.vf);
+//		FederationEvalStrategy strategy = new FederationEvalStrategy(this.vf);
 		QueryOptimizerList optimizerList = new QueryOptimizerList();
 		
 		LOGGER.trace("Incoming query model:\n{}", OperatorTreePrinter.print(query));
