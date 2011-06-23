@@ -31,5 +31,20 @@ public class BindJoin extends Join {
 	public BindJoin(TupleExpr leftArg, TupleExpr rightArg) {
 		super(leftArg, rightArg);
 	}
+	
+	@Override
+	public boolean equals(Object other) {
+		return other instanceof BindJoin && super.equals(other);
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode() ^ "BindJoin".hashCode();
+	}
+
+	@Override
+	public BindJoin clone() {
+		return (BindJoin)super.clone();
+	}
 
 }
