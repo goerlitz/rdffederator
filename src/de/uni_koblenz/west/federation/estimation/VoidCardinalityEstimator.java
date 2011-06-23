@@ -50,11 +50,13 @@ import de.uni_koblenz.west.statistics.RDFStatistics;
  * @author Olaf Goerlitz
  */
 //public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeException> {
-public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
+public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(VoidCardinalityEstimator.class);
 	
 	protected RDFStatistics stats;
+	
+	protected abstract Number getPatternCard(MappedStatementPattern pattern, Graph source);
 	
 	public VoidCardinalityEstimator(RDFStatistics stats) {
 		if (stats == null)
@@ -79,7 +81,7 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 	public void meet(MappedStatementPattern pattern) throws RuntimeException {
 		
 		// check cardinality index first
-		if (getCard(pattern) != null)
+		if (getIndexCard(pattern) != null)
 			return;
 		
 		double card = 0;
@@ -90,27 +92,27 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 		}
 		
 		// add cardinality to index
-		setCard(pattern, card);
+		setIndexCard(pattern, card);
 	}
 	
 	@Override
 	public void meet(Filter filter) {
 		
 		// check cardinality index first
-		if (getCard(filter) != null)
+		if (getIndexCard(filter) != null)
 			return;
 		
 		// TODO: include condition in estimation
 		// for now use same card as sub expression
 		
 		// add same cardinality as filter argument
-		setCard(filter, getCard(filter.getArg()));
+		setIndexCard(filter, getIndexCard(filter.getArg()));
 	}
 	
 	public void meet(Join join) throws RuntimeException {
 		
 		// check cardinality index first
-		if (getCard(join) != null)
+		if (getIndexCard(join) != null)
 			return;
 		
 		// TODO: does the estimated cardinality depend on the current join?
@@ -122,12 +124,12 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 		
 		double joinSelectivity = getJoinSelectivity(join.getLeftArg(), join.getRightArg());
 		
-		double leftCard = getCard(join.getLeftArg());
-		double rightCard = getCard(join.getRightArg());
+		double leftCard = getIndexCard(join.getLeftArg());
+		double rightCard = getIndexCard(join.getRightArg());
 		double card = joinSelectivity * leftCard * rightCard;
 
 		// add cardinality to index
-		setCard(join, card);
+		setIndexCard(join, card);
 	}
 	
 	// -------------------------------------------------------------------------
@@ -200,22 +202,4 @@ public class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 		return Math.min(leftSel, rightSel);
 	}
 	
-	private Number getPatternCard(MappedStatementPattern pattern, Graph source) {
-		
-		Value p = pattern.getPredicateVar().getValue();
-		Value o = pattern.getObjectVar().getValue();
-		
-		// predicate must be bound
-		if (p == null)
-			throw new IllegalArgumentException("predicate must be bound: " + pattern);
-		
-		// handle rdf:type
-		if (RDF.TYPE.equals(p) && o != null) {
-			return stats.typeCard(source, o.stringValue());
-		}
-
-		// use triple count containing the predicate
-		return stats.pCard(source, p.stringValue());
-	}
-
 }

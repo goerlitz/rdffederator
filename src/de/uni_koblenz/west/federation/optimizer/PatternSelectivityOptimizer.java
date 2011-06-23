@@ -32,7 +32,7 @@ import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.helpers.VarNameCollector;
 
-import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
 import de.uni_koblenz.west.federation.model.SubQueryBuilder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 
@@ -41,7 +41,7 @@ import de.uni_koblenz.west.federation.sources.SourceSelector;
  */
 public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 	
-	public PatternSelectivityOptimizer(SourceSelector selector, SubQueryBuilder builder, VoidCardinalityEstimator estimator) {
+	public PatternSelectivityOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator) {
 		super(selector, builder, estimator);
 	}
 
@@ -53,7 +53,7 @@ public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 		
 		// get cardinality for all query base expressions
 		for (TupleExpr expr : queryExpressions) {
-			costs.put(expr, this.estimator.process(expr));
+			costs.put(expr, this.costEstimator.process(expr));
 		}
 		
 		// defines the cost comparator

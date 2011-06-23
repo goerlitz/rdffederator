@@ -26,16 +26,30 @@ import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 /**
  * @author Olaf Goerlitz
  */
-public abstract class AbstractExecCostEstimator extends QueryModelVisitorBase<RuntimeException> implements ModelEvaluator {
+public abstract class AbstractCostEstimator extends QueryModelVisitorBase<RuntimeException> implements ModelEvaluator {
 	
 	protected double cost;
+	
+	protected AbstractCardinalityEstimator cardEst;
+	
+	public AbstractCardinalityEstimator getCardinalityEstimator() {
+		return cardEst;
+	}
+
+	public void setCardinalityEstimator(AbstractCardinalityEstimator cardEst) {
+		this.cardEst = cardEst;
+	}
+
+	public Double getCost(TupleExpr expr) {
+		cost = 0;
+		expr.visit(this);
+		return cost;
+	}
 	
 	@Override
 	public Double process(TupleExpr expr) {
 		synchronized (this) {
-			cost = 0;
-			expr.visit(this);
-			return cost;
+			return getCost(expr);
 		}
 	}
 	

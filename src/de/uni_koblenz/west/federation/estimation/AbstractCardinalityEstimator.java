@@ -56,17 +56,17 @@ public abstract class AbstractCardinalityEstimator extends QueryModelVisitorBase
 	}
 	
 	protected void meet(RemoteQuery node) {
-		if (getCard(node) != null)
+		if (getIndexCard(node) != null)
 			return;
 		node.getArg().visit(this);
-		setCard(node, getCard(node.getArg()));
+		setIndexCard(node, getIndexCard(node.getArg()));
 	}
 	
-	protected Double getCard(TupleExpr expr) {
+	protected Double getIndexCard(TupleExpr expr) {
 		return this.cardIndex.get(expr);
 	}
 	
-	protected void setCard(TupleExpr expr, Double value) {
+	protected void setIndexCard(TupleExpr expr, Double value) {
 		this.cardIndex.put(expr, value);
 	}
 

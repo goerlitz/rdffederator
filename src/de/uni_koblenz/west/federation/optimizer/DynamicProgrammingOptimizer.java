@@ -39,9 +39,12 @@ import org.openrdf.query.algebra.helpers.VarNameCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
 import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
 import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
 import de.uni_koblenz.west.federation.helpers.Format;
+import de.uni_koblenz.west.federation.model.BindJoin;
+import de.uni_koblenz.west.federation.model.HashJoin;
 import de.uni_koblenz.west.federation.model.SubQueryBuilder;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 
@@ -52,15 +55,17 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(DynamicProgrammingOptimizer.class);
 	
-	private VoidCardinalityEstimator costEval;
-	
 	private static int DEBUG_N;
+	
+	private boolean bindJoin;
+	private boolean hashJoin;
 			
-	public DynamicProgrammingOptimizer(SourceSelector selector, SubQueryBuilder builder, VoidCardinalityEstimator estimator) {
+//	public DynamicProgrammingOptimizer(SourceSelector selector, SubQueryBuilder builder, VoidCardinalityEstimator estimator, boolean hashJoin, boolean bindJoin) {
+	public DynamicProgrammingOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator, boolean hashJoin, boolean bindJoin) {
 		super(selector, builder, estimator);
 		
-		// TODO: get the cost evaluation
-		this.costEval = estimator;
+		this.bindJoin = bindJoin;
+		this.hashJoin = hashJoin;
 	}
 
 	@Override
@@ -133,18 +138,38 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 			vars.retainAll(VarNameCollector.process(plan));
 			if (vars.size() == 0) continue;
 			
-//			for (JoinExec exec : JoinExec.values()) {
-//				for (JoinAlgo algo : JoinAlgo.values()) {
+			// create all physical join variations
+			for (TupleExpr join : createPhysicalJoins(joinPlan, plan)) {
+				join = applyFilters(join, conditions);
+				newPlans.add(join);
+			}
 			
-					// create joins of different types
-					TupleExpr join = new Join(joinPlan, plan);
-					join = applyFilters(join, conditions);
-					newPlans.add(join);
-					
-//				}
-//			}
+////			for (JoinExec exec : JoinExec.values()) {
+////				for (JoinAlgo algo : JoinAlgo.values()) {
+//			
+//					// create joins of different types
+//					TupleExpr join = new Join(joinPlan, plan);
+//					join = applyFilters(join, conditions);
+//					newPlans.add(join);
+//					
+////				}
+////			}
 		}
+		if (newPlans.size() == 0)
+			throw new IllegalStateException("no physical joins created. please enable them");
+		
 		return newPlans;
+	}
+	
+	private List<Join> createPhysicalJoins(TupleExpr leftArg, TupleExpr rightArg) {
+		List<Join> joins = new ArrayList<Join>();
+		if (bindJoin) {
+			joins.add(new BindJoin(leftArg, rightArg));
+		}
+		if (hashJoin) {
+			joins.add(new HashJoin(leftArg, rightArg));
+		}
+		return joins;
 	}
 	
 	protected TupleExpr applyFilters(TupleExpr operator, List<ValueExpr> conditions) {
@@ -250,7 +275,8 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 			for (TupleExpr plan : equalSet) {
 				
 				planCount++;
-				double cost = costEval.process(plan);
+//				double cost = costEval.process(plan);
+				double cost = costEstimator.process(plan);
 				
 				if (bestPlan == null || cost < lowestCost) {
 					
