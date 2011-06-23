@@ -37,6 +37,11 @@ public class DARQCardinalityEstimator extends VoidCardinalityEstimator {
 	}
 	
 	@Override
+	public String getName() {
+		return "DARQCard";
+	}
+	
+	@Override
 	protected Number getPatternCard(MappedStatementPattern pattern, Graph source) {
 		
 		Value s = pattern.getSubjectVar().getValue();

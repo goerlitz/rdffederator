@@ -26,7 +26,7 @@ import org.openrdf.query.algebra.TupleExpr;
 /**
  * @author Olaf Goerlitz
  */
-public class CardinalityCostExtimator extends AbstractCostEstimator {
+public class CardinalityCostEstimator extends AbstractCostEstimator {
 
 	@Override
 	public String getName() {

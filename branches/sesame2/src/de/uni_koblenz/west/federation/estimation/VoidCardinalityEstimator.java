@@ -22,6 +22,7 @@ package de.uni_koblenz.west.federation.estimation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +34,7 @@ import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.UnaryTupleOperator;
+import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.openrdf.query.algebra.helpers.VarNameCollector;
@@ -56,26 +58,17 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 	
 	protected RDFStatistics stats;
 	
+	// -------------------------------------------------------------------------
+	
 	protected abstract Number getPatternCard(MappedStatementPattern pattern, Graph source);
+	
+	// -------------------------------------------------------------------------
 	
 	public VoidCardinalityEstimator(RDFStatistics stats) {
 		if (stats == null)
 			throw new IllegalArgumentException("RDF stats must not be NULL.");
 		
 		this.stats = stats;
-	}
-	
-	@Override
-	public String getName() {
-		return "VoidCard";
-	}
-	
-	@Override
-	public void meet(StatementPattern pattern) throws RuntimeException {
-		if (pattern instanceof MappedStatementPattern)
-			meet((MappedStatementPattern) pattern);
-		else
-			super.meet(pattern);
 	}
 	
 	public void meet(MappedStatementPattern pattern) throws RuntimeException {
@@ -86,13 +79,100 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		
 		double card = 0;
 
-		// assume that each source contributes distinct results: compute sum
+		// estimate the cardinality of the pattern for each source and sum up
+		// assumes that all result tuple will be distinct
 		for (Graph source : pattern.getSources()) {
 			card += getPatternCard(pattern, source).doubleValue();
 		}
 		
 		// add cardinality to index
 		setIndexCard(pattern, card);
+	}
+	
+	protected void meet(RemoteQuery node) {
+		
+		// check cardinality index first
+		if (getIndexCard(node) != null)
+			return;
+		
+		Map<String, List<StatementPattern>> patternGroup = new HashMap<String, List<StatementPattern>>();
+		
+		// group patterns by subject
+		for (StatementPattern p : StatementPatternCollector.process(node.getArg())) {
+			
+			// get cardinality first
+			meet(p);
+			
+			String varName = p.getSubjectVar().getName();
+			List<StatementPattern> pList = patternGroup.get(varName);
+			if (pList == null) {
+				pList = new ArrayList<StatementPattern>();
+				patternGroup.put(varName, pList);
+			}
+			pList.add(p);
+		}
+		
+		// process each pattern group: start with patterns where P+O is bound
+		for (String varName : patternGroup.keySet()) {
+
+			List<StatementPattern> pList = patternGroup.get(varName);
+			LOGGER.warn("PGroup: " + varName + " -> " + pList);
+			
+			// find minimum cardinality for all pattern which have P+O bound
+			Double minCard = Double.POSITIVE_INFINITY;
+			Iterator<StatementPattern> it = pList.iterator();
+			while (it.hasNext()) {
+				StatementPattern p = it.next();
+				if (p.getObjectVar().getValue() != null) {
+					Double pCard = getIndexCard(p);
+					if (pCard.compareTo(minCard) < 0) {
+						minCard = pCard;
+					}
+					it.remove();
+				}
+			}
+			
+			// check if we have found a minimum cardinality
+			if (minCard.equals(Double.POSITIVE_INFINITY)) {
+				LOGGER.warn("no pattern with bound P+O for " + varName);
+				minCard = 1d;
+			}
+			
+			// the remaining patterns are multiplied like a cross product
+			for (StatementPattern p : pList) {
+				minCard = minCard * getIndexCard(p);
+				double varSel = getVarSelectivity((MappedStatementPattern) p, varName);
+				LOGGER.warn("varsel: " + varSel + " ++ " + p);
+			}
+			
+			LOGGER.warn("PGroup: " + varName + " -> " + minCard);
+			
+		}
+		
+		
+		node.getArg().visit(this);
+		// add same cardinality as child argument
+		setIndexCard(node, getIndexCard(node.getArg()));
+	}
+	
+	// -------------------------------------------------------------------------
+	
+	@Override
+	public void meet(StatementPattern pattern) throws RuntimeException {
+		if (pattern instanceof MappedStatementPattern)
+			meet((MappedStatementPattern) pattern);
+		else
+			throw new IllegalArgumentException("all triple patterns must be mapped to sources");
+	}
+	
+	@Override
+	protected void meetUnaryTupleOperator(UnaryTupleOperator node)
+			throws RuntimeException {
+		if (node instanceof RemoteQuery) {
+			meet((RemoteQuery) node);
+		} else {
+			super.meetUnaryTupleOperator(node);
+		}
 	}
 	
 	@Override
@@ -149,15 +229,19 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		
 		for (Graph source : pattern.getSources()) {
 			
+			Long pCount = stats.distinctPredicates(source);
+			
 			if (varName.equals(pattern.getSubjectVar().getName())) {
-				count += stats.distinctSubjects(source);
+//				count += stats.distinctSubjects(source);
+				count += stats.distinctSubjects(source) / pCount.doubleValue();
 				continue;
 			}
 			if (varName.equals(pattern.getPredicateVar().getName())) {
 				throw new UnsupportedOperationException("predicate join not supported yet");
 			}
 			if (varName.equals(pattern.getObjectVar().getName())) {
-				count += stats.distinctObjects(source);
+//				count += stats.distinctObjects(source);
+				count += stats.distinctObjects(source) / pCount.doubleValue();
 				continue;
 			}
 			throw new IllegalArgumentException("var name not found in pattern");
@@ -165,7 +249,7 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		return 1.0 / count;
 	}
 	
-	private double getJoinSelectivity(TupleExpr leftExpr, TupleExpr rightExpr) {
+	protected double getJoinSelectivity(TupleExpr leftExpr, TupleExpr rightExpr) {
 		
 		// get join variables
 		Set<String> joinVars = VarNameCollector.process(leftExpr);

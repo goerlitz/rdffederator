@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
-import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
 import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
 import de.uni_koblenz.west.federation.helpers.Format;
 import de.uni_koblenz.west.federation.model.BindJoin;
@@ -60,7 +59,6 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 	private boolean bindJoin;
 	private boolean hashJoin;
 			
-//	public DynamicProgrammingOptimizer(SourceSelector selector, SubQueryBuilder builder, VoidCardinalityEstimator estimator, boolean hashJoin, boolean bindJoin) {
 	public DynamicProgrammingOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator, boolean hashJoin, boolean bindJoin) {
 		super(selector, builder, estimator);
 		
@@ -102,6 +100,8 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 				}
 			}
 			
+			LOGGER.warn(optPlans.get(n).size() + " plans generated for N=" + n);
+			
 			Set<TupleExpr> nAryPlans = optPlans.get(n);
 			
 			// check for cross product
@@ -120,14 +120,12 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 		if (optPlans.get(count).size() == 0)
 			throw new UnsupportedOperationException("Queries requiring cross products are not supported (yet)");
 		
-//		model.replaceRoot(optPlans.get(count).iterator().next());
 		bgp.replaceWith(optPlans.get(count).iterator().next());
 
 	}
 	
 	public List<TupleExpr> createJoins(TupleExpr joinPlan, Set<TupleExpr> plans, List<ValueExpr> conditions) {
 		
-//		Set<TupleExpr> newPlans = new HashSet<TupleExpr>();
 		List<TupleExpr> newPlans = new ArrayList<TupleExpr>();
 		
 		for (TupleExpr plan : plans) {
@@ -143,17 +141,6 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 				join = applyFilters(join, conditions);
 				newPlans.add(join);
 			}
-			
-////			for (JoinExec exec : JoinExec.values()) {
-////				for (JoinAlgo algo : JoinAlgo.values()) {
-//			
-//					// create joins of different types
-//					TupleExpr join = new Join(joinPlan, plan);
-//					join = applyFilters(join, conditions);
-//					newPlans.add(join);
-//					
-////				}
-////			}
 		}
 		if (newPlans.size() == 0)
 			throw new IllegalStateException("no physical joins created. please enable them");
