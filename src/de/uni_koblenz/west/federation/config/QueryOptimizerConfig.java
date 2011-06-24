@@ -21,6 +21,8 @@
 package de.uni_koblenz.west.federation.config;
 
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.ESTIMATOR;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_BIND_JOIN;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_HASH_JOIN;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPT_TYPE;
 
 import org.openrdf.model.Graph;
@@ -40,6 +42,9 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 	
 	private String estimatorType;
 	
+	private boolean useBindJoin;
+	private boolean useHashJoin;
+	
 	protected QueryOptimizerConfig() {
 		super(OPT_TYPE);
 	}
@@ -53,6 +58,14 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 	public String getEstimatorType() {
 		return this.estimatorType;
 	}
+	
+	public boolean isUseBindJoin() {
+		return this.useBindJoin;
+	}
+	
+	public boolean isUseHashJoin() {
+		return this.useHashJoin;
+	}
 
 	@Override
 	public Resource export(Graph model) {
@@ -61,6 +74,8 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		Resource self = super.export(model);
 		
 		model.add(self, ESTIMATOR, vf.createLiteral(this.estimatorType));
+		model.add(self, USE_BIND_JOIN, vf.createLiteral(this.useBindJoin));
+		model.add(self, USE_HASH_JOIN, vf.createLiteral(this.useHashJoin));
 		
 		return self;
 	}
@@ -73,16 +88,19 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		if (estimator != null) {
 			this.estimatorType = estimator.getLabel();
 		}
+		
+		useBindJoin = getObjectBoolean(model, implNode, USE_BIND_JOIN, false);
+		useHashJoin = getObjectBoolean(model, implNode, USE_HASH_JOIN, false);
 	}
 
 	@Override
 	public void validate() throws SailConfigException {
 		super.validate();
-		// TODO: check for valid optimizer setting
+		// TODO: check for valid optimizer settings
 		
 		if (this.estimatorType == null)
 			throw new SailConfigException("no cardinality estimator specified: use " + ESTIMATOR);
-		// TODO: check for valid estimator setting
+		// TODO: check for valid estimator settings
 	}
 
 }

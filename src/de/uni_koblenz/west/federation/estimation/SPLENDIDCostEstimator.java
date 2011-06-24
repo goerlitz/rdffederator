@@ -42,7 +42,7 @@ public class SPLENDIDCostEstimator extends AbstractCostEstimator {
 	private static final int C_TRANSFER_TUPLE = 1;
 	
 	public String getName() {
-		return "DARQCost";
+		return "SPLDCost";
 	}
 	
 	@Override

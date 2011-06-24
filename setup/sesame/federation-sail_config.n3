@@ -28,24 +28,14 @@
             fed:groupBySource true ;
             fed:groupBySameAs true ;
          ] ;
-         
-         # cardinality estimation settings; type={STATISTICS, TRUE_CARD}
-         fed:cardEstimation [
-            fed:estimatorType "STATISTICS" ;
-            fed:statsEstimation [
-               fed:usePredTypeCount true ;
-            ] ;
-         ] ;
 
          # optimizer settings; type={DYNAMIC_PROGRAMMING, PATTERN_HEURISTIC}
+         # cardinality estimation settings; type={STATISTICS, TRUE_CARD}
          fed:queryOptimization [
             fed:optimizerType "DYNAMIC_PROGRAMMING" ;
             fed:cardEstimator "STATISTICS" ;
-         ] ;
-         
-         fed:queryExecution [
-             fed:useBindJoin true ;
-             fed:useSemiJoin true ;
+            fed:useBindJoin true ;
+            fed:useSemiJoin true ;
          ] ;
 
          # sparql endpoints

@@ -50,37 +50,48 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFederationOptimizer.class);
 	
-	protected SourceSelector selector;
-	protected SubQueryBuilder builder;
+	protected SourceSelector sourceSelector;
+	protected SubQueryBuilder queryBuilder;
 	protected AbstractCostEstimator costEstimator;
 	protected ModelEvaluator modelEvaluator;
 	
-//	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCardinalityEstimator estimator) {
-	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator) {
-		if (selector == null)
-			throw new IllegalArgumentException("source selector must not be null");
-		if (builder == null)
-			throw new IllegalArgumentException("pattern group builder must not be null");
-		if (estimator == null)
-			throw new IllegalArgumentException("cardinality estimator must not be null");
-		
-		this.selector = selector;
-		this.builder = builder;
-		this.costEstimator = estimator;
-	}
-	
+	/**
+	 * To be implemented by sub classes.
+	 * 
+	 * @param query the Query to optimize.
+	 */
 	public abstract void optimizeBGP(TupleExpr query);
 	
-	protected List<TupleExpr> getBaseExpressions(TupleExpr expr) {
-		
-		// get patterns and filter conditions from query model
-		List<StatementPattern> patterns = StatementPatternCollector.process(expr);
-		List<ValueExpr> conditions = FilterConditionCollector.process(expr);
-		
-		// create patterns with source mappings
-		List<MappedStatementPattern> mappedPatterns = this.selector.mapSources(patterns);
-		
-		return this.builder.createSubQueries(mappedPatterns, conditions);
+	// -------------------------------------------------------------------------
+	
+	public SourceSelector getSelector() {
+		return sourceSelector;
+	}
+
+	public void setSelector(SourceSelector sourceSelector) {
+		if (sourceSelector == null)
+			throw new IllegalArgumentException("source selector must not be null");
+		this.sourceSelector = sourceSelector;
+	}
+
+	public SubQueryBuilder getBuilder() {
+		return queryBuilder;
+	}
+
+	public void setBuilder(SubQueryBuilder queryBuilder) {
+		if (queryBuilder == null)
+			throw new IllegalArgumentException("pattern group builder must not be null");
+		this.queryBuilder = queryBuilder;
+	}
+
+	public AbstractCostEstimator getCostEstimator() {
+		return costEstimator;
+	}
+
+	public void setCostEstimator(AbstractCostEstimator costEstimator) {
+		if (costEstimator == null)
+			throw new IllegalArgumentException("cost estimator must not be null");
+		this.costEstimator = costEstimator;
 	}
 	
 	public ModelEvaluator getModelEvaluator() {
@@ -89,6 +100,28 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 
 	public void setModelEvaluator(ModelEvaluator modelEvaluator) {
 		this.modelEvaluator = modelEvaluator;
+	}
+	
+	// -------------------------------------------------------------------------
+	
+//	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator) {
+//
+//
+//		this.selector = selector;
+//		this.builder = builder;
+//		this.costEstimator = estimator;
+//	}
+	
+	protected List<TupleExpr> getBaseExpressions(TupleExpr expr) {
+		
+		// get patterns and filter conditions from query model
+		List<StatementPattern> patterns = StatementPatternCollector.process(expr);
+		List<ValueExpr> conditions = FilterConditionCollector.process(expr);
+		
+		// create patterns with source mappings
+		List<MappedStatementPattern> mappedPatterns = this.sourceSelector.mapSources(patterns);
+		
+		return this.queryBuilder.createSubQueries(mappedPatterns, conditions);
 	}
 	
 	@Override

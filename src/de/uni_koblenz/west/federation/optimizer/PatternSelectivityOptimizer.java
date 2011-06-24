@@ -32,19 +32,11 @@ import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.helpers.VarNameCollector;
 
-import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
-import de.uni_koblenz.west.federation.model.SubQueryBuilder;
-import de.uni_koblenz.west.federation.sources.SourceSelector;
-
 /**
  * @author Olaf Goerlitz
  */
 public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 	
-	public PatternSelectivityOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator) {
-		super(selector, builder, estimator);
-	}
-
 	@Override
 	public void optimizeBGP(TupleExpr bgp) {
 		

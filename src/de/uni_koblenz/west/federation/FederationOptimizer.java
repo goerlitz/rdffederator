@@ -21,6 +21,7 @@
 package de.uni_koblenz.west.federation;
 
 import java.util.List;
+import java.util.Map;
 
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
@@ -29,6 +30,7 @@ import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
+import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 //import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,11 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.adapter.SesameAdapter;
 import de.uni_koblenz.west.federation.adapter.SesameBGPWrapper;
 import de.uni_koblenz.west.federation.helpers.BasicGraphPatternCollector;
+import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
+import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
+import de.uni_koblenz.west.federation.model.BasicGraphPatternExtractor;
+import de.uni_koblenz.west.federation.model.MappedStatementPattern;
+import de.uni_koblenz.west.federation.model.SubQueryBuilder;
 import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.optimizer.Optimizer;
@@ -83,6 +90,16 @@ public class FederationOptimizer implements QueryOptimizer {
 	@Override
 //	public void optimize(QueryModel query, BindingSet bindings) throws StoreException {  // Sesame 3
 	public void optimize(TupleExpr query, Dataset dataset, BindingSet bindings) {  // Sesame 2
+		
+		// collect all basic graph patterns
+		for (TupleExpr expr : BasicGraphPatternExtractor.process(query)) {
+			LOGGER.warn("process BGP:\n" + OperatorTreePrinter.print(expr));
+			List<StatementPattern> patterns = StatementPatternCollector.process(expr);
+			
+			SubQueryBuilder builder = new SubQueryBuilder(false, true);
+			List<MappedStatementPattern> mappedPatterns = this.finder.mapSources(patterns);
+			builder.getGroups(mappedPatterns);
+		}
 		
 		List<SesameBGPWrapper> bgps = new BasicGraphPatternCollector().eval(query);
 		if (bgps.size() == 0)

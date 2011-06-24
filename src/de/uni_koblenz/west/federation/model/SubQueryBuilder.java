@@ -233,7 +233,9 @@ public class SubQueryBuilder {
 			}
 			buffer.setLength(buffer.length()-2);
 			buffer.append("] @" + sources);
-			LOGGER.warn(buffer.toString());
+			
+			if (LOGGER.isDebugEnabled())
+				LOGGER.debug(buffer.toString());
 		}
 		
 		return patternGroups;

@@ -39,13 +39,10 @@ import org.openrdf.query.algebra.helpers.VarNameCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
 import de.uni_koblenz.west.federation.helpers.FilterConditionCollector;
 import de.uni_koblenz.west.federation.helpers.Format;
 import de.uni_koblenz.west.federation.model.BindJoin;
 import de.uni_koblenz.west.federation.model.HashJoin;
-import de.uni_koblenz.west.federation.model.SubQueryBuilder;
-import de.uni_koblenz.west.federation.sources.SourceSelector;
 
 /**
  * @author Olaf Goerlitz
@@ -59,9 +56,7 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 	private boolean bindJoin;
 	private boolean hashJoin;
 			
-	public DynamicProgrammingOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator, boolean hashJoin, boolean bindJoin) {
-		super(selector, builder, estimator);
-		
+	public DynamicProgrammingOptimizer(boolean hashJoin, boolean bindJoin) {
 		this.bindJoin = bindJoin;
 		this.hashJoin = hashJoin;
 	}

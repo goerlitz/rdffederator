@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.ValueExpr;
+import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
@@ -41,8 +42,20 @@ import de.uni_koblenz.west.federation.FederationOptimizer;
 import de.uni_koblenz.west.federation.FederationOptimizerFactory;
 import de.uni_koblenz.west.federation.FederationSail;
 import de.uni_koblenz.west.federation.VoidRepository;
+import de.uni_koblenz.west.federation.estimation.AbstractCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
+import de.uni_koblenz.west.federation.estimation.CardinalityCostEstimator;
+import de.uni_koblenz.west.federation.estimation.SPLENDIDCostEstimator;
+import de.uni_koblenz.west.federation.estimation.ModelEvaluator;
+import de.uni_koblenz.west.federation.estimation.SPLENDIDCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.TrueCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
 import de.uni_koblenz.west.federation.helpers.Format;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.model.SubQueryBuilder;
+import de.uni_koblenz.west.federation.optimizer.AbstractFederationOptimizer;
+import de.uni_koblenz.west.federation.optimizer.DynamicProgrammingOptimizer;
+import de.uni_koblenz.west.federation.optimizer.PatternSelectivityOptimizer;
 import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.sources.SparqlAskSelector;
@@ -162,23 +175,54 @@ public class FederationSailFactory implements SailFactory {
 		}
 		sail.setSourceSelector(selector);
 		
-		// Create optimizer from configuration settings
-		FederationOptimizer optimizer;
+		// sub query builder
+		SubQueryBuilder builder = new SubQueryBuilder(selConf.isGroupBySource(), selConf.isGroupBySameAs());
+		
+		// create optimizer
+		AbstractFederationOptimizer opt;
 		QueryOptimizerConfig optConf = cfg.getOptimizerConfig();
 		String optimizerType = optConf.getType();
-		String estimatorType = optConf.getEstimatorType();
+//		String estimatorType = optConf.getEstimatorType();
+		if ("DYNAMIC_PROGRAMMING".equals(optConf.getType())) {
+			opt = new DynamicProgrammingOptimizer(optConf.isUseHashJoin(), optConf.isUseBindJoin());
+		} else if ("PATTERN_HEURISTIC".equals(optConf.getType())) {
+			opt = new PatternSelectivityOptimizer();
+		} else {
+			throw new IllegalArgumentException("wrong optimizer type: " + optConf.getType());
+		}
 		
-		CostModel costModel = new CostModel();
-		FederationOptimizerFactory factory = new FederationOptimizerFactory();
-		factory.setStatistics(stats);
-		factory.setSourceSelector(selector);
-		factory.setCostmodel(costModel);
-		optimizer = factory.getOptimizer(optimizerType, estimatorType);
+		AbstractCardinalityEstimator cardEstim = new SPLENDIDCardinalityEstimator(stats, true);
+		AbstractCostEstimator costEstim = new SPLENDIDCostEstimator();
+		costEstim.setCardinalityEstimator(cardEstim);
+//		ModelEvaluator modelEval = new TrueCardinalityEstimator(sail.getEvalStrategy());
 		
-		// enable optimization result verification
-		optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(estimatorType), costModel)));
+//		QueryOptimizer opt = new PatternSelectivityOptimizer(selector, builder, costEstim);
+//		AbstractFederationOptimizer opt = new DynamicProgrammingOptimizer(selector, builder, costEstim, true, true);
+		opt.setBuilder(builder);
+		opt.setSelector(selector);
+		opt.setCostEstimator(costEstim);
+//		opt.setModelEvaluator(cardEstim);
+		opt.setModelEvaluator(costEstim);
+//		opt.setModelEvaluator(modelEval);
 		
-		sail.setFederationOptimizer(optimizer);
+		// Create optimizer from configuration settings
+//		FederationOptimizer optimizer;
+//		QueryOptimizerConfig optConf = cfg.getOptimizerConfig();
+//		String optimizerType = optConf.getType();
+//		String estimatorType = optConf.getEstimatorType();
+//		
+//		CostModel costModel = new CostModel();
+//		FederationOptimizerFactory factory = new FederationOptimizerFactory();
+//		factory.setStatistics(stats);
+//		factory.setSourceSelector(selector);
+//		factory.setCostmodel(costModel);
+//		optimizer = factory.getOptimizer(optimizerType, estimatorType);
+//		
+//		// enable optimization result verification
+//		optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(estimatorType), costModel)));
+		
+//		sail.setFederationOptimizer(optimizer);
+		sail.setFederationOptimizer(opt);
 		
 		return sail;
 	}
