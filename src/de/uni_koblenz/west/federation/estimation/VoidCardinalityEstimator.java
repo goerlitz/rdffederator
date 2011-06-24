@@ -89,71 +89,71 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		setIndexCard(pattern, card);
 	}
 	
-	protected void meet(RemoteQuery node) {
-		
-		// check cardinality index first
-		if (getIndexCard(node) != null)
-			return;
-		
-		Map<String, List<StatementPattern>> patternGroup = new HashMap<String, List<StatementPattern>>();
-		
-		// group patterns by subject
-		for (StatementPattern p : StatementPatternCollector.process(node.getArg())) {
-			
-			// get cardinality first
-			meet(p);
-			
-			String varName = p.getSubjectVar().getName();
-			List<StatementPattern> pList = patternGroup.get(varName);
-			if (pList == null) {
-				pList = new ArrayList<StatementPattern>();
-				patternGroup.put(varName, pList);
-			}
-			pList.add(p);
-		}
-		
-		// process each pattern group: start with patterns where P+O is bound
-		for (String varName : patternGroup.keySet()) {
-
-			List<StatementPattern> pList = patternGroup.get(varName);
-			LOGGER.warn("PGroup: " + varName + " -> " + pList);
-			
-			// find minimum cardinality for all pattern which have P+O bound
-			Double minCard = Double.POSITIVE_INFINITY;
-			Iterator<StatementPattern> it = pList.iterator();
-			while (it.hasNext()) {
-				StatementPattern p = it.next();
-				if (p.getObjectVar().getValue() != null) {
-					Double pCard = getIndexCard(p);
-					if (pCard.compareTo(minCard) < 0) {
-						minCard = pCard;
-					}
-					it.remove();
-				}
-			}
-			
-			// check if we have found a minimum cardinality
-			if (minCard.equals(Double.POSITIVE_INFINITY)) {
-				LOGGER.warn("no pattern with bound P+O for " + varName);
-				minCard = 1d;
-			}
-			
-			// the remaining patterns are multiplied like a cross product
-			for (StatementPattern p : pList) {
-				minCard = minCard * getIndexCard(p);
-				double varSel = getVarSelectivity((MappedStatementPattern) p, varName);
-				LOGGER.warn("varsel: " + varSel + " ++ " + p);
-			}
-			
-			LOGGER.warn("PGroup: " + varName + " -> " + minCard);
-			
-		}
-		
-		
-		node.getArg().visit(this);
-		// add same cardinality as child argument
-		setIndexCard(node, getIndexCard(node.getArg()));
-	}
+//	protected void meet(RemoteQuery node) {
+//		
+//		// check cardinality index first
+//		if (getIndexCard(node) != null)
+//			return;
+//		
+//		Map<String, List<StatementPattern>> patternGroup = new HashMap<String, List<StatementPattern>>();
+//		
+//		// group patterns by subject
+//		for (StatementPattern p : StatementPatternCollector.process(node.getArg())) {
+//			
+//			// get cardinality first
+//			meet(p);
+//			
+//			String varName = p.getSubjectVar().getName();
+//			List<StatementPattern> pList = patternGroup.get(varName);
+//			if (pList == null) {
+//				pList = new ArrayList<StatementPattern>();
+//				patternGroup.put(varName, pList);
+//			}
+//			pList.add(p);
+//		}
+//		
+//		// process each pattern group: start with patterns where P+O is bound
+//		for (String varName : patternGroup.keySet()) {
+//
+//			List<StatementPattern> pList = patternGroup.get(varName);
+//			LOGGER.warn("PGroup: " + varName + " -> " + pList);
+//			
+//			// find minimum cardinality for all pattern which have P+O bound
+//			Double minCard = Double.POSITIVE_INFINITY;
+//			Iterator<StatementPattern> it = pList.iterator();
+//			while (it.hasNext()) {
+//				StatementPattern p = it.next();
+//				if (p.getObjectVar().getValue() != null) {
+//					Double pCard = getIndexCard(p);
+//					if (pCard.compareTo(minCard) < 0) {
+//						minCard = pCard;
+//					}
+//					it.remove();
+//				}
+//			}
+//			
+//			// check if we have found a minimum cardinality
+//			if (minCard.equals(Double.POSITIVE_INFINITY)) {
+//				LOGGER.warn("no pattern with bound P+O for " + varName);
+//				minCard = 1d;
+//			}
+//			
+//			// the remaining patterns are multiplied like a cross product
+//			for (StatementPattern p : pList) {
+//				minCard = minCard * getIndexCard(p);
+//				double varSel = getVarSelectivity((MappedStatementPattern) p, varName);
+//				LOGGER.warn("varsel: " + varSel + " ++ " + p);
+//			}
+//			
+//			LOGGER.warn("PGroup: " + varName + " -> " + minCard);
+//			
+//		}
+//		
+//		
+//		node.getArg().visit(this);
+//		// add same cardinality as child argument
+//		setIndexCard(node, getIndexCard(node.getArg()));
+//	}
 	
 	// -------------------------------------------------------------------------
 	
@@ -165,15 +165,15 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 			throw new IllegalArgumentException("all triple patterns must be mapped to sources");
 	}
 	
-	@Override
-	protected void meetUnaryTupleOperator(UnaryTupleOperator node)
-			throws RuntimeException {
-		if (node instanceof RemoteQuery) {
-			meet((RemoteQuery) node);
-		} else {
-			super.meetUnaryTupleOperator(node);
-		}
-	}
+//	@Override
+//	protected void meetUnaryTupleOperator(UnaryTupleOperator node)
+//			throws RuntimeException {
+//		if (node instanceof RemoteQuery) {
+//			meet((RemoteQuery) node);
+//		} else {
+//			super.meetUnaryTupleOperator(node);
+//		}
+//	}
 	
 	@Override
 	public void meet(Filter filter) {
