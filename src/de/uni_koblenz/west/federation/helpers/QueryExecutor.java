@@ -41,6 +41,7 @@ import java.util.Map;
 //import org.openrdf.cursor.EmptyCursor;
 //import org.openrdf.http.client.TupleQueryClient;
 //import org.openrdf.http.client.connections.HTTPConnectionPool;
+import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.MalformedQueryException;
@@ -303,7 +304,12 @@ public final class QueryExecutor {
 				httpMap.put(endpoint, http);
 			}
 			
-			return http.getConnection().prepareTupleQuery(QueryLanguage.SPARQL, query, null);
+			TupleQuery tq = http.getConnection().prepareTupleQuery(QueryLanguage.SPARQL, query, null);
+			for (Binding b : bindings) {
+				tq.setBinding(b.getName(), b.getValue());
+			}
+			return tq;
+//			return http.getConnection().prepareTupleQuery(QueryLanguage.SPARQL, query, null);
 		} catch (RepositoryException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -100,7 +100,8 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 				}
 			}
 			
-			LOGGER.warn(optPlans.get(n).size() + " plans generated for N=" + n);
+			if (LOGGER.isTraceEnabled())
+				LOGGER.trace(optPlans.get(n).size() + " plans generated for N=" + n);
 			
 			Set<TupleExpr> nAryPlans = optPlans.get(n);
 			

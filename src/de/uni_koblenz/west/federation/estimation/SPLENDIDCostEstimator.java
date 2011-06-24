@@ -34,9 +34,9 @@ import de.uni_koblenz.west.federation.model.RemoteQuery;
  * 
  * @author Olaf Goerlitz
  */
-public class DARQExecCostEstimator extends AbstractCostEstimator {
+public class SPLENDIDCostEstimator extends AbstractCostEstimator {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(DARQExecCostEstimator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SPLENDIDCostEstimator.class);
 	
 	private static final int C_TRANSFER_QUERY = 5;
 	private static final int C_TRANSFER_TUPLE = 1;
