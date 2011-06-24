@@ -20,8 +20,6 @@
  */
 package de.uni_koblenz.west.federation.helpers;
 
-import java.util.List;
-
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.algebra.BinaryTupleOperator;

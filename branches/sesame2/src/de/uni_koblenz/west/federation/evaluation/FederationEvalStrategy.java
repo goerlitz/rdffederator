@@ -52,6 +52,7 @@ import org.openrdf.query.algebra.evaluation.TripleSource;
 //import org.openrdf.query.algebra.evaluation.cursors.DistinctCursor;
 //import org.openrdf.query.algebra.evaluation.cursors.UnionCursor;
 import org.openrdf.query.algebra.evaluation.impl.EvaluationStrategyImpl;
+import org.openrdf.query.algebra.evaluation.iterator.JoinIterator;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 //import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
@@ -61,6 +62,8 @@ import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.model.BindJoin;
+import de.uni_koblenz.west.federation.model.HashJoin;
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 import de.uni_koblenz.west.federation.model.RemoteQuery;
 
@@ -133,22 +136,15 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		
 		return result;
 	}
-
-	/**
-	 * Evaluates the join with the specified set of variable bindings as input.
-	 * 
-	 * @param join
-	 *        The Join to evaluate
-	 * @param bindings
-	 *        The variables bindings to use for evaluating the expression, if
-	 *        applicable.
-	 * @return A cursor over the variable binding sets that match the join.
-	 */
-	@Override
-//	public Cursor<BindingSet> evaluate(Join join, BindingSet bindings) throws StoreException {
+	
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
-			Join join, BindingSet bindings) throws QueryEvaluationException {
-		
+			BindJoin join, BindingSet bindings) throws QueryEvaluationException {
+		return new JoinIterator(this, join, bindings);
+//		throw new UnsupportedOperationException("bind join not supported");
+	}
+	
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			HashJoin join, BindingSet bindings) throws QueryEvaluationException {
 		// eval query if all sub operators are applied on same source
 		// TODO optimize with caching
 		Set<Graph> sources = new SourceCollector().getSources(join);
@@ -160,15 +156,12 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		// TODO: support different join strategies
 
 		Set<String> resultVars = null;
-//		Cursor<BindingSet> joinCursor = null;
 		CloseableIteration<BindingSet, QueryEvaluationException> joinCursor = null;
 		
-//		List<? extends TupleExpr> joinArgs = join.getArgs();
 		TupleExpr[] joinArgs = {join.getLeftArg(), join.getRightArg()};
 		
 		for (TupleExpr joinArg : joinArgs) {
 			
-//			Cursor<BindingSet> argCursor;
 			CloseableIteration<BindingSet, QueryEvaluationException> argCursor;
 //			if (MULTI_THREADED) {
 //				argCursor = fetchArgResults(joinArg, bindings); 
@@ -212,6 +205,30 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		}
 
 		return joinCursor;
+	}
+
+	/**
+	 * Evaluates the join with the specified set of variable bindings as input.
+	 * 
+	 * @param join
+	 *        The Join to evaluate
+	 * @param bindings
+	 *        The variables bindings to use for evaluating the expression, if
+	 *        applicable.
+	 * @return A cursor over the variable binding sets that match the join.
+	 */
+	@Override
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			Join join, BindingSet bindings) throws QueryEvaluationException {
+		
+		if (join instanceof BindJoin) {
+			return evaluate((BindJoin) join, bindings);
+		}
+		if (join instanceof HashJoin) {
+			return evaluate((HashJoin) join, bindings);
+		}
+		
+		throw new IllegalArgumentException("join type not supported: " + join);
 	}
 
 	/**
@@ -263,13 +280,11 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	
 	// -------------------------------------------------------------------------
 	
-	//	private Cursor<BindingSet> sendSparqlQuery(TupleExpr expr, Collection<Repository> sources, BindingSet bindings) {
 	private CloseableIteration<BindingSet, QueryEvaluationException> sendSparqlQuery(TupleExpr expr, Set<Graph> sources, BindingSet bindings) {
 		
 		// check if there are any sources to query
 		if (sources.size() == 0) {
 			LOGGER.warn("Cannot find any source for: " + OperatorTreePrinter.print(expr));
-//			return EmptyCursor.getInstance();
 			return new EmptyIteration<BindingSet, QueryEvaluationException>();
 		}
 		
@@ -278,9 +293,7 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		
 		// TODO: need to know actual projection and join variables to reduce transmitted data
 		
-//		Cursor<BindingSet> cursor;
 		CloseableIteration<BindingSet, QueryEvaluationException> cursor;
-//		List<Cursor<BindingSet>> cursors = new ArrayList<Cursor<BindingSet>>(sources.size());
 		List<CloseableIteration<BindingSet, QueryEvaluationException>> cursors = new ArrayList<CloseableIteration<BindingSet, QueryEvaluationException>>(sources.size());
 		final String query = "SELECT REDUCED * WHERE {" + SparqlPrinter.print(expr) + "}";
 		
