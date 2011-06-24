@@ -115,7 +115,8 @@ public class FederationRepositoryTest {
 			
 			long start = System.currentTimeMillis();
 			List<BindingSet> result = QueryExecutor.eval(REPOSITORY, query.getQuery());
-			LOGGER.info("Evaluation time: " + (System.currentTimeMillis() - start));
+//			LOGGER.info("Evaluation time: " + (System.currentTimeMillis() - start));
+			LOGGER.info((System.currentTimeMillis() - start)/1000 + " seconds elapsed");
 			LOGGER.info("RESULT SIZE: " + (result != null ? result.size() : -1));
 		}
 	}

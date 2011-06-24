@@ -45,6 +45,8 @@ public class FederationSailSchema {
 	public static final URI USE_TYPE_STATS = vf.createURI(NAMESPACE + "useTypeStats");
 	public static final URI GROUP_BY_SAMEAS = vf.createURI(NAMESPACE + "groupBySameAs");
 	public static final URI GROUP_BY_SOURCE = vf.createURI(NAMESPACE + "groupBySource");
+	public static final URI USE_BIND_JOIN = vf.createURI(NAMESPACE + "useBindJoin");
+	public static final URI USE_HASH_JOIN = vf.createURI(NAMESPACE + "useHashJoin");
 	public static final URI ESTIMATOR = vf.createURI(NAMESPACE + "cardEstimator");
 	public static final URI STATISTIC = vf.createURI(NAMESPACE + "statistic");
 	public static final URI VOID_URI  = vf.createURI(NAMESPACE + "voidDescription");
