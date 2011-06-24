@@ -95,8 +95,11 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 				// find for each plan all complementary plans to join
 				for (TupleExpr plan : plans1) {
 					Set<TupleExpr> comp = filterDistinctPlans(plan, plans2);
-					plans = createJoins(plan, comp, conditions);
-					optPlans.add(new HashSet<TupleExpr>(plans), n);
+					// we may not always find complementary plans
+					if (comp.size() > 0) {
+						plans = createJoins(plan, comp, conditions);
+						optPlans.add(new HashSet<TupleExpr>(plans), n);
+					}
 				}
 			}
 			
@@ -144,7 +147,7 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 			}
 		}
 		if (newPlans.size() == 0)
-			throw new IllegalStateException("no physical joins created. please enable them");
+			throw new IllegalStateException("no physical joins created. please enable them: " + joinPlan + " -> " + plans);
 		
 		return newPlans;
 	}
@@ -208,12 +211,10 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 		
 		// distinct plans don't share any triple patterns (intersection is empty)
 		
-//		Set<P> planpatterns = BGPCollector.getPatterns(plan);
 		Collection<StatementPattern> planpatterns = StatementPatternCollector.process(plan);
 		
 		Set<TupleExpr> planSet = new HashSet<TupleExpr>();
 		for (TupleExpr other : plans) {
-//			Set<P> patterns = BGPCollector.getPatterns(other);
 			Collection<StatementPattern> patterns = StatementPatternCollector.process(other);
 			patterns.retainAll(planpatterns);
 			if (patterns.size() == 0)
@@ -233,7 +234,6 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 		int eqClass = 0;
 		Set<TupleExpr> bestPlans = new HashSet<TupleExpr>();
 		Set<Set<TupleExpr>> equivalentPlans = groupEquivalentPlans(plans);
-//		Set<Set<O>> equivalentPlans = model.groupEquivalentPlans(plans);
 
 //		// DEBUG
 //		if (LOGGER.isDebugEnabled()) {
@@ -263,7 +263,6 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 			for (TupleExpr plan : equalSet) {
 				
 				planCount++;
-//				double cost = costEval.process(plan);
 				double cost = costEstimator.process(plan);
 				
 				if (bestPlan == null || cost < lowestCost) {

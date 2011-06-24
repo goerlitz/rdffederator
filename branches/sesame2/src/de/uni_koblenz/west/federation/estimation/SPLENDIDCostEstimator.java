@@ -80,7 +80,7 @@ public class SPLENDIDCostEstimator extends AbstractCostEstimator {
 		
 		this.cost += (leftCard + rightCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY;
 		
-		LOGGER.warn("HashJoin: " + leftCard + " >< " + rightCard + " :: " + (leftCard + rightCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY);
+//		LOGGER.warn("HashJoin: " + leftCard + " >< " + rightCard + " :: " + (leftCard + rightCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY);
 	}
 	
 	protected void meet(BindJoin join) {
@@ -89,7 +89,7 @@ public class SPLENDIDCostEstimator extends AbstractCostEstimator {
 		
 		this.cost += leftCard * (C_TRANSFER_TUPLE + C_TRANSFER_QUERY) + joinCard * C_TRANSFER_TUPLE;
 		
-		LOGGER.warn("BindJoin: " + leftCard + " >< " + joinCard + " :: " + (leftCard + joinCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY);
+//		LOGGER.warn("BindJoin: " + leftCard + " >< " + joinCard + " :: " + (leftCard + joinCard) * C_TRANSFER_TUPLE + 2 * C_TRANSFER_QUERY);
 	}
 	
 	protected void meet(RemoteQuery query) {
