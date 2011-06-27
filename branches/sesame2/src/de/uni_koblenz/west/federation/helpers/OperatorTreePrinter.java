@@ -29,6 +29,7 @@ import org.openrdf.query.algebra.Compare;
 import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.query.algebra.ValueConstant;
 import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.helpers.QueryModelTreePrinter;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
@@ -119,6 +120,11 @@ public class OperatorTreePrinter extends QueryModelVisitorBase<RuntimeException>
 				buffer.append(node.getValue());
 		} else
 			buffer.append("?").append(node.getName());
+	}
+	
+	@Override
+	public void meet(ValueConstant node) throws RuntimeException {
+		buffer.append(node.getValue());
 	}
 
 	@Override
