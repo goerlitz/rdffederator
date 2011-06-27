@@ -27,15 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.model.Value;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.algebra.UnaryTupleOperator;
-import org.openrdf.query.algebra.Var;
-import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.openrdf.query.algebra.helpers.VarNameCollector;
 import org.slf4j.Logger;
@@ -51,7 +45,6 @@ import de.uni_koblenz.west.statistics.RDFStatistics;
  * 
  * @author Olaf Goerlitz
  */
-//public class VoidCardinalityEstimator extends QueryModelVisitorBase<RuntimeException> {
 public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstimator {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(VoidCardinalityEstimator.class);
@@ -162,31 +155,7 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		if (pattern instanceof MappedStatementPattern)
 			meet((MappedStatementPattern) pattern);
 		else
-			throw new IllegalArgumentException("all triple patterns must be mapped to sources");
-	}
-	
-//	@Override
-//	protected void meetUnaryTupleOperator(UnaryTupleOperator node)
-//			throws RuntimeException {
-//		if (node instanceof RemoteQuery) {
-//			meet((RemoteQuery) node);
-//		} else {
-//			super.meetUnaryTupleOperator(node);
-//		}
-//	}
-	
-	@Override
-	public void meet(Filter filter) {
-		
-		// check cardinality index first
-		if (getIndexCard(filter) != null)
-			return;
-		
-		// TODO: include condition in estimation
-		// for now use same card as sub expression
-		
-		// add same cardinality as filter argument
-		setIndexCard(filter, getIndexCard(filter.getArg()));
+			throw new IllegalArgumentException("cannot estimate cardinality for triple pattern without sources: " + pattern);
 	}
 	
 	public void meet(Join join) throws RuntimeException {

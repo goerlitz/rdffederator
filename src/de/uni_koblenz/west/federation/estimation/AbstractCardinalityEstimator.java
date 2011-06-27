@@ -23,6 +23,7 @@ package de.uni_koblenz.west.federation.estimation;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
@@ -39,10 +40,24 @@ public abstract class AbstractCardinalityEstimator extends QueryModelVisitorBase
 	@Override
 	public Double process(TupleExpr expr) {
 		synchronized (this) {
-//			cardIndex.clear();
 			expr.visit(this);
 			return cardIndex.get(expr);
 		}
+	}
+	
+	@Override
+	public void meet(Filter filter) {
+		
+		// check cardinality index first
+		if (getIndexCard(filter) != null)
+			return;
+		
+		// TODO: include condition in estimation
+		// for now use same card as sub expression
+		filter.getArg().visit(this);
+		
+		// add same cardinality as filter argument
+		setIndexCard(filter, getIndexCard(filter.getArg()));
 	}
 	
 	@Override

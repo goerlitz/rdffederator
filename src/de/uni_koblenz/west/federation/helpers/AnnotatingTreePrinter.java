@@ -28,6 +28,7 @@ import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.UnaryTupleOperator;
+import org.openrdf.query.algebra.ValueConstant;
 import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
@@ -123,6 +124,11 @@ public class AnnotatingTreePrinter extends QueryModelVisitorBase<RuntimeExceptio
 				buffer.append(node.getValue());
 		} else
 			buffer.append("?").append(node.getName());
+	}
+	
+	@Override
+	public void meet(ValueConstant node) throws RuntimeException {
+		buffer.append(node.getValue());
 	}
 
 	@Override

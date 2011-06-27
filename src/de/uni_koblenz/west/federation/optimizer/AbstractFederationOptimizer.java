@@ -104,14 +104,6 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 	
 	// -------------------------------------------------------------------------
 	
-//	public AbstractFederationOptimizer(SourceSelector selector, SubQueryBuilder builder, AbstractCostEstimator estimator) {
-//
-//
-//		this.selector = selector;
-//		this.builder = builder;
-//		this.costEstimator = estimator;
-//	}
-	
 	protected List<TupleExpr> getBaseExpressions(TupleExpr expr) {
 		
 		// get patterns and filter conditions from query model
@@ -140,8 +132,8 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 
 			optimizeBGP(bgp);
 			
-			if (LOGGER.isTraceEnabled() && modelEvaluator != null)
-				LOGGER.trace("BGP after optimization:\n" + AnnotatingTreePrinter.print(bgp.getParentNode(), modelEvaluator));
+//			if (LOGGER.isTraceEnabled() && modelEvaluator != null)
+//				LOGGER.trace("BGP after optimization:\n" + AnnotatingTreePrinter.print(bgp.getParentNode(), modelEvaluator));
 		}
 		
 	}
