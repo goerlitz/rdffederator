@@ -20,14 +20,10 @@
  */
 package de.uni_koblenz.west.federation.sources;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.openrdf.query.algebra.StatementPattern;
 
-import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 
 /**
@@ -38,17 +34,11 @@ import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 public interface SourceSelector {
 	
 	/**
-	 * Select data sources which can contribute results for a set of SPARQL
-	 * triple patterns.
-	 * A data source may match multiple triple patterns and one triple pattern
-	 * can obtain results from multiple data sources. Hence the mapping is a 
-	 * N to N relation. 
+	 * Maps triple patterns to data sources which can contribute results.
 	 * 
-	 * @param patterns the SPARQL triple patterns which need to be matched.
-	 * @return a map connecting data sources to triple patterns.
+	 * @param patterns the SPARQL triple patterns which need to be mapped.
+	 * @return a list triple patterns with mappings to sources.
 	 */
-	public Map<Set<Graph>, List<StatementPattern>> getSources(Collection<StatementPattern> patterns);
-	
 	public List<MappedStatementPattern> mapSources(List<StatementPattern> patterns);
 
 }

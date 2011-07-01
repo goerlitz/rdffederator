@@ -47,50 +47,50 @@ public class SourceSelectionEval {
 		this.finder = fedSail.getSourceSelector();
 	}
 	
-	public void testQueries() {
-		
-		// table header
-		output.println("#query\tsources\treqSent\tpatSent");
-		
-		while (this.queries.hasNext()) {
-			Query query = this.queries.next();
-			SPARQLParser parser = new SPARQLParser();
-			TupleExpr expr;
-			try {
-				expr = parser.parseQuery(query.getQuery(), null).getTupleExpr();
-			} catch (MalformedQueryException e) {
-				LOGGER.error("cannot parse Query " + query.getName() + ": " + e.getMessage());
-				continue;
-			}
-			List<StatementPattern> patterns = StatementPatternCollector.process(expr);
-			Map<Set<Graph>, List<StatementPattern>> sourceMap = this.finder.getSources(patterns);
-			
-			// evaluation
-			Set<Graph> selectedSources = new HashSet<Graph>();
-			int queriesToSend = 0;
-			int patternToSend = 0;
-			for (Set<Graph> sourceSet : sourceMap.keySet()) {
-				selectedSources.addAll(sourceSet);
-				int patternCount = sourceMap.get(sourceSet).size();
-				queriesToSend += sourceSet.size();
-				patternToSend += sourceSet.size() * patternCount;
-			}
-			
-			// print results
-			for (Set<Graph> key : sourceMap.keySet()) {
-				List<StatementPattern> patternList = sourceMap.get(key);
-				List<String> pStrings = new ArrayList<String>();
-				for (StatementPattern p : patternList) {
-//					pStrings.add(new SesameAdapter().toSparqlPattern(p));
-					pStrings.add(AnnotatingTreePrinter.print(p));
-				}
-				System.out.println(key + " -> " + pStrings);
-			}
-			
-			output.println(query.getName() + "\t" + selectedSources.size() + "\t" + queriesToSend + "\t" + patternToSend);
-		}
-		output.close();
-	}
+//	public void testQueries() {
+//		
+//		// table header
+//		output.println("#query\tsources\treqSent\tpatSent");
+//		
+//		while (this.queries.hasNext()) {
+//			Query query = this.queries.next();
+//			SPARQLParser parser = new SPARQLParser();
+//			TupleExpr expr;
+//			try {
+//				expr = parser.parseQuery(query.getQuery(), null).getTupleExpr();
+//			} catch (MalformedQueryException e) {
+//				LOGGER.error("cannot parse Query " + query.getName() + ": " + e.getMessage());
+//				continue;
+//			}
+//			List<StatementPattern> patterns = StatementPatternCollector.process(expr);
+//			Map<Set<Graph>, List<StatementPattern>> sourceMap = this.finder.getSources(patterns);
+//			
+//			// evaluation
+//			Set<Graph> selectedSources = new HashSet<Graph>();
+//			int queriesToSend = 0;
+//			int patternToSend = 0;
+//			for (Set<Graph> sourceSet : sourceMap.keySet()) {
+//				selectedSources.addAll(sourceSet);
+//				int patternCount = sourceMap.get(sourceSet).size();
+//				queriesToSend += sourceSet.size();
+//				patternToSend += sourceSet.size() * patternCount;
+//			}
+//			
+//			// print results
+//			for (Set<Graph> key : sourceMap.keySet()) {
+//				List<StatementPattern> patternList = sourceMap.get(key);
+//				List<String> pStrings = new ArrayList<String>();
+//				for (StatementPattern p : patternList) {
+////					pStrings.add(new SesameAdapter().toSparqlPattern(p));
+//					pStrings.add(AnnotatingTreePrinter.print(p));
+//				}
+//				System.out.println(key + " -> " + pStrings);
+//			}
+//			
+//			output.println(query.getName() + "\t" + selectedSources.size() + "\t" + queriesToSend + "\t" + patternToSend);
+//		}
+//		output.close();
+//	}
 	
 	public static void main(String[] args) {
 		
@@ -106,7 +106,7 @@ public class SourceSelectionEval {
 		try {
 			Configuration config = Configuration.load(configFile);
 			SourceSelectionEval eval = new SourceSelectionEval(config);
-			eval.testQueries();
+//			eval.testQueries();
 		} catch (IOException e) {
 			LOGGER.error("cannot load test config: " + e.getMessage());
 		} catch (ConfigurationException e) {
