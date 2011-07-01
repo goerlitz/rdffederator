@@ -11,4 +11,4 @@ goto :eof
 
 :SETTER
 set JARS=%JARS%;%1
-goto :eof 
+goto :eof
