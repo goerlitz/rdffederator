@@ -57,8 +57,6 @@ import de.uni_koblenz.west.federation.optimizer.PatternSelectivityOptimizer;
 import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.sources.SparqlAskSelector;
-import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
-import de.uni_koblenz.west.optimizer.eval.CostModel;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
@@ -199,39 +197,8 @@ public class FederationSailFactory implements SailFactory {
 		opt.setModelEvaluator(costEstim);
 //		opt.setModelEvaluator(modelEval);
 		
-		// Create optimizer from configuration settings
-//		FederationOptimizer optimizer;
-//		QueryOptimizerConfig optConf = cfg.getOptimizerConfig();
-//		String optimizerType = optConf.getType();
-//		String estimatorType = optConf.getEstimatorType();
-//		
-//		CostModel costModel = new CostModel();
-//		FederationOptimizerFactory factory = new FederationOptimizerFactory();
-//		factory.setStatistics(stats);
-//		factory.setSourceSelector(selector);
-//		factory.setCostmodel(costModel);
-//		optimizer = factory.getOptimizer(optimizerType, estimatorType);
-//		
-//		// enable optimization result verification
-//		optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(estimatorType), costModel)));
-		
-//		sail.setFederationOptimizer(optimizer);
 		sail.setFederationOptimizer(opt);
-		
 		return sail;
 	}
 	
-//	private QueryModelVerifier<StatementPattern, ValueExpr> createOptimizationVeryfier(final CostCalculator<BGPOperator<StatementPattern, ValueExpr>> costEval) {
-//		return new QueryModelVerifier<StatementPattern, ValueExpr>() {
-//			@Override
-//			public QueryModelEvaluator<BGPOperator<StatementPattern, ValueExpr>, ? extends Number> getEvaluator() {
-//				return costEval;
-//			}
-//			@Override
-//			public void resultObtained(Number value) {
-//				System.out.println(Format.d(value.doubleValue(), 2));
-//			}
-//		};
-//	}
-
 }
