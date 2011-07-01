@@ -20,6 +20,7 @@
  */
 package de.uni_koblenz.west.federation.sources;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 
 /**
  * A source selector which contacts SPARQL Endpoints asking them whether
@@ -42,7 +44,7 @@ public class SparqlAskSelector extends SourceSelectorBase {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SparqlAskSelector.class);
 	
-	private List<Graph> sources;
+	private List<Graph> sourceList;
 	
 	/**
 	 * Creates a new ASK selector.
@@ -50,30 +52,39 @@ public class SparqlAskSelector extends SourceSelectorBase {
 	 * @param sources the list of data sources to ask. 
 	 */
 	public SparqlAskSelector(List<Graph> sources, boolean attachSameAs) {
-		this.sources = sources;
+		this.sourceList = sources;
 	}
 
 	@Override
 	protected Set<Graph> getSources(StatementPattern pattern) {
-		Set<Graph> sourceSet = new HashSet<Graph>();
+		Set<Graph> selectedSources = new HashSet<Graph>();
 		
 		if (LOGGER.isDebugEnabled())
 			LOGGER.debug(debugAskRequest(pattern));
 		
+		String sparqlPattern = OperatorTreePrinter.print(pattern);
+		Collection<Graph> sources;
+		
+		
+		if (pattern instanceof MappedStatementPattern) {
+			sources = ((MappedStatementPattern) pattern).getSources();
+		} else {
+			sources = sourceList;
+		}
+		
 		// ask each source for current pattern
 		for (Graph source : sources) {
-			String sparql = OperatorTreePrinter.print(pattern);
-			if (QueryExecutor.ask(source.toString(), sparql))
-				sourceSet.add(source);
+			if (QueryExecutor.ask(source.toString(), sparqlPattern))
+				selectedSources.add(source);
 		}
-		return sourceSet;
+		return selectedSources;
 	}
 	
 	private String debugAskRequest(StatementPattern pattern) {
 		StringBuffer buffer = new StringBuffer("ASK {");
 		buffer.append(OperatorTreePrinter.print(pattern));
 		buffer.append("} @[");
-		for (Graph source : sources) {
+		for (Graph source : sourceList) {
 			buffer.append(source.getNamespaceURL()).append(", ");
 		}
 		buffer.setLength(buffer.length()-2);
