@@ -38,6 +38,7 @@ import java.util.zip.ZipFile;
 
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
+import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
@@ -53,6 +54,7 @@ import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.Rio;
 import org.openrdf.rio.UnsupportedRDFormatException;
+import org.openrdf.rio.ntriples.NTriplesWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,6 +138,8 @@ public class Void2StatisticsGenerator {
 		}
 		
 		writeVoidFile();
+//		writeObjects();
+//		writeSubjects();
 	}
 	
 	// -------------------------------------------------------------------------
@@ -237,6 +241,38 @@ public class Void2StatisticsGenerator {
 	}
 	
 	/**
+	 * Writes all distinct object to System.out.
+	 */
+	private void writeObjects() {
+		RDFWriter writer = new NTriplesWriter(System.out);
+		try {
+			writer.startRDF();
+			for (Value val : voidParser.getSortedObjects()) {
+				writer.handleStatement(vf.createStatement(RDF.TYPE, RDF.TYPE, val));
+			}
+			writer.endRDF();
+		} catch (RDFHandlerException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Writes all distinct subjects to System.out.
+	 */
+	private void writeSubjects() {
+		RDFWriter writer = new NTriplesWriter(System.out);
+		try {
+			writer.startRDF();
+			for (Resource val : voidParser.getSortedSubjects()) {
+				writer.handleStatement(vf.createStatement(val, RDF.TYPE, RDF.TYPE));
+			}
+			writer.endRDF();
+		} catch (RDFHandlerException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
 	 * Writes the voiD 2 output file.
 	 */
 	private void writeVoidFile() {
@@ -311,7 +347,7 @@ public class Void2StatisticsGenerator {
 			Collections.sort(predicates, VAL_COMP);
 			for (URI p : predicates) {
 				BNode propPartition = vf.createBNode();
-				Literal count = vf.createLiteral(String.valueOf(voidParser.getPredicateCount(p)), XMLSchema.INTEGER);
+				Literal count = vf.createLiteral(String.valueOf(voidParser.getPredicateCount(p)));
 				distinctS  = vf.createLiteral(String.valueOf(voidParser.getDistinctSubjects(p)), XMLSchema.INTEGER);
 				distinctO  = vf.createLiteral(String.valueOf(voidParser.getDistinctObjects(p)), XMLSchema.INTEGER);
 				writer.handleStatement(vf.createStatement(dataset, toURI(VOID2.propertyPartition), propPartition));

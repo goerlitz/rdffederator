@@ -22,9 +22,12 @@ package de.uni_koblenz.west.statistics.parser;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -209,6 +212,26 @@ public class RDFStatsExtractor extends RDFHandlerBase {
 	
 	public int getDistinctObjects(URI predicate) {
 		return this.distPredObjects.get(predicate).size();
+	}
+	
+	public List<Value> getSortedObjects() {
+		List<Value> objList = new ArrayList<Value>(objects);
+		Collections.sort(objList, new Comparator<Value>() {
+			@Override public int compare(Value val1, Value val2) {
+				return val1.stringValue().compareTo(val2.stringValue());
+			}
+		});
+		return objList;
+	}
+	
+	public List<Resource> getSortedSubjects() {
+		List<Resource> subjList = new ArrayList<Resource>(subjects);
+		Collections.sort(subjList, new Comparator<Value>() {
+			@Override public int compare(Value val1, Value val2) {
+				return val1.stringValue().compareTo(val2.stringValue());
+			}
+		});
+		return subjList;
 	}
 	
 	public int getDistinctObjects() {

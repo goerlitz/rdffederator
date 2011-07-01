@@ -60,9 +60,9 @@ echo >>$voidfile -e "\t] ;"
 
 
 echo "counting distinct subjects"
-distinct_sub=$(awk '{ arr[$3]++ } END { for(no in arr) { print no } }' $ntriples | wc -l)
-echo "counting distinct objects"
-distinct_obj=$(awk '{ ORS=""; line=""; for (i=3;i<=NF-1;i++) line=line $i" "; arr[line"\n"]++} END { for(no in arr) { print no } }' $ntriples | wc -l)
+distinct_sub=$(awk '{ arr[$1]++ } END { for(no in arr) { print no } }' $ntriples | wc -l)
+echo "counting distinct objects" # field separator is single space: FS="[ ]"
+distinct_obj=$(awk '{ FS="[ ]"; ORS=""; line=""; for (i=3;i<=NF-1;i++) line=line $i" "; arr[line"\n"]++} END { for(no in arr) { print no } }' $ntriples | wc -l)
 
 
 # print general statistics
