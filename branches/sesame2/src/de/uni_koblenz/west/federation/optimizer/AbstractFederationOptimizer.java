@@ -60,7 +60,7 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 	 * 
 	 * @param query the Query to optimize.
 	 */
-	public abstract void optimizeBGP(TupleExpr query);
+	public abstract TupleExpr optimizeBGP(TupleExpr query);
 	
 	// -------------------------------------------------------------------------
 	
@@ -130,10 +130,10 @@ public abstract class AbstractFederationOptimizer implements QueryOptimizer {
 			if (LOGGER.isTraceEnabled())
 				LOGGER.trace("BGP before optimization:\n" + AnnotatingTreePrinter.print(bgp));
 
-			optimizeBGP(bgp);
+			bgp = optimizeBGP(bgp);
 			
-//			if (LOGGER.isTraceEnabled() && modelEvaluator != null)
-//				LOGGER.trace("BGP after optimization:\n" + AnnotatingTreePrinter.print(bgp.getParentNode(), modelEvaluator));
+			if (LOGGER.isTraceEnabled() && modelEvaluator != null)
+				LOGGER.trace("BGP after optimization:\n" + AnnotatingTreePrinter.print(bgp, modelEvaluator));
 		}
 		
 	}

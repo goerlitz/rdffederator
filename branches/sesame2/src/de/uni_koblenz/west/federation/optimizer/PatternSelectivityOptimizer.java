@@ -38,7 +38,7 @@ import org.openrdf.query.algebra.helpers.VarNameCollector;
 public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 	
 	@Override
-	public void optimizeBGP(TupleExpr bgp) {
+	public TupleExpr optimizeBGP(TupleExpr bgp) {
 		
 		List<TupleExpr> queryExpressions = this.getBaseExpressions(bgp);
 		final Map<TupleExpr, Double> costs = new HashMap<TupleExpr, Double>();
@@ -92,6 +92,7 @@ public class PatternSelectivityOptimizer extends AbstractFederationOptimizer {
 		}
 		
 		bgp.replaceWith(newQuery);
+		return newQuery;
 	}
 
 }

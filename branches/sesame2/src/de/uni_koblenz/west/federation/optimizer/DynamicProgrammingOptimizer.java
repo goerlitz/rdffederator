@@ -62,7 +62,7 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 	}
 
 	@Override
-	public void optimizeBGP(TupleExpr bgp) {
+	public TupleExpr optimizeBGP(TupleExpr bgp) {
 		
 		long time = System.currentTimeMillis();
 
@@ -119,7 +119,9 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 		if (optPlans.get(count).size() == 0)
 			throw new UnsupportedOperationException("Queries requiring cross products are not supported (yet)");
 		
-		bgp.replaceWith(optPlans.get(count).iterator().next());
+		TupleExpr newOp = optPlans.get(count).iterator().next();
+		bgp.replaceWith(newOp);
+		return newOp;
 
 	}
 	
