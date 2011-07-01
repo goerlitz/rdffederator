@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.FederationSail;
-import de.uni_koblenz.west.federation.adapter.SesameAdapter;
+import de.uni_koblenz.west.federation.helpers.AnnotatingTreePrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.test.config.Configuration;
@@ -81,7 +81,8 @@ public class SourceSelectionEval {
 				List<StatementPattern> patternList = sourceMap.get(key);
 				List<String> pStrings = new ArrayList<String>();
 				for (StatementPattern p : patternList) {
-					pStrings.add(new SesameAdapter().toSparqlPattern(p));
+//					pStrings.add(new SesameAdapter().toSparqlPattern(p));
+					pStrings.add(AnnotatingTreePrinter.print(p));
 				}
 				System.out.println(key + " -> " + pStrings);
 			}

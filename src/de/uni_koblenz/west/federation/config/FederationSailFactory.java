@@ -38,8 +38,6 @@ import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
 
-import de.uni_koblenz.west.federation.FederationOptimizer;
-import de.uni_koblenz.west.federation.FederationOptimizerFactory;
 import de.uni_koblenz.west.federation.FederationSail;
 import de.uni_koblenz.west.federation.VoidRepository;
 import de.uni_koblenz.west.federation.estimation.AbstractCardinalityEstimator;
@@ -60,11 +58,7 @@ import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.sources.SparqlAskSelector;
 import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
-import de.uni_koblenz.west.optimizer.eval.CostCalculator;
 import de.uni_koblenz.west.optimizer.eval.CostModel;
-import de.uni_koblenz.west.optimizer.eval.QueryModelEvaluator;
-import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
-import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
@@ -227,17 +221,17 @@ public class FederationSailFactory implements SailFactory {
 		return sail;
 	}
 	
-	private QueryModelVerifier<StatementPattern, ValueExpr> createOptimizationVeryfier(final CostCalculator<BGPOperator<StatementPattern, ValueExpr>> costEval) {
-		return new QueryModelVerifier<StatementPattern, ValueExpr>() {
-			@Override
-			public QueryModelEvaluator<BGPOperator<StatementPattern, ValueExpr>, ? extends Number> getEvaluator() {
-				return costEval;
-			}
-			@Override
-			public void resultObtained(Number value) {
-				System.out.println(Format.d(value.doubleValue(), 2));
-			}
-		};
-	}
+//	private QueryModelVerifier<StatementPattern, ValueExpr> createOptimizationVeryfier(final CostCalculator<BGPOperator<StatementPattern, ValueExpr>> costEval) {
+//		return new QueryModelVerifier<StatementPattern, ValueExpr>() {
+//			@Override
+//			public QueryModelEvaluator<BGPOperator<StatementPattern, ValueExpr>, ? extends Number> getEvaluator() {
+//				return costEval;
+//			}
+//			@Override
+//			public void resultObtained(Number value) {
+//				System.out.println(Format.d(value.doubleValue(), 2));
+//			}
+//		};
+//	}
 
 }
