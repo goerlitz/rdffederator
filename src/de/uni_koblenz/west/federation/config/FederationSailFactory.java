@@ -56,7 +56,7 @@ import de.uni_koblenz.west.federation.optimizer.DynamicProgrammingOptimizer;
 import de.uni_koblenz.west.federation.optimizer.PatternSelectivityOptimizer;
 import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
-import de.uni_koblenz.west.federation.sources.SparqlAskSelector;
+import de.uni_koblenz.west.federation.sources.AskSelector;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
@@ -159,8 +159,10 @@ public class FederationSailFactory implements SailFactory {
 		String selectorType = selConf.getType();
 		
 		if ("ASK".equalsIgnoreCase(selectorType))
-			selector = new SparqlAskSelector(sources, selConf.isGroupBySameAs());
-		else if ("STATS".equalsIgnoreCase(selectorType))
+			selector = new AskSelector(sources);
+		else if ("INDEX".equalsIgnoreCase(selectorType))
+			selector = new IndexSelector(stats, selConf.isUseTypeStats());
+		else if ("INDEX_ASK".equalsIgnoreCase(selectorType))
 			selector = new IndexSelector(stats, selConf.isUseTypeStats());
 		else {
 			throw new SailConfigException("no source selector specified");

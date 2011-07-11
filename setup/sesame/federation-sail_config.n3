@@ -19,9 +19,9 @@
       sr:sailImpl [
          sail:sailType "west:FederationSail" ;
 
-         # source selection settings; type={Ask, Stats}
+         # source selection settings; type={ASK, INDEX, INDEX_ASK}
          fed:sourceSelection [
-            fed:selectorType "Ask";
+            fed:selectorType "INDEX_ASK";
             fed:useTypeStats true ;  # deprecated
             
             # sub query grouping
@@ -35,7 +35,7 @@
             fed:optimizerType "DYNAMIC_PROGRAMMING" ;
             fed:cardEstimator "STATISTICS" ;
             fed:useBindJoin true ;
-            fed:useSemiJoin true ;
+            fed:useHashJoin true ;
          ] ;
 
          # sparql endpoints

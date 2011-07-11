@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 
 /**
  * A source selector which contacts SPARQL Endpoints asking them whether
@@ -40,9 +39,9 @@ import de.uni_koblenz.west.federation.model.MappedStatementPattern;
  * 
  * @author Olaf Goerlitz
  */
-public class SparqlAskSelector extends SourceSelectorBase {
+public class AskSelector extends SourceSelectorBase {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(SparqlAskSelector.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AskSelector.class);
 	
 	private List<Graph> sourceList;
 	
@@ -51,26 +50,23 @@ public class SparqlAskSelector extends SourceSelectorBase {
 	 * 
 	 * @param sources the list of data sources to ask. 
 	 */
-	public SparqlAskSelector(List<Graph> sources, boolean attachSameAs) {
+	public AskSelector(List<Graph> sources) {
 		this.sourceList = sources;
 	}
 
 	@Override
 	protected Set<Graph> getSources(StatementPattern pattern) {
+		return getSources(pattern, this.sourceList);
+	}
+	
+	
+	protected Set<Graph> getSources(StatementPattern pattern, Collection<Graph> sources) {
 		Set<Graph> selectedSources = new HashSet<Graph>();
 		
 		if (LOGGER.isDebugEnabled())
 			LOGGER.debug(debugAskRequest(pattern));
 		
 		String sparqlPattern = OperatorTreePrinter.print(pattern);
-		Collection<Graph> sources;
-		
-		
-		if (pattern instanceof MappedStatementPattern) {
-			sources = ((MappedStatementPattern) pattern).getSources();
-		} else {
-			sources = sourceList;
-		}
 		
 		// ask each source for current pattern
 		for (Graph source : sources) {
