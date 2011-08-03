@@ -10,6 +10,5 @@ for jar in lib/*.jar; do classpath=$classpath:$jar; done
 classpath=.:bin/$classpath
 
 # run main class with classpath setting
-#echo java -cp $classpath $mainclass $*
 java -cp $classpath -Xmx2g $mainclass $* 1>void.n3
 
