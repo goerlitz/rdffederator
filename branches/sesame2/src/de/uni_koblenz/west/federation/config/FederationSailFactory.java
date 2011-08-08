@@ -21,6 +21,7 @@
 package de.uni_koblenz.west.federation.config;
 
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
+import org.openrdf.query.impl.AbstractQuery;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
@@ -125,45 +126,23 @@ public class FederationSailFactory implements SailFactory {
 		}
 
 		// Create source selector from configuration settings
-		SourceSelector selector;
 		SourceSelectorConfig selConf = cfg.getSelectorConfig();
-		String selectorType = selConf.getType();
-		
-		if ("ASK".equalsIgnoreCase(selectorType))
-			selector = new AskSelector();
-		else if ("INDEX".equalsIgnoreCase(selectorType))
-			selector = new IndexSelector(selConf.isUseTypeStats());
-		else if ("INDEX_ASK".equalsIgnoreCase(selectorType))
-			selector = new IndexAskSelector(selConf.isUseTypeStats());
-		else {
-			throw new SailConfigException("no source selector specified");
-		}
+		SourceSelector selector = getSourceSelector(selConf);
 		sail.setSourceSelector(selector);
 		
 		// sub query builder
 		SubQueryBuilder builder = new SubQueryBuilder(selConf.isGroupBySource(), selConf.isGroupBySameAs());
 		
 		// create optimizer
-		AbstractFederationOptimizer opt;
-		QueryOptimizerConfig optConf = cfg.getOptimizerConfig();
-//		String optimizerType = optConf.getType();
-//		String estimatorType = optConf.getEstimatorType();
-		if ("DYNAMIC_PROGRAMMING".equals(optConf.getType())) {
-			opt = new DynamicProgrammingOptimizer(optConf.isUseHashJoin(), optConf.isUseBindJoin());
-		} else if ("PATTERN_HEURISTIC".equals(optConf.getType())) {
-			opt = new PatternSelectivityOptimizer();
-		} else {
-			throw new IllegalArgumentException("wrong optimizer type: " + optConf.getType());
-		}
-
+		AbstractFederationOptimizer opt = getQueryOptimizer(cfg.getOptimizerConfig());
+		sail.setFederationOptimizer(opt);
+		
 		Void2StatsRepository stats = Void2StatsRepository.getInstance();
 		AbstractCardinalityEstimator cardEstim = new SPLENDIDCardinalityEstimator(stats, true);
 		AbstractCostEstimator costEstim = new SPLENDIDCostEstimator();
 		costEstim.setCardinalityEstimator(cardEstim);
 //		ModelEvaluator modelEval = new TrueCardinalityEstimator(sail.getEvalStrategy());
 		
-//		QueryOptimizer opt = new PatternSelectivityOptimizer(selector, builder, costEstim);
-//		AbstractFederationOptimizer opt = new DynamicProgrammingOptimizer(selector, builder, costEstim, true, true);
 		opt.setBuilder(builder);
 		opt.setSelector(selector);
 		opt.setCostEstimator(costEstim);
@@ -171,8 +150,50 @@ public class FederationSailFactory implements SailFactory {
 		opt.setModelEvaluator(costEstim);
 //		opt.setModelEvaluator(modelEval);
 		
-		sail.setFederationOptimizer(opt);
+
 		return sail;
+	}
+	
+	// --------------------------------------------------------------
+	
+	/**
+	 * Creates a sources selector for the given configuration settings.
+	 * 
+	 * @param selConf the source selector configuration settings.
+	 * @return the created sources selector.
+	 * @throws SailConfigException If no source selector could be created due to invalid or incomplete
+	 *             configuration data.
+	 */
+	private SourceSelector getSourceSelector(SourceSelectorConfig selConf) throws SailConfigException {
+		String selectorType = selConf.getType();
+		
+		if ("ASK".equalsIgnoreCase(selectorType))
+			return new AskSelector();
+		else if ("INDEX".equalsIgnoreCase(selectorType))
+			return new IndexSelector(selConf.isUseTypeStats());
+		else if ("INDEX_ASK".equalsIgnoreCase(selectorType))
+			return new IndexAskSelector(selConf.isUseTypeStats());
+		
+		throw new SailConfigException("invalid source selector type: " + selectorType);
+	}
+	
+	/**
+	 * Creates a query optimizer for the given configuration settings.
+	 *  
+	 * @param optConf the query optimizer configuration settings.
+	 * @return the created query optimizer.
+	 * @throws SailConfigException If no query optimizer could be created due to invalid or incomplete
+	 *             configuration data.
+	 */
+	private AbstractFederationOptimizer getQueryOptimizer(QueryOptimizerConfig optConf) throws SailConfigException {
+		String optimizerType = optConf.getType();
+		
+		if ("DYNAMIC_PROGRAMMING".equals(optimizerType))
+			return new DynamicProgrammingOptimizer(optConf.isUseHashJoin(), optConf.isUseBindJoin());
+		else if ("PATTERN_HEURISTIC".equals(optimizerType))
+			return new PatternSelectivityOptimizer();
+		
+		throw new SailConfigException("invalid query optimizer type: " + optConf.getType());
 	}
 	
 }
