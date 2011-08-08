@@ -39,12 +39,12 @@ import org.openrdf.query.algebra.helpers.VarNameCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.config.QueryOptimizerConfig;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 
-
 /**
- * Creates sub queries for patterns with assigned sources. 
+ * Creates sub queries for patterns with assigned data sources. 
  * 
  * @author Olaf Goerlitz
  */
@@ -55,11 +55,18 @@ public class SubQueryBuilder {
 	private boolean groupBySameAs;
 	private boolean groupBySource;
 	
-	public SubQueryBuilder(boolean groupBySource, boolean groupBySameAs) {
-		this.groupBySource = groupBySource;
-		this.groupBySameAs = groupBySameAs;
+	public SubQueryBuilder(QueryOptimizerConfig config) {
+		this.groupBySource = config.isGroupBySource();
+		this.groupBySameAs = config.isGroupBySameAs();
 	}
-	
+
+	/**
+	 * Creates sub queries for all mapped data sources.
+	 * 
+	 * @param patterns the statement patterns with mapped data sources.
+	 * @param conditions the filter conditions to apply.
+	 * @return a list of created sub queries.
+	 */
 	public List<TupleExpr> createSubQueries(List<MappedStatementPattern> patterns, List<ValueExpr> conditions) {
 		
 		List<TupleExpr> subQueries = new ArrayList<TupleExpr>();

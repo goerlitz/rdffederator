@@ -20,8 +20,6 @@
  */
 package de.uni_koblenz.west.federation.config;
 
-import static de.uni_koblenz.west.federation.config.FederationSailSchema.GROUP_BY_SAMEAS;
-import static de.uni_koblenz.west.federation.config.FederationSailSchema.GROUP_BY_SOURCE;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.SELECTOR_TYPE;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_TYPE_STATS;
 
@@ -32,15 +30,14 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.sail.config.SailConfigException;
 
 /**
- * Setting details for the sources selector configuration.
+ * Configuration settings for the sources selector.
  * 
  * @author Olaf Goerlitz
  */
 public class SourceSelectorConfig extends AbstractSailConfig {
 	
+	/** @deprecated */
 	private boolean useTypeStats;
-	private boolean groupBySameAs;
-	private boolean groupBySource;
 	
 	protected SourceSelectorConfig() {
 		super(SELECTOR_TYPE);
@@ -52,16 +49,9 @@ public class SourceSelectorConfig extends AbstractSailConfig {
 		return config;
 	}
 	
+	/** @deprecated */
 	public boolean isUseTypeStats() {
 		return this.useTypeStats;
-	}
-	
-	public boolean isGroupBySameAs() {
-		return this.groupBySameAs;
-	}
-	
-	public boolean isGroupBySource() {
-		return this.groupBySource;
 	}
 	
 	@Override
@@ -69,10 +59,7 @@ public class SourceSelectorConfig extends AbstractSailConfig {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		
 		Resource self = super.export(model);
-		
 		model.add(self, USE_TYPE_STATS, vf.createLiteral(this.useTypeStats));
-		model.add(self, GROUP_BY_SAMEAS, vf.createLiteral(this.groupBySameAs));
-		model.add(self, GROUP_BY_SOURCE, vf.createLiteral(this.groupBySource));
 		
 		return self;
 	}
@@ -81,9 +68,7 @@ public class SourceSelectorConfig extends AbstractSailConfig {
 	public void parse(Graph model, Resource implNode) throws SailConfigException {
 		super.parse(model, implNode);
 		
-		useTypeStats = getObjectBoolean(model, implNode, USE_TYPE_STATS, true);
-		groupBySameAs = getObjectBoolean(model, implNode, GROUP_BY_SAMEAS, false);
-		groupBySource = getObjectBoolean(model, implNode, GROUP_BY_SOURCE, false);
+		this.useTypeStats = getObjectBoolean(model, implNode, USE_TYPE_STATS, true);
 	}
 
 }

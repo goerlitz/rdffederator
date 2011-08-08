@@ -19,21 +19,23 @@
       sr:sailImpl [
          sail:sailType "west:FederationSail" ;
 
-         # source selection settings; type={ASK, INDEX, INDEX_ASK}
+         # source selection {ASK, INDEX, INDEX_ASK}
          fed:sourceSelection [
             fed:selectorType "INDEX_ASK";
             fed:useTypeStats true ;  # deprecated
-            
-            # sub query grouping
-            fed:groupBySource true ;
-            fed:groupBySameAs true ;
          ] ;
 
-         # optimizer settings; type={DYNAMIC_PROGRAMMING, PATTERN_HEURISTIC}
+         # optimizer settings {DYNAMIC_PROGRAMMING, PATTERN_HEURISTIC}
          # cardinality estimation settings; type={STATISTICS, TRUE_CARD}
          fed:queryOptimization [
             fed:optimizerType "DYNAMIC_PROGRAMMING" ;
             fed:cardEstimator "STATISTICS" ;
+            
+            # sub query grouping
+            fed:groupBySource true ;
+            fed:groupBySameAs true ;
+            
+            # join operator implementation
             fed:useBindJoin true ;
             fed:useHashJoin true ;
          ] ;

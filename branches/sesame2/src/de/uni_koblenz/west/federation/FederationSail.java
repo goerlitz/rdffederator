@@ -159,9 +159,12 @@ public class FederationSail extends SailBase {
 			}
 		}
 		
+		// initialize statistics
 		Void2StatsRepository stats = Void2StatsRepository.getInstance();
 		this.selector.setStatistics(stats);
 		this.selector.initialize();
+		
+		// TODO: initialize source selector
 		
 		initialized = true;
 	}
