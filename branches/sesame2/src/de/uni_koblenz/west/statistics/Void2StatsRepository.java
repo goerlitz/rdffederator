@@ -22,15 +22,15 @@ package de.uni_koblenz.west.statistics;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
-//import org.openrdf.model.URIFactory;
+import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
@@ -44,11 +44,11 @@ import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.Rio;
 import org.openrdf.sail.memory.MemoryStore;
-//import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
+import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.vocabulary.VOID2;
 
 /**
@@ -60,18 +60,20 @@ public class Void2StatsRepository extends Void2Statistics {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Void2StatsRepository.class);
 	
-	protected final Repository voidRepository;
+	protected static final Void2StatsRepository singleton = new Void2StatsRepository();
 	
-	/**
-	 * Creates a new Void 2 statistics representation based on a memory store.
-	 */
-	public Void2StatsRepository() {
+	protected final Repository voidRepository;
+
+	public static Void2StatsRepository getInstance() {
+		return singleton;
+	}
+	
+	private Void2StatsRepository() {
 		this.voidRepository = new SailRepository(new MemoryStore());
 		try {
 			this.voidRepository.initialize();
-//		} catch (StoreException e) {
 		} catch (RepositoryException e) {
-			throw new RuntimeException("init of voiD 2 repository failed", e);
+			throw new RuntimeException("initialization of statistics repository failed", e);
 		}
 	}
 	
@@ -84,38 +86,84 @@ public class Void2StatsRepository extends Void2Statistics {
 		return result;
 	}
 	
+	/**
+	 * Extracts all SPARQL endpoints of the datasets.
+	 * 
+	 * @return the list of SPARQL endpoints.
+	 */
+	public List<Graph> getEndpoints() {
+		
+		List<Graph> sources = new ArrayList<Graph>();
+		
+		ValueFactory uf = this.voidRepository.getValueFactory();
+		URI voidDataset = uf.createURI(VOID2.Dataset.toString());
+		URI sparqlEndpoint = uf.createURI(VOID2.sparqlEndpoint.toString());
+		
+		try {
+			RepositoryConnection con = this.voidRepository.getConnection();
+			
+			try {
+				for (Statement dataset : con.getStatements(null, RDF.TYPE, voidDataset, false).asList()) {
+					for (Statement endpoint : con.getStatements(dataset.getSubject(), sparqlEndpoint, null, false).asList()) {
+						sources.add(new Graph(endpoint.getObject().stringValue()));
+					}
+				}
+			} catch (RepositoryException e) {
+				e.printStackTrace();
+			} finally {
+				con.close();
+			}
+		} catch (RepositoryException e) {
+			e.printStackTrace();
+		}
+		
+		return sources;
+	}
+	
 	// -------------------------------------------------------------------------
 	
 	/**
-	 * Loads the supplied void description into the statistics repository.
+	 * Loads the supplied voiD description into the statistics repository.
 	 * 
-	 * @param the void description URL.
-	 * @param the context of the loaded statistics.
+	 * @param the URI of the voiD description to load.
+	 * @return the SPARQL endpoint.
 	 */
-	@Override
-	public URI load(URL url) throws IOException {
-		if (url == null)
-			throw new IllegalArgumentException("voiD 2 description URL must not be null.");
+	public URI load(URI voidURI) throws IOException {
+		if (voidURI == null)
+			throw new IllegalArgumentException("voiD URI must not be null.");
 		
 		// initialize parser
-		RDFFormat format = Rio.getParserFormatForFileName(url.getFile());
+		RDFFormat format = Rio.getParserFormatForFileName(voidURI.stringValue());
 		if (format == null) {
-			throw new IOException("Unsupported RDF format: " + url);
+			throw new IOException("Unsupported RDF format: " + voidURI);
 		}
 
-		InputStream in = url.openStream();
+		InputStream in = new URL(voidURI.stringValue()).openStream();
 		try {
-			// TODO: check if this is valid void data with a sparql endpoint
-			
 			RepositoryConnection con = this.voidRepository.getConnection();
 			try {
-				URI context = url.toURI();
-//				con.add(in, url.getFile(), format, voidRepository.getURIFactory().createURI(context.toString()));
-				con.add(in, url.getFile(), format, voidRepository.getValueFactory().createURI(context.toString()));
-				return context;
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
-//			} catch (StoreException e) {
+				con.add(in, voidURI.stringValue(), format, voidURI);
+				
+				// check if this voiD description has a valid SPARQL endpoint
+				ValueFactory uf = this.voidRepository.getValueFactory();
+				URI voidDataset = uf.createURI(VOID2.Dataset.toString());
+				URI sparqlEndpoint = uf.createURI(VOID2.sparqlEndpoint.toString());
+				Set<URI> endpoints = new HashSet<URI>();
+				
+				for (Statement dataset : con.getStatements(null, RDF.TYPE, voidDataset, false, voidURI).asList()) {
+					for (Statement endpoint : con.getStatements(dataset.getSubject(), sparqlEndpoint, null, false, voidURI).asList()) {
+						// TODO: endpoint may be a literal
+						endpoints.add((URI) endpoint.getObject());
+					}
+				}
+				
+				if (endpoints.size() == 0)
+					LOGGER.debug("found no SPARQL endpoint in voiD file");
+				if (endpoints.size() > 1)
+					throw new IllegalStateException("found multiple SPARQL endpoints in voiD file");
+				
+				return endpoints.iterator().next();
+				
 			} catch (RepositoryException e) {
 				e.printStackTrace();
 			} catch (RDFParseException e) {
@@ -125,18 +173,23 @@ public class Void2StatsRepository extends Void2Statistics {
 			} finally {
 				con.close();
 			}
-//		} catch (StoreException e) {
 		} catch (RepositoryException e) {
 			e.printStackTrace();
 		}
 		
-		LOGGER.info("loaded voiD 2 data from " + url);
 		return null;
 	}
 	
-	public void setEndpoint(String endpoint, URI contextURI) {
+	/**
+	 * Sets a new endpoint for the specified void context.
+	 */
+	public void setEndpoint(URI endpoint, URI contextURI) {
 		
-//		URIFactory uf = this.voidRepository.getURIFactory();
+		if (endpoint == null)
+			throw new IllegalArgumentException("endpoint must not be null");
+		if (contextURI == null)
+			throw new IllegalArgumentException("void URI must not be null");
+		
 		ValueFactory uf = this.voidRepository.getValueFactory();
 		Value voidDataset = uf.createURI(VOID2.Dataset.toString());
 		Resource context = uf.createURI(contextURI.toString());
@@ -145,17 +198,14 @@ public class Void2StatsRepository extends Void2Statistics {
 			RepositoryConnection con = this.voidRepository.getConnection();
 			
 			// find dataset resource in specified context
-//			ModelResult result = con.match(null, RDF.TYPE, voidDataset, false, context);
 			RepositoryResult<Statement> result = con.getStatements(null, RDF.TYPE, voidDataset, false, context);
 			Resource dataset = result.next().getSubject();
 			
 			// remove current sparql endpoint and add new one
-//			con.removeMatch(dataset, uf.createURI(VOID2.sparqlEndpoint.toString()), null, context);
 			con.remove(dataset, uf.createURI(VOID2.sparqlEndpoint.toString()), null, context);
-			con.add(dataset, uf.createURI(VOID2.sparqlEndpoint.toString()), uf.createURI(endpoint), context);
+			con.add(dataset, uf.createURI(VOID2.sparqlEndpoint.toString()), endpoint, context);
 			
 			LOGGER.info("assigned new SPARQL endpoint '" + endpoint + "' for " + contextURI);
-//		} catch (StoreException e) {
 		} catch (RepositoryException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

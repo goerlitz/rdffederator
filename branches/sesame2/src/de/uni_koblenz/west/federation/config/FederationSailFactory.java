@@ -20,15 +20,7 @@
  */
 package de.uni_koblenz.west.federation.config;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.openrdf.query.algebra.StatementPattern;
-import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
-import org.openrdf.repository.Repository;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
@@ -39,7 +31,6 @@ import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
 
 import de.uni_koblenz.west.federation.FederationSail;
-import de.uni_koblenz.west.federation.VoidRepository;
 import de.uni_koblenz.west.federation.estimation.AbstractCardinalityEstimator;
 import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
 import de.uni_koblenz.west.federation.estimation.CardinalityCostEstimator;
@@ -49,11 +40,11 @@ import de.uni_koblenz.west.federation.estimation.SPLENDIDCardinalityEstimator;
 import de.uni_koblenz.west.federation.estimation.TrueCardinalityEstimator;
 import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
 import de.uni_koblenz.west.federation.helpers.Format;
-import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.model.SubQueryBuilder;
 import de.uni_koblenz.west.federation.optimizer.AbstractFederationOptimizer;
 import de.uni_koblenz.west.federation.optimizer.DynamicProgrammingOptimizer;
 import de.uni_koblenz.west.federation.optimizer.PatternSelectivityOptimizer;
+import de.uni_koblenz.west.federation.sources.IndexAskSelector;
 import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.sources.AskSelector;
@@ -113,57 +104,37 @@ public class FederationSailFactory implements SailFactory {
 		if (!SAIL_TYPE.equals(config.getType())) {
 			throw new SailConfigException("Invalid Sail type: " + config.getType());
 		}
+		
+		RepositoryRegistry registry = RepositoryRegistry.getInstance();
+		
 		assert config instanceof FederationSailConfig;
 		FederationSailConfig cfg = (FederationSailConfig)config;
 		FederationSail sail = new FederationSail();
 		
 		// Create all member repositories
-		List<Repository> members = new ArrayList<Repository>();
-		RepositoryRegistry registry = RepositoryRegistry.getInstance();
-		
 		for (RepositoryImplConfig repConfig : cfg.getMemberConfigs()) {
 			RepositoryFactory factory = registry.get(repConfig.getType());
 			if (factory == null) {
 				throw new SailConfigException("Unsupported repository type: " + repConfig.getType());
 			}
 			try {
-				members.add(factory.getRepository(repConfig));
+				sail.addMember(factory.getRepository(repConfig));
 			} catch (RepositoryConfigException e) {
 				throw new SailConfigException("invalid repository configuration: " + e.getMessage(), e);
 			}
 		}
-		sail.setMembers(members);
 
-		// Create void statistics for member repositories
-		List<Graph> sources = new ArrayList<Graph>();
-		Void2StatsRepository stats = new Void2StatsRepository();
-		
-		for (Repository rep : members) {
-			if (rep instanceof VoidRepository) {
-				VoidRepository voidRep = (VoidRepository) rep;
-				URI context;
-				try {
-					context = stats.load(voidRep.getVoidUrl());
-				} catch (IOException e) {
-					throw new SailConfigException("can not read voiD description: " + voidRep.getVoidUrl() + e.getMessage(), e);
-				}
-				stats.setEndpoint(voidRep.getEndpoint(), context);
-				sources.add(new Graph(voidRep.getEndpoint()));
-			}
-		}
-		sail.setStatistics(stats);
-		
 		// Create source selector from configuration settings
 		SourceSelector selector;
 		SourceSelectorConfig selConf = cfg.getSelectorConfig();
 		String selectorType = selConf.getType();
 		
 		if ("ASK".equalsIgnoreCase(selectorType))
-			selector = new AskSelector(sources);
+			selector = new AskSelector();
 		else if ("INDEX".equalsIgnoreCase(selectorType))
-			selector = new IndexSelector(stats, selConf.isUseTypeStats());
+			selector = new IndexSelector(selConf.isUseTypeStats());
 		else if ("INDEX_ASK".equalsIgnoreCase(selectorType))
-			selector = new IndexSelector(stats, selConf.isUseTypeStats());
+			selector = new IndexAskSelector(selConf.isUseTypeStats());
 		else {
 			throw new SailConfigException("no source selector specified");
 		}
@@ -175,7 +146,7 @@ public class FederationSailFactory implements SailFactory {
 		// create optimizer
 		AbstractFederationOptimizer opt;
 		QueryOptimizerConfig optConf = cfg.getOptimizerConfig();
-		String optimizerType = optConf.getType();
+//		String optimizerType = optConf.getType();
 //		String estimatorType = optConf.getEstimatorType();
 		if ("DYNAMIC_PROGRAMMING".equals(optConf.getType())) {
 			opt = new DynamicProgrammingOptimizer(optConf.isUseHashJoin(), optConf.isUseBindJoin());
@@ -184,7 +155,8 @@ public class FederationSailFactory implements SailFactory {
 		} else {
 			throw new IllegalArgumentException("wrong optimizer type: " + optConf.getType());
 		}
-		
+
+		Void2StatsRepository stats = Void2StatsRepository.getInstance();
 		AbstractCardinalityEstimator cardEstim = new SPLENDIDCardinalityEstimator(stats, true);
 		AbstractCostEstimator costEstim = new SPLENDIDCostEstimator();
 		costEstim.setCardinalityEstimator(cardEstim);

@@ -20,7 +20,6 @@
  */
 package de.uni_koblenz.west.federation.sources;
 
-import java.util.List;
 import java.util.Set;
 
 import org.openrdf.query.algebra.StatementPattern;
@@ -44,9 +43,14 @@ public class IndexAskSelector extends AskSelector {
 	 * 
 	 * @param stats the statistics to use.
 	 */
-	public IndexAskSelector(RDFStatistics stats, boolean useTypeStats, List<Graph> sources) {
-		super(sources);
-		this.indexSel = new IndexSelector(stats, useTypeStats);
+	public IndexAskSelector(boolean useTypeStats) {
+		this.indexSel = new IndexSelector(useTypeStats);
+	}
+	
+	@Override
+	public void setStatistics(RDFStatistics stats) {
+		super.setStatistics(stats);
+		this.indexSel.setStatistics(stats);
 	}
 	
 	@Override

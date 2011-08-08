@@ -26,12 +26,14 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.sail.SailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.index.Graph;
+import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
  * A source selector which contacts SPARQL Endpoints asking them whether
@@ -45,20 +47,16 @@ public class AskSelector extends SourceSelectorBase {
 	
 	private List<Graph> sourceList;
 	
-	/**
-	 * Creates a new ASK selector.
-	 * 
-	 * @param sources the list of data sources to ask. 
-	 */
-	public AskSelector(List<Graph> sources) {
-		this.sourceList = sources;
+	@Override
+	public void initialize() throws SailException {
+		super.initialize();
+		this.sourceList = ((Void2StatsRepository) stats).getEndpoints();
 	}
 
 	@Override
 	protected Set<Graph> getSources(StatementPattern pattern) {
 		return getSources(pattern, this.sourceList);
 	}
-	
 	
 	protected Set<Graph> getSources(StatementPattern pattern, Collection<Graph> sources) {
 		Set<Graph> selectedSources = new HashSet<Graph>();

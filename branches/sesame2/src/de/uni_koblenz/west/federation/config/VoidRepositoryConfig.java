@@ -23,18 +23,19 @@ package de.uni_koblenz.west.federation.config;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.VOID_URI;
 import static de.uni_koblenz.west.federation.config.VoidRepositorySchema.ENDPOINT;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.util.Iterator;
 
 //import org.openrdf.model.Model;
 //import org.openrdf.model.util.ModelException;
 //import org.openrdf.store.StoreConfigException;
 import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.model.Value;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryImplConfigBase;
+import org.openrdf.sail.config.SailConfigException;
 
 /**
  * Configuration details for a void repository.
@@ -43,33 +44,27 @@ import org.openrdf.repository.config.RepositoryImplConfigBase;
  */
 public class VoidRepositoryConfig extends RepositoryImplConfigBase {
 	
-	private URL voidUrl;
-	private URL endpoint;
+	private URI voidUri;
+	private URI endpoint;
 	
-//	private String endpoint;
-//	private URI sparqlEndpoint;
-	
-	public URL getVoidUrl() {
-		return this.voidUrl;
+	/**
+	 * Returns the location of the VOID file.
+	 * 
+	 * @return the location of the VOID file or null if it is not set.
+	 */
+	public URI getVoidURI() {
+		return this.voidUri;
 	}
 	
-	public URL getEndpoint() {
+	/**
+	 * Returns the location of the SPARQL endpoint.
+	 * 
+	 * @return the location of the SPARQL endpoint or null if it is not set.
+	 */
+	public URI getEndpoint() {
 		return this.endpoint;
 	}
-	
-//	public URI getEndpoint() {
-//		return this.sparqlEndpoint;
-//	}
 
-//	/**
-//	 * Gets the SPARQL endpoint.
-//	 * 
-//	 * @return the SAPRQL endpoint.
-//	 */
-//	public String getEndpoint() {
-//		return this.endpoint;
-//	}
-	
 	// -------------------------------------------------------------------------
 	
 	/**
@@ -82,16 +77,11 @@ public class VoidRepositoryConfig extends RepositoryImplConfigBase {
 //	public Resource export(Model model) { // Sesame 3
 	public Resource export(Graph model) { // Sesame 2
 		Resource implNode = super.export(model);
-		ValueFactoryImpl vf = ValueFactoryImpl.getInstance();
 
-		model.add(implNode, VOID_URI, vf.createURI(this.voidUrl.toString()));
-		model.add(implNode, ENDPOINT, vf.createURI(this.endpoint.toString()));
-//		if (voidUri != null) {
-//			model.add(implNode, VOID_URI, voidUri);
-//		}
-//		if (endpoint != null) {
-//			model.add(implNode, ENDPOINT, vf.createURI(endpoint));
-//		}
+		model.add(implNode, VOID_URI, this.voidUri);
+		
+		if (this.endpoint != null)
+			model.add(implNode, ENDPOINT, this.endpoint);
 		
 		return implNode;
 	}
@@ -107,42 +97,13 @@ public class VoidRepositoryConfig extends RepositoryImplConfigBase {
 	public void parse(Graph model, Resource implNode) throws RepositoryConfigException { // Sesame 2
 		super.parse(model, implNode);
 		
-//		try {
-//			URI voidUri = model.filter(implNode, VOID_URI, null).objectURI();
-			URI voidUri = (URI) model.match(implNode, VOID_URI, null).next().getObject();
-			
-			if (voidUri == null)
-//				throw new StoreConfigException("VoidRepository requires: " + VOID_URI);
-				throw new RepositoryConfigException("VoidRepository requires: " + VOID_URI);
-			try {
-				this.voidUrl = new URL(voidUri.stringValue());
-			} catch (MalformedURLException e) {
-//				throw new StoreConfigException("Malformed '" + VOID_URI + "' URL: " + voidUri);
-				throw new RepositoryConfigException("Malformed '" + VOID_URI + "' URL: " + voidUri);
-			}
-			
-//			URI endpoint = model.filter(implNode, ENDPOINT, null).objectURI();
-			URI endpoint = (URI) model.match(implNode, ENDPOINT, null).next().getObject();
-			
-			if (endpoint == null)
-//				throw new StoreConfigException("VoidRepository requires: " + ENDPOINT);
-				throw new RepositoryConfigException("VoidRepository requires: " + ENDPOINT);
-			try {
-				this.endpoint = new URL(endpoint.stringValue());
-			} catch (MalformedURLException e) {
-//				throw new StoreConfigException("Malformed '" + ENDPOINT + "' URL: " + endpoint);
-				throw new RepositoryConfigException("Malformed '" + ENDPOINT + "' URL: " + endpoint);
-			}
-			
-//			this.sparqlEndpoint = model.filter(implNode, ENDPOINT, null).objectURI();
-//			if (sparqlEndpoint != null) {
-//				// TODO: do proper overwriting of sparql endpoint 
-//				endpoint = sparqlEndpoint.toString();
-//			}
-//		}
-//		catch (ModelException e) {
-//			throw new StoreConfigException(e);
-//		}
+		this.voidUri = getObjectURI(model, implNode, VOID_URI);
+		if (this.voidUri == null)
+//			throw new StoreConfigException("VoidRepository requires: " + VOID_URI);  // Sesame 3
+			throw new RepositoryConfigException("VoidRepository requires: " + VOID_URI);
+		
+		this.endpoint = getObjectURI(model, implNode, ENDPOINT);
+		
 	}
 
 //	/**
@@ -160,5 +121,29 @@ public class VoidRepositoryConfig extends RepositoryImplConfigBase {
 ////			throw new StoreConfigException("No SPARQL endpoint specified");
 ////		}
 //	}
+	
+	/**
+	 * Returns the object URI of the setting with the specified property.
+	 * 
+	 * @param config the configuration settings.
+	 * @param subject the subject (sub context) of the configuration setting.
+	 * @param property the configuration property.
+	 * @return the URI value of the desired property setting or null.
+	 * @throws SailConfigException if there is no (single) URI to return.
+	 */
+	protected URI getObjectURI(Graph config, Resource subject, URI property) throws RepositoryConfigException {
+		Iterator<Statement> objects = config.match(subject, property, null);
+		if (!objects.hasNext())
+			return null;
+//			throw new RepositoryConfigException("found no settings for property " + property);
+		Statement st = objects.next();
+		if (objects.hasNext())
+			throw new RepositoryConfigException("found multiple settings for property " + property);
+		Value object = st.getObject();
+		if (object instanceof URI)
+			return (URI) object;
+		else
+			throw new RepositoryConfigException("property value is not a URI: " + property + " " + object); 
+	}
 
 }

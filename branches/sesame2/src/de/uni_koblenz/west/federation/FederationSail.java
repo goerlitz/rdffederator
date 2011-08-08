@@ -20,6 +20,7 @@
  */
 package de.uni_koblenz.west.federation;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.openrdf.model.ValueFactory;
@@ -36,8 +37,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
+import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.statistics.RDFStatistics;
+import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
  * Wraps multiple data sources (remote repositories) within a single
@@ -57,19 +60,26 @@ public class FederationSail extends SailBase {
 	private List<Repository> members;
 	private SourceSelector selector;
 	private QueryOptimizer optimizer;
-	private RDFStatistics statistics;
+//	private RDFStatistics statistics;
 	private EvaluationStrategy evalStrategy;
 
 	private boolean initialized = false;
 	
 	public FederationSail() {
 		this.evalStrategy = new FederationEvalStrategy(this.vf);
+		this.members = new ArrayList<Repository>();
+	}
+	
+	public void addMember(Repository rep) {
+		if (rep == null)
+			throw new IllegalArgumentException("federation member must not be NULL");
+		this.members.add(rep);
 	}
 	
 	// --- GETTER --------------------------------------------------------------
 	
 	public EvaluationStrategy getEvalStrategy() {
-		return evalStrategy;
+		return this.evalStrategy;
 	}
 	
 	public QueryOptimizer getFederationOptimizer() {
@@ -77,48 +87,52 @@ public class FederationSail extends SailBase {
 	}
 	
 	public List<Repository> getMembers() {
-		return members;
+		return this.members;
 	}
 	
 	public SourceSelector getSourceSelector() {
 		return this.selector;
 	}
 	
-	public RDFStatistics getStatistics() {
-		if (statistics == null)
-			throw new IllegalArgumentException("statistics is NULL");
-		return statistics;
-	}
+//	public RDFStatistics getStatistics() {
+//		return this.statistics;
+//	}
 	
 	// --- SETTER --------------------------------------------------------------
 
 	public void setEvalStrategy(EvaluationStrategy evalStrategy) {
 		if (evalStrategy == null)
-			throw new IllegalArgumentException("evaluation strategy is NULL");
+			throw new IllegalArgumentException("evaluation strategy must not be NULL");
 		this.evalStrategy = evalStrategy;
 	}
 	
 	public void setFederationOptimizer(QueryOptimizer optimizer) {
 		if (optimizer == null)
-			throw new IllegalArgumentException("optimizer is NULL");
+			throw new IllegalArgumentException("query optimizer must not be NULL");
 		this.optimizer = optimizer;
 	}
 	
 	public void setMembers(List<Repository> members) {
 		if (members == null)
-			throw new IllegalArgumentException("members is NULL");
+			throw new IllegalArgumentException("federation members must not be NULL");
+		for (Repository rep : members) {
+			if (rep == null)
+				throw new IllegalArgumentException("federation member must not be NULL");
+		}
 		this.members = members;
 	}
 
 	public void setSourceSelector(SourceSelector selector) {
 		if (selector == null)
-			throw new IllegalArgumentException("selector is NULL");
+			throw new IllegalArgumentException("source selector must not be NULL");
 		this.selector = selector;
 	}
 	
-	public void setStatistics(RDFStatistics statistics) {
-		this.statistics = statistics;
-	}
+//	public void setStatistics(RDFStatistics statistics) {
+//		if (statistics == null)
+//			throw new IllegalArgumentException("statistics must not be NULL");
+//		this.statistics = statistics;
+//	}
 	
 	// -------------------------------------------------------------------------
 	
@@ -132,9 +146,9 @@ public class FederationSail extends SailBase {
 //	public void initialize() throws StoreException {
 	public void initialize() throws SailException {
 		
-		// only Sesame 2 needs to initialize super class
-		super.initialize();
+		super.initialize();  // only Sesame 2 needs to initialize super class
 		
+		// initialize all members
 		for (Repository rep : this.members) {
 			try {
 				rep.initialize();
@@ -144,6 +158,10 @@ public class FederationSail extends SailBase {
 				LOGGER.debug("member repository is already initialized", e);
 			}
 		}
+		
+		Void2StatsRepository stats = Void2StatsRepository.getInstance();
+		this.selector.setStatistics(stats);
+		this.selector.initialize();
 		
 		initialized = true;
 	}

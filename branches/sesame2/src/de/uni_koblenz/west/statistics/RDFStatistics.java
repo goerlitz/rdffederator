@@ -20,8 +20,9 @@
  */
 package de.uni_koblenz.west.statistics;
 
-import java.net.URI;
 import java.util.Set;
+
+import org.openrdf.model.URI;
 
 import de.uni_koblenz.west.federation.index.Graph;
 

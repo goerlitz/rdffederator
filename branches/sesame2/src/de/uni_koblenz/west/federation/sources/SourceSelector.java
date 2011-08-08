@@ -23,8 +23,10 @@ package de.uni_koblenz.west.federation.sources;
 import java.util.List;
 
 import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.sail.SailException;
 
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
+import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
  * Interface for source selection strategies.
@@ -32,6 +34,10 @@ import de.uni_koblenz.west.federation.model.MappedStatementPattern;
  * @author Olaf Goerlitz
  */
 public interface SourceSelector {
+	
+	public void initialize() throws SailException;
+	
+	public void setStatistics(RDFStatistics stats);
 	
 	/**
 	 * Maps triple patterns to data sources which can contribute results.

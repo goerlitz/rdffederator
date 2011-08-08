@@ -26,7 +26,6 @@ import org.openrdf.model.Value;
 import org.openrdf.query.algebra.StatementPattern;
 
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
  * Source selection for the supplied basic graph patterns.
@@ -38,16 +37,13 @@ public class IndexSelector extends SourceSelectorBase {
 	
 	private boolean useTypeStats = true; 
 	
-	private RDFStatistics stats;
-	
 	/**
 	 * Creates a source finder using the supplied statistics.
 	 * 
 	 * @param stats the statistics to use.
 	 */
-	public IndexSelector(RDFStatistics stats, boolean useTypeStats) {
+	public IndexSelector(boolean useTypeStats) {
 		this.useTypeStats = useTypeStats;
-		this.stats = stats;
 	}
 
 	/**

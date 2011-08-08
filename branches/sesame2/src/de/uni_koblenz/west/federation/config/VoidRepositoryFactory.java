@@ -74,18 +74,16 @@ public class VoidRepositoryFactory implements RepositoryFactory {
 	 *             incomplete configuration data.
 	 */
 	@Override
-	public Repository getRepository(RepositoryImplConfig config)
-//			throws StoreConfigException {
-			throws RepositoryConfigException {
+	public Repository getRepository(RepositoryImplConfig config) throws RepositoryConfigException {
 		
 		if (!REPOSITORY_TYPE.equals(config.getType())) {
-//			throw new StoreConfigException("Invalid Repository type: " + config.getType());
-			throw new RepositoryConfigException("Invalid Repository type: " + config.getType());
+			throw new RepositoryConfigException("Invalid repository type: " + config.getType());
 		}
 		assert config instanceof VoidRepositoryConfig;
 		VoidRepositoryConfig repConfig = (VoidRepositoryConfig) config;
 		
-		return new VoidRepository(repConfig.getVoidUrl(), repConfig.getEndpoint());
+//		return new VoidRepository(repConfig.getVoidURI(), repConfig.getEndpoint());
+		return new VoidRepository(repConfig);
 	}
 
 }
