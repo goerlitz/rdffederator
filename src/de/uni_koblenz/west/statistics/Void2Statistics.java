@@ -20,12 +20,11 @@
  */
 package de.uni_koblenz.west.statistics;
 
-import java.net.URI;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.model.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +46,9 @@ public abstract class Void2Statistics implements RDFStatistics {
 	
 	protected abstract List<String> evalVar(String query, String var);
 	
-	public abstract URI load(URL url) throws Exception;
+	public abstract URI load(URI voidURI) throws Exception;
 	
-	public abstract void setEndpoint(String endpoint, URI context);
+	public abstract void setEndpoint(URI endpoint, URI voidURI);
 	
 	// -------------------------------------------------------------------------
 	

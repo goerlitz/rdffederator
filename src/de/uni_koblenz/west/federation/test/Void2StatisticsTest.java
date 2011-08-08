@@ -29,6 +29,7 @@ import junit.framework.Assert;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.openrdf.model.impl.ValueFactoryImpl;
 
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
@@ -43,7 +44,7 @@ import de.uni_koblenz.west.vocabulary.RDF;
 public class Void2StatisticsTest {
 	
 	private static final String[] STAT_FILES = {"void1.n3", "void2.n3"};
-	private static final Void2Statistics voidStats = new Void2StatsRepository();
+	private static final Void2Statistics voidStats = Void2StatsRepository.getInstance();
 	
 	private static URI RDF_TYPE;
 	private static URI FOAF_NAME;
@@ -71,7 +72,7 @@ public class Void2StatisticsTest {
 		for (String statFile : STAT_FILES) {
 			URL url = Void2StatisticsTest.class.getResource(statFile);
 			try {
-				voidStats.load(url);
+				voidStats.load(new ValueFactoryImpl().createURI(url.getPath()));
 			} catch (Exception e) {
 				throw new RuntimeException("can not load " + url, e);
 			}

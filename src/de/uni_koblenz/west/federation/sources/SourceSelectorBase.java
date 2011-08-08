@@ -25,12 +25,14 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.sail.SailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
+import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
  * Basic behavior of a source selector.
@@ -42,6 +44,8 @@ import de.uni_koblenz.west.federation.model.MappedStatementPattern;
 public abstract class SourceSelectorBase implements SourceSelector {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SourceSelectorBase.class);
+	
+	protected RDFStatistics stats;
 
 	/**
 	 * Return all sources for the supplied pattern.
@@ -50,6 +54,20 @@ public abstract class SourceSelectorBase implements SourceSelector {
 	 * @return a set of sources.
 	 */
 	protected abstract Set<Graph> getSources(StatementPattern pattern);
+	
+	// --------------------------------------------------------------
+	
+	@Override
+	public void initialize() throws SailException {
+		if (this.stats == null)
+			throw new SailException("need statistics for source selection");
+	}
+	
+	public void setStatistics(RDFStatistics stats) {
+		if (stats == null)
+			throw new IllegalArgumentException("statistics must not be null");
+		this.stats = stats;
+	}
 	
 	/**
 	 * Assigns data sources to query patterns.

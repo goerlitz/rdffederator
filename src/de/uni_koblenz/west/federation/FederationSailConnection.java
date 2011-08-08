@@ -75,7 +75,7 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSailConnection.class);
 
-	private final ValueFactory vf;
+//	private final ValueFactory vf;
 	private final QueryOptimizer optimizer;
 	private final EvaluationStrategy strategy;
 	
@@ -100,7 +100,7 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 //		LiteralFactory lf = sail.getLiteralFactory();
 //		BNodeFactoryImpl bf = new BNodeFactoryImpl();
 //		this.vf = new ValueFactoryImpl(bf, uf, lf);
-		this.vf = new ValueFactoryImpl();
+//		this.vf = new ValueFactoryImpl();
 	}
 	
 	// -------------------------------------------------------------------------
