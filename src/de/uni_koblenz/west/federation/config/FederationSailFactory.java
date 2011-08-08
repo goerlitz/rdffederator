@@ -125,16 +125,9 @@ public class FederationSailFactory implements SailFactory {
 			}
 		}
 
-		// Create source selector from configuration settings
-		SourceSelectorConfig selConf = cfg.getSelectorConfig();
-		SourceSelector selector = getSourceSelector(selConf);
-		sail.setSourceSelector(selector);
-		
-		// sub query builder
-		SubQueryBuilder builder = new SubQueryBuilder(selConf.isGroupBySource(), selConf.isGroupBySameAs());
-		
-		// create optimizer
-		AbstractFederationOptimizer opt = getQueryOptimizer(cfg.getOptimizerConfig());
+		// create query optimizer
+		QueryOptimizerConfig optConfig = cfg.getOptimizerConfig(); 
+		AbstractFederationOptimizer opt = getQueryOptimizer(optConfig);
 		sail.setFederationOptimizer(opt);
 		
 		Void2StatsRepository stats = Void2StatsRepository.getInstance();
@@ -143,7 +136,11 @@ public class FederationSailFactory implements SailFactory {
 		costEstim.setCardinalityEstimator(cardEstim);
 //		ModelEvaluator modelEval = new TrueCardinalityEstimator(sail.getEvalStrategy());
 		
-		opt.setBuilder(builder);
+		// Create source selector from configuration settings
+		SourceSelector selector = getSourceSelector(cfg.getSelectorConfig());
+		sail.setSourceSelector(selector);
+		
+		opt.setBuilder(new SubQueryBuilder(optConfig));
 		opt.setSelector(selector);
 		opt.setCostEstimator(costEstim);
 //		opt.setModelEvaluator(cardEstim);

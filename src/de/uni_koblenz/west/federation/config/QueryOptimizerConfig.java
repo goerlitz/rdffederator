@@ -21,6 +21,8 @@
 package de.uni_koblenz.west.federation.config;
 
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.ESTIMATOR;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.GROUP_BY_SAMEAS;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.GROUP_BY_SOURCE;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_BIND_JOIN;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_HASH_JOIN;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPT_TYPE;
@@ -33,14 +35,16 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.sail.config.SailConfigException;
 
 /**
+ * Configuration settings for the query optimizer.
+ * 
  * @author Olaf Goerlitz
  */
 public class QueryOptimizerConfig extends AbstractSailConfig {
 	
-//	private static final String DEFAULT_OPTIMIZER = "DYNAMIC_PROGRAMMING";
-//	private static final String DEFAULT_ESTIMATOR = CardinalityEstimatorType.STATISTICS.toString();
-	
 	private String estimatorType;
+	
+	private boolean groupBySameAs;
+	private boolean groupBySource;
 	
 	private boolean useBindJoin;
 	private boolean useHashJoin;
@@ -59,6 +63,15 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		return this.estimatorType;
 	}
 	
+	public boolean isGroupBySameAs() {
+		return this.groupBySameAs;
+	}
+
+	public boolean isGroupBySource() {
+		return this.groupBySource;
+	}
+
+	
 	public boolean isUseBindJoin() {
 		return this.useBindJoin;
 	}
@@ -74,6 +87,10 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		Resource self = super.export(model);
 		
 		model.add(self, ESTIMATOR, vf.createLiteral(this.estimatorType));
+		
+		model.add(self, GROUP_BY_SAMEAS, vf.createLiteral(this.groupBySameAs));
+		model.add(self, GROUP_BY_SOURCE, vf.createLiteral(this.groupBySource));
+		
 		model.add(self, USE_BIND_JOIN, vf.createLiteral(this.useBindJoin));
 		model.add(self, USE_HASH_JOIN, vf.createLiteral(this.useHashJoin));
 		
@@ -88,6 +105,9 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		if (estimator != null) {
 			this.estimatorType = estimator.getLabel();
 		}
+		
+		groupBySameAs = getObjectBoolean(model, implNode, GROUP_BY_SAMEAS, false);
+		groupBySource = getObjectBoolean(model, implNode, GROUP_BY_SOURCE, false);
 		
 		useBindJoin = getObjectBoolean(model, implNode, USE_BIND_JOIN, false);
 		useHashJoin = getObjectBoolean(model, implNode, USE_HASH_JOIN, false);
