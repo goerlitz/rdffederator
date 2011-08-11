@@ -130,8 +130,15 @@ public class FederationSailFactory implements SailFactory {
 		AbstractFederationOptimizer opt = getQueryOptimizer(optConfig);
 		sail.setFederationOptimizer(opt);
 		
+		boolean voidPlus = true;
+		String estType = optConfig.getEstimatorType();
+		if ("VOID".equalsIgnoreCase(estType))
+			voidPlus = false;
+		if ("VOID_PLUS".equalsIgnoreCase(estType))
+			voidPlus = true;
+		
 		Void2StatsRepository stats = Void2StatsRepository.getInstance();
-		AbstractCardinalityEstimator cardEstim = new SPLENDIDCardinalityEstimator(stats, true);
+		AbstractCardinalityEstimator cardEstim = new SPLENDIDCardinalityEstimator(stats, voidPlus);
 		AbstractCostEstimator costEstim = new SPLENDIDCostEstimator();
 		costEstim.setCardinalityEstimator(cardEstim);
 //		ModelEvaluator modelEval = new TrueCardinalityEstimator(sail.getEvalStrategy());

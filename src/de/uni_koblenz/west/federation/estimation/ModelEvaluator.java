@@ -23,6 +23,8 @@ package de.uni_koblenz.west.federation.estimation;
 import org.openrdf.query.algebra.TupleExpr;
 
 /**
+ * Common base interface for query evaluators.
+ * 
  * @author Olaf Goerlitz
  */
 public interface ModelEvaluator {

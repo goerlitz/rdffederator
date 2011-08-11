@@ -76,6 +76,7 @@ public class SPLENDIDCardinalityEstimator extends VoidCardinalityEstimator {
 			}
 		}
 		
+		// subject is bound
 		if (s != null) {
 			if (distSOPerPred) {
 				long distPredSubj = stats.distinctSubjects(source, p.stringValue());
