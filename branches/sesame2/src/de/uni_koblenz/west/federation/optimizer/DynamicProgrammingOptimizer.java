@@ -51,8 +51,6 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(DynamicProgrammingOptimizer.class);
 	
-	private static int DEBUG_N;
-	
 	private boolean bindJoin;
 	private boolean hashJoin;
 			
@@ -78,9 +76,6 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 		// create all n-ary join combinations [n = 2 .. #plans]
 		for (int n = 2; n <= count; n++) {
 			
-			// store current n-ary join count for debugging
-			DEBUG_N = n;
-			
 			// build n-ary joins by combining i-ary joins and (n-i)-ary joins
 			for (int i = 1; i < n; i++) {
 				
@@ -92,6 +87,7 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 					Set<TupleExpr> comp = filterDistinctPlans(plan, plans2);
 					// we may not always find complementary plans
 					if (comp.size() > 0) {
+						// cross products are created if there is no common join variable
 						plans = createJoins(plan, comp, conditions);
 						optPlans.add(new HashSet<TupleExpr>(plans), n);
 					}
@@ -100,14 +96,6 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 			
 			if (LOGGER.isTraceEnabled())
 				LOGGER.trace(optPlans.get(n).size() + " plans generated for N=" + n);
-			
-			Set<TupleExpr> nAryPlans = optPlans.get(n);
-			
-			// check for cross product
-			if (nAryPlans.size() == 0) {
-				LOGGER.debug(n + "-ary plans require cross product");
-				// TODO: create cross products
-			}
 			
 			prune(optPlans.get(n));
 		}
@@ -125,26 +113,45 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 
 	}
 	
-	public List<TupleExpr> createJoins(TupleExpr joinPlan, Set<TupleExpr> plans, List<ValueExpr> conditions) {
+	/**
+	 * Combine tuple expressions with a join operator.
+	 * 
+	 * @param leftArg the left join argument.
+	 * @param rightArgs a set of potential right join arguments.
+	 * @param filters filter expressions which may be applied.
+	 * @return a list of created physical join operators.
+	 */
+	public List<TupleExpr> createJoins(TupleExpr leftArg, Set<TupleExpr> rightArgs, List<ValueExpr> filters) {
 		
 		List<TupleExpr> newPlans = new ArrayList<TupleExpr>();
 		
-		for (TupleExpr plan : plans) {
+		// check each pair of potential join arguments if they have at leas one variable in common 
+		for (TupleExpr plan : rightArgs) {
 			
-			// TODO: avoid cross products as long as possible
-			// keep only plans which have at least one join variable in common
-			Set<String> vars = VarNameCollector.process(joinPlan);
+			// get the intersection of variables found in the left and right join argument
+			Set<String> vars = VarNameCollector.process(leftArg);
 			vars.retainAll(VarNameCollector.process(plan));
+			
+			// avoid joins with cross products (without a common join variable)
 			if (vars.size() == 0) continue;
 			
 			// create all physical join variations
-			for (TupleExpr join : createPhysicalJoins(joinPlan, plan)) {
-				join = applyFilters(join, conditions);
+			for (TupleExpr join : createPhysicalJoins(leftArg, plan)) {
+				join = applyFilters(join, filters);
 				newPlans.add(join);
 			}
 		}
-		if (newPlans.size() == 0)
-			throw new IllegalStateException("no physical joins created. please enable them: " + joinPlan + " -> " + plans);
+		
+		// only cross products possible
+		if (newPlans.size() == 0) {
+			for (TupleExpr plan : rightArgs) {
+				// create all physical join variations
+				for (TupleExpr join : createPhysicalJoins(leftArg, plan)) {
+					join = applyFilters(join, filters);
+					newPlans.add(join);
+				}
+			}
+		}
 		
 		return newPlans;
 	}

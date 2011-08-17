@@ -69,6 +69,9 @@ public class SubQueryBuilder {
 	 */
 	public List<TupleExpr> createSubQueries(List<MappedStatementPattern> patterns, List<ValueExpr> conditions) {
 		
+		if (patterns == null || patterns.size() == 0)
+			throw new IllegalArgumentException("need at least on triple pattern to create sub queries");
+		
 		List<TupleExpr> subQueries = new ArrayList<TupleExpr>();
 		
 		List<List<MappedStatementPattern>> groups = getGroups(patterns);
