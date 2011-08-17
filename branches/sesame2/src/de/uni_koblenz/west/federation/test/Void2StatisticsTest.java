@@ -72,7 +72,7 @@ public class Void2StatisticsTest {
 		for (String statFile : STAT_FILES) {
 			URL url = Void2StatisticsTest.class.getResource(statFile);
 			try {
-				voidStats.load(new ValueFactoryImpl().createURI(url.getPath()));
+				voidStats.load(new ValueFactoryImpl().createURI(url.getPath()), null);
 			} catch (Exception e) {
 				throw new RuntimeException("can not load " + url, e);
 			}
@@ -86,18 +86,15 @@ public class Void2StatisticsTest {
 	@Test
 	public void test() throws URISyntaxException {
 		
-//		Set<Graph> sources = voidStats.findGraphs(RDF_TYPE.toString());
 		Set<Graph> sources = voidStats.findSources(null, RDF_TYPE.toString(), null, false);
 		Assert.assertTrue(sources.size() == 2);
 
-//		sources = voidStats.findGraphs(GEO_LAT.toString());
 		sources = voidStats.findSources(null, GEO_LAT.toString(), null, false);
 		Assert.assertTrue(sources.size() == 1);
 		Assert.assertTrue(15000 == voidStats.getSize(sources.iterator().next()));
 		Assert.assertTrue(5000 == (Long) voidStats.pCard(sources.iterator().next(), GEO_LAT.toString()));
 		Assert.assertTrue(5000 == (Long) voidStats.typeCard(sources.iterator().next(), GML_FEATURE.toString()));
 		
-//		sources = voidStats.findGraphs(FOAF_NAME.toString());
 		sources = voidStats.findSources(null, FOAF_NAME.toString(), null, false);
 		Assert.assertTrue(sources.size() == 1);
 		Assert.assertTrue(19000 == voidStats.getSize(sources.iterator().next()));

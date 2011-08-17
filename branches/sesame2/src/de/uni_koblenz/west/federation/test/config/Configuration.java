@@ -238,7 +238,6 @@ public class Configuration {
 			File dir = new File(cfgFile.toURI().resolve(qDir)).getAbsoluteFile();
 			if (!dir.isDirectory() || !dir.canRead())
 				LOGGER.warn("cannot read query directory: " + dir);
-//				throw new ConfigurationException("cannot read query directory: " + dir);
 			
 			for (File file : dir.listFiles()) {
 				if (file.isFile() && file.getName().endsWith(queryExt)) {
@@ -248,7 +247,7 @@ public class Configuration {
 		}
 		
 		if (queries.size() == 0)
-			throw new ConfigurationException("found no matching queries");
+			LOGGER.error("found no matching queries");
 		
 		Collections.sort(queries);
 		return queries;
@@ -287,7 +286,6 @@ public class Configuration {
 			throw new ConfigurationException("unknown RDF format of repository config: " + file);
 		
 		try {
-//			Model model = new LinkedHashModel();
 			Graph model = new GraphImpl();
 			RDFParser parser = Rio.createParser(format);
 			parser.setRDFHandler(new StatementCollector(model));

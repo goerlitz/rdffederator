@@ -46,9 +46,11 @@ public abstract class Void2Statistics implements RDFStatistics {
 	
 	protected abstract List<String> evalVar(String query, String var);
 	
-	public abstract URI load(URI voidURI) throws Exception;
+	public abstract URI load(URI voidURI, URI endpoint) throws Exception;
 	
-	public abstract void setEndpoint(URI endpoint, URI voidURI);
+//	public abstract URI load(URI voidURI) throws Exception;
+//	
+//	public abstract void setEndpoint(URI endpoint, URI voidURI);
 	
 	// -------------------------------------------------------------------------
 	

@@ -29,6 +29,8 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.config.VoidRepositoryConfig;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
@@ -40,23 +42,23 @@ import de.uni_koblenz.west.statistics.Void2StatsRepository;
  */
 public class VoidRepository implements Repository {
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(VoidRepository.class);
+	
 	protected final ValueFactory vf = new ValueFactoryImpl();
 	protected URI endpoint;
-	protected final URI voidUrl;
+	protected final URI voidURI;
+	
+	protected boolean initialized = false;
 	
 	public VoidRepository(VoidRepositoryConfig config) {
 		this.endpoint = config.getEndpoint();
-		this.voidUrl = config.getVoidURI();
+		this.voidURI = config.getVoidURI();
 	}
 	
 	public URI getEndpoint() {
 		return this.endpoint;
 	}
 
-//public URL getVoidUrl() {
-//	return this.voidUrl;
-//}
-	
 	// --------------------------------------------------------------
 	
 	@Override
@@ -82,22 +84,23 @@ public class VoidRepository implements Repository {
 	@Override
 	public void initialize() throws RepositoryException {
 		
+		if (this.initialized) {
+			LOGGER.info("Void repository has already been initialized");
+			return;
+		}
+		
 		try {
-			URI voidEndpoint = Void2StatsRepository.getInstance().load(this.voidUrl);
-			if (this.endpoint == null) {
-				this.endpoint = voidEndpoint;
-			} else {
-				Void2StatsRepository.getInstance().setEndpoint(this.endpoint, this.voidUrl);
-			}
+			this.endpoint = Void2StatsRepository.getInstance().load(this.voidURI, this.endpoint);
 		} catch (IOException e) {
-			throw new RepositoryException("can not read voiD description: " + this.voidUrl + e.getMessage(), e);
-		}		
+			throw new RepositoryException("can not read voiD description: " + this.voidURI + e.getMessage(), e);
+		}
+		
+		this.initialized = true;
 	}
 
 	@Override
 	public void shutDown() throws RepositoryException {
-		// TODO Auto-generated method stub
-		
+		// TODO: remove statistics from VOID repository?
 	}
 
 	@Override
