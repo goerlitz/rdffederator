@@ -47,52 +47,57 @@ public class SPLENDIDCardinalityEstimator extends VoidCardinalityEstimator {
 	@Override
 	protected Number getPatternCard(MappedStatementPattern pattern, Graph source) {
 		
-		Value s = pattern.getSubjectVar().getValue();
-		Value p = pattern.getPredicateVar().getValue();
-		Value o = pattern.getObjectVar().getValue();
+		Value sVal = pattern.getSubjectVar().getValue();
+		Value pVal = pattern.getPredicateVar().getValue();
+		Value oVal = pattern.getObjectVar().getValue();
 		
-		// predicate must be bound
-		if (p == null)
-			throw new IllegalArgumentException("predicate must be bound: " + pattern);
+		// check trivial cave that all variables are bound
+		if (sVal != null && pVal != null && oVal != null)
+			return 1;
 		
 		// handle rdf:type
-		if (RDF.TYPE.equals(p) && o != null) {
-			return stats.typeCard(source, o.stringValue());
+		if (RDF.TYPE.equals(pVal) && oVal != null) {
+			return stats.typeCard(source, oVal.stringValue());
 		}
 		
-		Number pCard = stats.pCard(source, p.stringValue());
+		Number resultSize;
+		if (pVal == null) {
+			resultSize = stats.getSize(source);
+		} else {
+			resultSize = stats.pCard(source, pVal.stringValue());
+		}
 		
 		// object is bound
-		if (o != null) {
-			if (distSOPerPred) {
-				long distPredObj = stats.distinctObjects(source, p.stringValue());
+		if (oVal != null) {
+			if (distSOPerPred && pVal != null) {
+				long distPredObj = stats.distinctObjects(source, pVal.stringValue());
 				if (distPredObj == -1)
 					throw new IllegalArgumentException("no value for distinct Objects per Predicate in statistics");
-				return pCard.doubleValue() / distPredObj;
+				return resultSize.doubleValue() / distPredObj;
 			} else {
 				long pCount = stats.distinctPredicates(source);
 				long distObj = stats.distinctObjects(source);
-				return pCard.doubleValue() * pCount / distObj; 
+				return resultSize.doubleValue() * pCount / distObj; 
 			}
 		}
 		
 		// subject is bound
-		if (s != null) {
-			if (distSOPerPred) {
-				long distPredSubj = stats.distinctSubjects(source, p.stringValue());
+		if (sVal != null) {
+			if (distSOPerPred && pVal != null) {
+				long distPredSubj = stats.distinctSubjects(source, pVal.stringValue());
 				if (distPredSubj == -1)
 					throw new IllegalArgumentException("no value for distinct Objects per Predicate in statistics");
-				return pCard.doubleValue() / distPredSubj;
+				return resultSize.doubleValue() / distPredSubj;
 			} else {
 				long pCount = stats.distinctPredicates(source);
 				long distSubj = stats.distinctSubjects(source);
-				return pCard.doubleValue() * pCount / distSubj; 
+				return resultSize.doubleValue() * pCount / distSubj; 
 			}
 			
 		}
 
 		// use triple count containing the predicate
-		return pCard;
+		return resultSize;
 	}
 
 }

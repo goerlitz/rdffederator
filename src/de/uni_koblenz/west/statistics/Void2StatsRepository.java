@@ -95,6 +95,7 @@ public class Void2StatsRepository extends Void2Statistics {
 	 * 
 	 * @return the list of SPARQL endpoints.
 	 */
+	@Override
 	public List<Graph> getEndpoints() {
 		
 		List<Graph> sources = new ArrayList<Graph>();

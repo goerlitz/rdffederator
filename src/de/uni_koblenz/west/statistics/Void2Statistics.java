@@ -48,9 +48,7 @@ public abstract class Void2Statistics implements RDFStatistics {
 	
 	public abstract URI load(URI voidURI, URI endpoint) throws Exception;
 	
-//	public abstract URI load(URI voidURI) throws Exception;
-//	
-//	public abstract void setEndpoint(URI endpoint, URI voidURI);
+	public abstract List<Graph> getEndpoints();
 	
 	// -------------------------------------------------------------------------
 	
@@ -66,8 +64,13 @@ public abstract class Void2Statistics implements RDFStatistics {
 	@Override
 	public Set<Graph> findSources(String sValue, String pValue, String oValue, boolean handleType) {
 		
-		if (pValue == null)
-			throw new UnsupportedOperationException("unbound predicates are not supported");
+		Set<Graph> sources = new HashSet<Graph>();
+		
+		if (pValue == null) {
+			LOGGER.info("found triple pattern with unbound predicate: selecting all sources");
+			sources.addAll(getEndpoints());
+			return sources;
+		}
 		
 		String query = null;
 		// query for RDF type occurrence if rdf:type with bound object is used
@@ -92,7 +95,6 @@ public abstract class Void2Statistics implements RDFStatistics {
 		}
 		
 		// execute query and get all source bindings
-		Set<Graph> sources = new HashSet<Graph>();
 		for (String graph : evalVar(query, "source")) {
 			sources.add(new Graph(graph));
 		}
