@@ -51,6 +51,9 @@ public class AskSelector extends SourceSelectorBase {
 	public void initialize() throws SailException {
 		super.initialize();
 		this.sourceList = ((Void2StatsRepository) stats).getEndpoints();
+		
+		if (LOGGER.isDebugEnabled())
+			LOGGER.debug("initialized ask selecector with: " + this.sourceList);
 	}
 
 	@Override

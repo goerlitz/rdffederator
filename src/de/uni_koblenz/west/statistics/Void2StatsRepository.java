@@ -20,19 +20,18 @@
  */
 package de.uni_koblenz.west.statistics;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.Repository;
@@ -59,6 +58,11 @@ import de.uni_koblenz.west.vocabulary.VOID2;
 public class Void2StatsRepository extends Void2Statistics {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Void2StatsRepository.class);
+	private static final String USER_DIR = System.getProperty("user.dir") + File.separator;
+	
+	private static final ValueFactory uf = ValueFactoryImpl.getInstance();
+	private static final URI DATASET = uf.createURI(VOID2.Dataset.toString());
+	private static final URI ENDPOINT = uf.createURI(VOID2.sparqlEndpoint.toString());
 	
 	protected static final Void2StatsRepository singleton = new Void2StatsRepository();
 	
@@ -120,15 +124,30 @@ public class Void2StatsRepository extends Void2Statistics {
 		return sources;
 	}
 	
+	private List<URI> getEndpoints(URI voidURI, RepositoryConnection con) throws RepositoryException {
+		ValueFactory uf = this.voidRepository.getValueFactory();
+		URI voidDataset = uf.createURI(VOID2.Dataset.toString());
+		URI sparqlEndpoint = uf.createURI(VOID2.sparqlEndpoint.toString());
+		List<URI> endpoints = new ArrayList<URI>();
+		
+		for (Statement dataset : con.getStatements(null, RDF.TYPE, voidDataset, false, voidURI).asList()) {
+			for (Statement endpoint : con.getStatements(dataset.getSubject(), sparqlEndpoint, null, false, voidURI).asList()) {
+				// TODO: endpoint may be a literal
+				endpoints.add((URI) endpoint.getObject());
+			}
+		}
+		return endpoints;
+	}
+	
 	// -------------------------------------------------------------------------
 	
 	/**
 	 * Loads the supplied voiD description into the statistics repository.
 	 * 
-	 * @param the URI of the voiD description to load.
-	 * @return the SPARQL endpoint.
+	 * @param voidURI the URI of the voiD description to load.
+	 * @return the assigned SPARQL endpoint.
 	 */
-	public URI load(URI voidURI) throws IOException {
+	public URI load(URI voidURI, URI endpoint) throws IOException {
 		if (voidURI == null)
 			throw new IllegalArgumentException("voiD URI must not be null.");
 		
@@ -138,31 +157,53 @@ public class Void2StatsRepository extends Void2Statistics {
 			throw new IOException("Unsupported RDF format: " + voidURI);
 		}
 
-		InputStream in = new URL(voidURI.stringValue()).openStream();
+		URL voidURL = new URL(voidURI.stringValue());  // throws IOException
+		InputStream in = voidURL.openStream();
 		try {
+			
 			RepositoryConnection con = this.voidRepository.getConnection();
 			try {
-				con.add(in, voidURI.stringValue(), format, voidURI);
 				
-				// check if this voiD description has a valid SPARQL endpoint
-				ValueFactory uf = this.voidRepository.getValueFactory();
-				URI voidDataset = uf.createURI(VOID2.Dataset.toString());
-				URI sparqlEndpoint = uf.createURI(VOID2.sparqlEndpoint.toString());
-				Set<URI> endpoints = new HashSet<URI>();
-				
-				for (Statement dataset : con.getStatements(null, RDF.TYPE, voidDataset, false, voidURI).asList()) {
-					for (Statement endpoint : con.getStatements(dataset.getSubject(), sparqlEndpoint, null, false, voidURI).asList()) {
-						// TODO: endpoint may be a literal
-						endpoints.add((URI) endpoint.getObject());
-					}
+				// check if voiD description has already been loaded
+				List<URI> endpoints = getEndpoints(voidURI, con);
+				if (endpoints.size() > 0) {
+					LOGGER.warn("VOID has already been loaded: " + voidURI);
+					return endpoints.get(0);
 				}
 				
-				if (endpoints.size() == 0)
-					LOGGER.debug("found no SPARQL endpoint in voiD file");
-				if (endpoints.size() > 1)
-					throw new IllegalStateException("found multiple SPARQL endpoints in voiD file");
+				// add voiD file content to repository
+				con.add(in, voidURI.stringValue(), format, voidURI);
 				
+				if (LOGGER.isDebugEnabled())
+					LOGGER.debug("loaded VOID: " + voidURL.getPath().replace(USER_DIR, ""));
+				
+				if (endpoint == null) {
+				
+					// check if this voiD description has a valid SPARQL endpoint
+					endpoints = getEndpoints(voidURI, con);
+
+					if (endpoints.size() == 0)
+						LOGGER.debug("found no SPARQL endpoint in voiD file");
+					if (endpoints.size() > 1)
+						// TODO: don't throw Exception but use first endpoint only
+						throw new IllegalStateException("found multiple SPARQL endpoints in voiD file");
+
 				return endpoints.iterator().next();
+				} else {
+					// find dataset resource in specified context
+					RepositoryResult<Statement> result = con.getStatements(null, RDF.TYPE, DATASET, false, voidURI);
+					Resource dataset = result.next().getSubject();
+					
+					// TODO: check that there is only one dataset defined
+					
+					// remove current SPARQL endpoint and add new one
+					con.remove(dataset, ENDPOINT, null, voidURI);
+					con.add(dataset, ENDPOINT, endpoint, voidURI);
+					
+					LOGGER.info("set SPARQL endpoint '" + endpoint + "' for " + voidURL.getPath().replace(USER_DIR, ""));
+					
+					return endpoint;
+				}
 				
 			} catch (RepositoryException e) {
 				e.printStackTrace();
@@ -175,41 +216,11 @@ public class Void2StatsRepository extends Void2Statistics {
 			}
 		} catch (RepositoryException e) {
 			e.printStackTrace();
+		} finally {
+			in.close();
 		}
 		
 		return null;
-	}
-	
-	/**
-	 * Sets a new endpoint for the specified void context.
-	 */
-	public void setEndpoint(URI endpoint, URI contextURI) {
-		
-		if (endpoint == null)
-			throw new IllegalArgumentException("endpoint must not be null");
-		if (contextURI == null)
-			throw new IllegalArgumentException("void URI must not be null");
-		
-		ValueFactory uf = this.voidRepository.getValueFactory();
-		Value voidDataset = uf.createURI(VOID2.Dataset.toString());
-		Resource context = uf.createURI(contextURI.toString());
-		
-		try {
-			RepositoryConnection con = this.voidRepository.getConnection();
-			
-			// find dataset resource in specified context
-			RepositoryResult<Statement> result = con.getStatements(null, RDF.TYPE, voidDataset, false, context);
-			Resource dataset = result.next().getSubject();
-			
-			// remove current sparql endpoint and add new one
-			con.remove(dataset, uf.createURI(VOID2.sparqlEndpoint.toString()), null, context);
-			con.add(dataset, uf.createURI(VOID2.sparqlEndpoint.toString()), endpoint, context);
-			
-			LOGGER.info("assigned new SPARQL endpoint '" + endpoint + "' for " + contextURI);
-		} catch (RepositoryException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 	
 }

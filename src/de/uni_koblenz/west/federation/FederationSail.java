@@ -146,6 +146,11 @@ public class FederationSail extends SailBase {
 //	public void initialize() throws StoreException {
 	public void initialize() throws SailException {
 		
+		if (initialized) {
+			LOGGER.info("Federation Sail is already initialized");
+			return;
+		}
+		
 		super.initialize();  // only Sesame 2 needs to initialize super class
 		
 		// initialize all members
@@ -159,12 +164,11 @@ public class FederationSail extends SailBase {
 			}
 		}
 		
-		// initialize statistics
+		// initialize statistics and source selector
 		Void2StatsRepository stats = Void2StatsRepository.getInstance();
 		this.selector.setStatistics(stats);
 		this.selector.initialize();
-		
-		// TODO: initialize source selector
+		LOGGER.info("initialized ask selector and statistics");
 		
 		initialized = true;
 	}
