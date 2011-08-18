@@ -20,23 +20,16 @@
  */
 package de.uni_koblenz.west.federation;
 
-//import org.openrdf.cursor.Cursor;
-//import org.openrdf.model.LiteralFactory;
 import info.aduna.iteration.CloseableIteration;
 
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-//import org.openrdf.model.URIFactory;
 import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-//import org.openrdf.model.impl.BNodeFactoryImpl;
-import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
-//import org.openrdf.query.algebra.QueryModel;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
@@ -45,18 +38,14 @@ import org.openrdf.query.algebra.evaluation.impl.BindingAssigner;
 import org.openrdf.query.algebra.evaluation.impl.CompareOptimizer;
 import org.openrdf.query.algebra.evaluation.impl.ConjunctiveConstraintSplitter;
 import org.openrdf.query.algebra.evaluation.impl.DisjunctiveConstraintOptimizer;
-import org.openrdf.query.algebra.evaluation.impl.FilterOptimizer;
-import org.openrdf.query.algebra.evaluation.impl.QueryModelPruner;
 import org.openrdf.query.algebra.evaluation.impl.SameTermFilterOptimizer;
 import org.openrdf.query.algebra.evaluation.util.QueryOptimizerList;
 import org.openrdf.query.impl.EmptyBindingSet;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
-//import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.ReadOnlySailConnection;
 
@@ -75,7 +64,6 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSailConnection.class);
 
-//	private final ValueFactory vf;
 	private final QueryOptimizer optimizer;
 	private final EvaluationStrategy strategy;
 	
@@ -95,12 +83,6 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 		
 		this.optimizer = sail.getFederationOptimizer();
 		this.strategy = sail.getEvalStrategy();
-
-//		URIFactory uf = sail.getURIFactory();
-//		LiteralFactory lf = sail.getLiteralFactory();
-//		BNodeFactoryImpl bf = new BNodeFactoryImpl();
-//		this.vf = new ValueFactoryImpl(bf, uf, lf);
-//		this.vf = new ValueFactoryImpl();
 	}
 	
 	// -------------------------------------------------------------------------
@@ -123,12 +105,9 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 	 *             If the Sail encountered an error or invalid internal state.
 	 */
 	@Override
-//	public Cursor<? extends BindingSet> evaluate(QueryModel query,
-//			BindingSet bindings, boolean includeInferred) throws StoreException {	// Sesame 3:
 	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluateInternal(TupleExpr query, Dataset dataset,
 			BindingSet bindings, boolean includeInferred) throws SailException {	// Sesame 2:
 		
-//		FederationEvalStrategy strategy = new FederationEvalStrategy(this.vf);
 		QueryOptimizerList optimizerList = new QueryOptimizerList();
 		
 		LOGGER.trace("Incoming query model:\n{}", OperatorTreePrinter.print(query));
@@ -145,69 +124,48 @@ public class FederationSailConnection extends ReadOnlySailConnection {
 //		optimizerList.add(new QueryModelPruner());
 		optimizerList.add(this.optimizer);
 
-//		optimizerList.optimize(query, bindings);  // Sesame 3
-		optimizerList.optimize(query, dataset, bindings);  // Sesame 2
+		optimizerList.optimize(query, dataset, bindings);
 		
 		if (LOGGER.isTraceEnabled())
 			LOGGER.trace("Optimized query model:\n{}", OperatorTreePrinter.print(query));
 		
 		try {
 			return strategy.evaluate(query, EmptyBindingSet.getInstance());
-		} catch (QueryEvaluationException e) {  // Sesame 3: StoreException
+		} catch (QueryEvaluationException e) {
 			throw new SailException("query evaluation failed", e);
 		}
 	}
 	
-	// Sesame 2 only ===========================================================
+	// Sesame 2: Overriding internal methods ==================================
 	
 	@Override
-//	public void close() throws StoreException {
 	protected void closeInternal() throws SailException {
 		// do nothing, calling super.close() creates a loop in Sesame 2
-//		super.close(); // Sesame 3 only
 	}
 
 	@Override
-//	public Cursor<? extends Resource> getContextIDs() throws StoreException {
 	protected CloseableIteration<? extends Resource, SailException> getContextIDsInternal() throws SailException {
 		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-//	public String getNamespace(String prefix) throws StoreException {
 	protected String getNamespaceInternal(String prefix) throws SailException {
 		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-//	public Cursor<? extends Namespace> getNamespaces() throws StoreException {
 	protected CloseableIteration<? extends Namespace, SailException> getNamespacesInternal() throws SailException {
 		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-//	public Cursor<? extends Statement> getStatements(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws StoreException {
 	protected CloseableIteration<? extends Statement, SailException> getStatementsInternal(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws SailException {
 		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-//	public long size(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws StoreException {
 	protected long sizeInternal(Resource... contexts) throws SailException {
 		throw new UnsupportedOperationException("Not implemented");
 	}
-	
-	// Sesame 3 only ===========================================================
-	
-//	/**
-//	 * Gets a ValueFactory object that can be used to create URI-, blank node-,
-//	 * literal- and statement objects.
-//	 * 
-//	 * @return a ValueFactory object for this Sail object.
-//	 */
-//	@Override
-//	public ValueFactory getValueFactory() {
-//		return this.vf;
-//	}
 	
 }
