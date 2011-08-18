@@ -31,9 +31,10 @@
          ] ;
 
          # optimizer settings {DYNAMIC_PROGRAMMING, PATTERN_HEURISTIC}
-         # cardinality estimation settings {STATISTICS, TRUE_CARD}
          fed:queryOptimization [
             fed:optimizerType "DYNAMIC_PROGRAMMING" ;
+
+            # cardinality estimation setting {VOID, VOID_PLUS, TRUE_CARD}            
             fed:cardEstimator "VOID_PLUS" ;
             
             # sub query grouping
@@ -54,7 +55,8 @@
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/nytimes-2010-01-13-void.n3> ;
-            void:sparqlEndpoint west:nyt
+#            void:sparqlEndpoint west:nyt
+            void:sparqlEndpoint fed5:nyt
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/linkedmdb-dump-2010-01-19-void.n3> ;
@@ -63,23 +65,28 @@
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/all-geonames-2010-11-28_cleaned-void.n3> ;
-            void:sparqlEndpoint west:geonames ;
+#            void:sparqlEndpoint west:geonames
+            void:sparqlEndpoint fed2:geonames
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/jamendo-void.n3> ;
-            void:sparqlEndpoint west:jamendo
+#            void:sparqlEndpoint west:jamendo
+            void:sparqlEndpoint fed4:jamendo
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/semanticwebdog-void.n3> ;
-            void:sparqlEndpoint west:sw-dogfood
+#            void:sparqlEndpoint west:sw-dogfood
+            void:sparqlEndpoint fed5:swdf
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/chebi-2010-11-26-void.n3> ;
-            void:sparqlEndpoint west:chebi
+#            void:sparqlEndpoint west:chebi
+            void:sparqlEndpoint fed4:chebi
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/KEGG-2010-11-26-void.n3> ;
-            void:sparqlEndpoint west:kegg
+#            void:sparqlEndpoint west:kegg
+            void:sparqlEndpoint fed5:kegg
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/drugbank_dump_cleaned-2010-11.26-void.n3> ;
