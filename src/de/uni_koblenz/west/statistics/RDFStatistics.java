@@ -1,6 +1,6 @@
 /*
  * This file is part of RDF Federator.
- * Copyright 2010 Olaf Goerlitz
+ * Copyright 2011 Olaf Goerlitz
  * 
  * RDF Federator is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,8 +21,6 @@
 package de.uni_koblenz.west.statistics;
 
 import java.util.Set;
-
-import org.openrdf.model.URI;
 
 import de.uni_koblenz.west.federation.index.Graph;
 
@@ -47,21 +45,7 @@ public interface RDFStatistics {
 	
 	public long distinctObjects(Graph g, String predicate);
 	
-//	public Number patternCard(Graph g, URI s, URI p, RDFTerm o);
-	
-	public Number sCard(Graph g, URI subject);
-	
 	public Number pCard(Graph g, String predicate);
-	
-	public Number oCard(Graph g, RDFValue object);
-	
-	public Number poCard(Graph g, URI predicate, RDFValue object);
-	
-	public Number poCard(Graph g, URI predicate, RDFValue object, URI datatype);
-	
-	public Number spCard(Graph g, URI subject, URI predicate);
-	
-	public Number soCard(Graph g, URI subject, RDFValue object);
 	
 	public Number typeCard(Graph g, String type);
 	

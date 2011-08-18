@@ -254,11 +254,6 @@ public abstract class Void2Statistics implements RDFStatistics {
 	}
 	
 	@Override
-	public Number sCard(Graph g, URI subject) {
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-	
-	@Override
 	public Number pCard(Graph g, String predicate) {
 		String query = concat(
 				VOID_PREFIX,
@@ -278,30 +273,6 @@ public abstract class Void2Statistics implements RDFStatistics {
 		if (bindings.size() > 1)
 			LOGGER.warn("found multiple cardinality values for predicate " + predicate + " in graph " + g.toString());
 		return Long.parseLong(bindings.get(0));
-	}
-	
-	@Override
-	public Number oCard(Graph g, RDFValue object) {
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-
-	@Override
-	public Number poCard(Graph g, URI predicate, RDFValue object) {
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-	
-	public Number poCard(Graph g, URI predicate, RDFValue object, URI datatype) {
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-
-	@Override
-	public Number soCard(Graph g, URI subject, RDFValue object) {
-		throw new UnsupportedOperationException("not yet implemented");
-	}
-
-	@Override
-	public Number spCard(Graph g, URI subject, URI predicate) {
-		throw new UnsupportedOperationException("not yet implemented");
 	}
 	
 }
