@@ -37,9 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
-import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
-import de.uni_koblenz.west.statistics.RDFStatistics;
 import de.uni_koblenz.west.statistics.Void2StatsRepository;
 
 /**
@@ -60,7 +58,6 @@ public class FederationSail extends SailBase {
 	private List<Repository> members;
 	private SourceSelector selector;
 	private QueryOptimizer optimizer;
-//	private RDFStatistics statistics;
 	private EvaluationStrategy evalStrategy;
 
 	private boolean initialized = false;
@@ -94,10 +91,6 @@ public class FederationSail extends SailBase {
 		return this.selector;
 	}
 	
-//	public RDFStatistics getStatistics() {
-//		return this.statistics;
-//	}
-	
 	// --- SETTER --------------------------------------------------------------
 
 	public void setEvalStrategy(EvaluationStrategy evalStrategy) {
@@ -128,12 +121,6 @@ public class FederationSail extends SailBase {
 		this.selector = selector;
 	}
 	
-//	public void setStatistics(RDFStatistics statistics) {
-//		if (statistics == null)
-//			throw new IllegalArgumentException("statistics must not be NULL");
-//		this.statistics = statistics;
-//	}
-	
 	// -------------------------------------------------------------------------
 	
 	/**
@@ -143,7 +130,6 @@ public class FederationSail extends SailBase {
 	 *         If the Sail could not be initialized.
 	 */
 	@Override
-//	public void initialize() throws StoreException {
 	public void initialize() throws SailException {
 		
 		if (initialized) {
@@ -168,7 +154,6 @@ public class FederationSail extends SailBase {
 		Void2StatsRepository stats = Void2StatsRepository.getInstance();
 		this.selector.setStatistics(stats);
 		this.selector.initialize();
-		LOGGER.info("initialized ask selector and statistics");
 		
 		initialized = true;
 	}
@@ -180,7 +165,6 @@ public class FederationSail extends SailBase {
 	 *         If the Sail encountered an error or unexpected internal state.
 	 */
 	@Override
-//	protected void shutDownInternal() throws StoreException {
 	protected void shutDownInternal() throws SailException {
 		for (Repository rep : this.members) {
 			try {
@@ -200,7 +184,6 @@ public class FederationSail extends SailBase {
 	 * @return the Sail connection wrapper.
 	 */
 	@Override
-//	protected SailConnection getConnectionInternal() throws StoreException {
 	protected SailConnection getConnectionInternal() throws SailException {
 		
 		if (!this.initialized)
@@ -223,31 +206,4 @@ public class FederationSail extends SailBase {
 		return false;
 	}
 	
-	// SESAME 3 ================================================================
-	
-//	private final URIFactory uf = new URIFactoryImpl();
-//	private final LiteralFactory lf = new LiteralFactoryImpl();
-
-//	/**
-//	 * Gets a LiteralFactory object that can be used to create Sail-specific
-//	 * literal objects.
-//	 * 
-//	 * @return a LiteralFactory object for this Sail object.
-//	 */
-//	@Override
-//	public LiteralFactory getLiteralFactory() {
-//		return lf;
-//	}
-//
-//	/**
-//	 * Gets a URIFactory object that can be used to create Sail-specific URI
-//	 * objects.
-//	 * 
-//	 * @return a URIFactory object for this Sail object.
-//	 */
-//	@Override
-//	public URIFactory getURIFactory() {
-//		return uf;
-//	}
-
 }
