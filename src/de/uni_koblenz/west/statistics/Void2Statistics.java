@@ -41,14 +41,18 @@ public abstract class Void2Statistics implements RDFStatistics {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Void2Statistics.class);
 	
-	protected static final String VOID_PREFIX = "PREFIX void: <" + VOID2.NAMESPACE + ">\n";
+	private static final String VOID_PREFIX = "PREFIX void: <" + VOID2.NAMESPACE + ">\n";
+	
+	private static final String VAR_GRAPH = "$GRAPH$";
+	private static final String VAR_TYPE  = "$TYPE$";
+	private static final String VAR_PRED  = "$PRED$";
 
 	private static final String PRED_SOURCE = VOID_PREFIX +
 			"SELECT ?source WHERE {" +
 			"  [] a void:Dataset ;" +
 			"     void:sparqlEndpoint ?source ;" +
 			"     void:propertyPartition ?part ." +
-			"  ?part void:property <$PRED$> ." +
+			"  ?part void:property <" + VAR_PRED + "> ." +
 			"}";
 	
 	private static final String TYPE_SOURCE = VOID_PREFIX +
@@ -56,70 +60,70 @@ public abstract class Void2Statistics implements RDFStatistics {
 			"  [] a void:Dataset ;" +
 			"     void:sparqlEndpoint ?source ;" +
 			"     void:classPartition ?part ." +
-			"  ?part void:class <$TYPE$>" +
+			"  ?part void:class <" + VAR_TYPE + ">" +
 			"}";
 	
 	private static final String TRIPLE_COUNT = VOID_PREFIX +
 			"SELECT ?count WHERE {" +
 			"  [] a void:Dataset ;" +
 			"     void:triples ?count ;" +
-			"     void:sparqlEndpoint <$GRAPH$> ." +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ." +
 			"}";
 	
 	private static final String DISTINCT_PREDICATES = VOID_PREFIX +
 			"SELECT ?count WHERE {" +
 			"  [] a void:Dataset ;" +
-			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
 			"     void:properties ?count ." +
 			"}";
 
 	private static final String DISTINCT_SUBJECTS = VOID_PREFIX +
 			"SELECT ?count WHERE {" +
 			"  [] a void:Dataset ;" +
-			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
 			"     void:distinctSubjects ?count ." +
 			"}";
 
 	private static final String DISTINCT_PRED_SUBJECTS = VOID_PREFIX +
 			"SELECT ?count WHERE {" +
 			"  [] a void:Dataset ;" +
-			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
 			"     void:propertyPartition ?part ." +
-			"  ?part void:property <$PRED$> ;" +
+			"  ?part void:property <" + VAR_PRED + "> ;" +
 			"        void:distinctSubjects ?count ." +
 			"}";
 	
 	private static final String DISTINCT_OBJECTS = VOID_PREFIX +
 			"SELECT ?count WHERE {" +
 			"  [] a void:Dataset ;" +
-			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
 			"     void:distinctObjects ?count ." +
 			"}";
 	
 	private static final String DISTINCT_PRED_OBJECTS = VOID_PREFIX +
 			"SELECT ?count WHERE {" +
 			"  [] a void:Dataset ;" +
-			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
 			"     void:propertyPartition ?part ." +
-			"  ?part void:property <$PRED$> ;" +
+			"  ?part void:property <" + VAR_PRED + "> ;" +
 			"        void:distinctObjects ?count ." +
 			"}";
 	
 	private static final String TYPE_TRIPLES = VOID_PREFIX +
 			"SELECT ?count WHERE {" +
 			"  [] a void:Dataset ;" +
-			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
 			"     void:classPartition ?part ." +
-			"  ?part void:class <$TYPE$> ;" +
+			"  ?part void:class <" + VAR_TYPE + "> ;" +
 			"        void:entities ?count ." +
 			"}";
 	
 	private static final String PRED_TRIPLES = VOID_PREFIX +
 			"SELECT ?count WHERE {" +
 			"  [] a void:Dataset ;" +
-			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
 			"     void:propertyPartition ?part ." +
-			"  ?part void:property <$PRED$> ;" +
+			"  ?part void:property <" + VAR_PRED + "> ;" +
 			"        void:triples ?count ." +
 			"}";
 	
@@ -176,9 +180,9 @@ public abstract class Void2Statistics implements RDFStatistics {
 		String query = null;
 		// query for RDF type occurrence if rdf:type with bound object is used
 		if (handleType && RDF.type.toString().equals(pValue) && oValue != null) {
-			query = TYPE_SOURCE.replace("$TYPE$", oValue);
+			query = TYPE_SOURCE.replace(VAR_TYPE, oValue);
 		} else { // else query for predicate occurrence
-			query = PRED_SOURCE.replace("$PRED$", pValue);
+			query = PRED_SOURCE.replace(VAR_PRED, pValue);
 		}
 		
 		// execute query and get all source bindings
@@ -190,42 +194,42 @@ public abstract class Void2Statistics implements RDFStatistics {
 	
 	@Override
 	public long getTripleCount(Graph g) {
-		return getCount(TRIPLE_COUNT, "$GRAPH$", g.toString());
+		return getCount(TRIPLE_COUNT, VAR_GRAPH, g.toString());
 	}
 	
 	@Override
 	public long getPredicateCount(Graph g, String predicate) {
-		return getCount(PRED_TRIPLES, "$GRAPH$", g.toString(), "$PRED$", predicate);
+		return getCount(PRED_TRIPLES, VAR_GRAPH, g.toString(), VAR_PRED, predicate);
 	}
 	
 	@Override
 	public long getTypeCount(Graph g, String type) {
-		return getCount(TYPE_TRIPLES, "$GRAPH$", g.toString(), "$TYPE$", type);
+		return getCount(TYPE_TRIPLES, VAR_GRAPH, g.toString(), VAR_TYPE, type);
 	}
 	
 	@Override
 	public long getDistinctPredicates(Graph g) {
-		return getCount(DISTINCT_PREDICATES, "$GRAPH$", g.toString());
+		return getCount(DISTINCT_PREDICATES, VAR_GRAPH, g.toString());
 	}
 	
 	@Override
 	public long getDistinctSubjects(Graph g) {
-		return getCount(DISTINCT_SUBJECTS, "$GRAPH$", g.toString());
+		return getCount(DISTINCT_SUBJECTS, VAR_GRAPH, g.toString());
 	}
 	
 	@Override
 	public long getDistinctSubjects(Graph g, String predicate) {
-		return getCount(DISTINCT_PRED_SUBJECTS, "$GRAPH$", g.toString(), "$PRED$", predicate);
+		return getCount(DISTINCT_PRED_SUBJECTS, VAR_GRAPH, g.toString(), VAR_PRED, predicate);
 	}
 	
 	@Override
 	public long getDistinctObjects(Graph g) {
-		return getCount(DISTINCT_OBJECTS, "$GRAPH$", g.toString());
+		return getCount(DISTINCT_OBJECTS, VAR_GRAPH, g.toString());
 	}
 
 	@Override
 	public long getDistinctObjects(Graph g, String predicate) {
-		return getCount(DISTINCT_PRED_OBJECTS, "$GRAPH$", g.toString(), "$PRED$", predicate);
+		return getCount(DISTINCT_PRED_OBJECTS, VAR_GRAPH, g.toString(), VAR_PRED, predicate);
 	}
 	
 }
