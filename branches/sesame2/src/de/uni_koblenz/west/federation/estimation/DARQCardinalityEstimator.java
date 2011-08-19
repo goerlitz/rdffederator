@@ -54,7 +54,7 @@ public class DARQCardinalityEstimator extends VoidCardinalityEstimator {
 		
 		// handle rdf:type
 		if (RDF.TYPE.equals(p) && o != null) {
-			return stats.typeCard(source, o.stringValue());
+			return stats.getTypeCount(source, o.stringValue());
 		}
 		
 		// Subject is bound
@@ -63,7 +63,7 @@ public class DARQCardinalityEstimator extends VoidCardinalityEstimator {
 		}
 
 		// use triple count containing the predicate
-		return stats.pCard(source, p.stringValue());
+		return stats.getPredicateCount(source, p.stringValue());
 	}
 
 }

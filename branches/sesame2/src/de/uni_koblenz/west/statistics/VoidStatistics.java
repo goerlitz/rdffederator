@@ -1,6 +1,6 @@
 /*
  * This file is part of RDF Federator.
- * Copyright 2010 Olaf Goerlitz
+ * Copyright 2011 Olaf Goerlitz
  * 
  * RDF Federator is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -55,24 +55,24 @@ import de.uni_koblenz.west.vocabulary.VOID2;
  * 
  * @author Olaf Goerlitz
  */
-public class Void2StatsRepository extends Void2Statistics {
+public class VoidStatistics extends Void2Statistics {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(Void2StatsRepository.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(VoidStatistics.class);
 	private static final String USER_DIR = System.getProperty("user.dir") + File.separator;
 	
 	private static final ValueFactory uf = ValueFactoryImpl.getInstance();
 	private static final URI DATASET = uf.createURI(VOID2.Dataset.toString());
 	private static final URI ENDPOINT = uf.createURI(VOID2.sparqlEndpoint.toString());
 	
-	protected static final Void2StatsRepository singleton = new Void2StatsRepository();
+	protected static final VoidStatistics singleton = new VoidStatistics();
 	
-	protected final Repository voidRepository;
+	private final Repository voidRepository;
 
-	public static Void2StatsRepository getInstance() {
+	public static VoidStatistics getInstance() {
 		return singleton;
 	}
 	
-	private Void2StatsRepository() {
+	private VoidStatistics() {
 		this.voidRepository = new SailRepository(new MemoryStore());
 		try {
 			this.voidRepository.initialize();

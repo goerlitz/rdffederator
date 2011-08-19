@@ -198,10 +198,10 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		
 		for (Graph source : pattern.getSources()) {
 			
-			Long pCount = stats.distinctPredicates(source);
+			Long pCount = stats.getDistinctPredicates(source);
 			
 			if (varName.equals(pattern.getSubjectVar().getName())) {
-				count += stats.distinctSubjects(source);
+				count += stats.getDistinctSubjects(source);
 //				count += stats.distinctSubjects(source) / pCount.doubleValue();
 				continue;
 			}
@@ -209,7 +209,7 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 				throw new UnsupportedOperationException("predicate join not supported yet");
 			}
 			if (varName.equals(pattern.getObjectVar().getName())) {
-				count += stats.distinctObjects(source);
+				count += stats.getDistinctObjects(source);
 //				count += stats.distinctObjects(source) / pCount.doubleValue();
 				continue;
 			}

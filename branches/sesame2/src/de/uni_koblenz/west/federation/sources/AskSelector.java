@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.statistics.Void2StatsRepository;
+import de.uni_koblenz.west.statistics.VoidStatistics;
 
 /**
  * A source selector which contacts SPARQL Endpoints asking them whether
@@ -50,7 +50,7 @@ public class AskSelector extends SourceSelectorBase {
 	@Override
 	public void initialize() throws SailException {
 		super.initialize();
-		this.sourceList = ((Void2StatsRepository) stats).getEndpoints();
+		this.sourceList = ((VoidStatistics) stats).getEndpoints();
 		
 		if (LOGGER.isDebugEnabled())
 			LOGGER.debug("initialized ask selecector with: " + this.sourceList);

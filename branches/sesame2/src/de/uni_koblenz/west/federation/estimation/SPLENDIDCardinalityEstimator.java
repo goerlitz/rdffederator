@@ -57,26 +57,26 @@ public class SPLENDIDCardinalityEstimator extends VoidCardinalityEstimator {
 		
 		// handle rdf:type
 		if (RDF.TYPE.equals(pVal) && oVal != null) {
-			return stats.typeCard(source, oVal.stringValue());
+			return stats.getTypeCount(source, oVal.stringValue());
 		}
 		
 		Number resultSize;
 		if (pVal == null) {
-			resultSize = stats.getSize(source);
+			resultSize = stats.getTripleCount(source);
 		} else {
-			resultSize = stats.pCard(source, pVal.stringValue());
+			resultSize = stats.getPredicateCount(source, pVal.stringValue());
 		}
 		
 		// object is bound
 		if (oVal != null) {
 			if (distSOPerPred && pVal != null) {
-				long distPredObj = stats.distinctObjects(source, pVal.stringValue());
+				long distPredObj = stats.getDistinctObjects(source, pVal.stringValue());
 				if (distPredObj == -1)
 					throw new IllegalArgumentException("no value for distinct Objects per Predicate in statistics");
 				return resultSize.doubleValue() / distPredObj;
 			} else {
-				long pCount = stats.distinctPredicates(source);
-				long distObj = stats.distinctObjects(source);
+				long pCount = stats.getDistinctPredicates(source);
+				long distObj = stats.getDistinctObjects(source);
 				return resultSize.doubleValue() * pCount / distObj; 
 			}
 		}
@@ -84,13 +84,13 @@ public class SPLENDIDCardinalityEstimator extends VoidCardinalityEstimator {
 		// subject is bound
 		if (sVal != null) {
 			if (distSOPerPred && pVal != null) {
-				long distPredSubj = stats.distinctSubjects(source, pVal.stringValue());
+				long distPredSubj = stats.getDistinctSubjects(source, pVal.stringValue());
 				if (distPredSubj == -1)
 					throw new IllegalArgumentException("no value for distinct Objects per Predicate in statistics");
 				return resultSize.doubleValue() / distPredSubj;
 			} else {
-				long pCount = stats.distinctPredicates(source);
-				long distSubj = stats.distinctSubjects(source);
+				long pCount = stats.getDistinctPredicates(source);
+				long distSubj = stats.getDistinctSubjects(source);
 				return resultSize.doubleValue() * pCount / distSubj; 
 			}
 			
