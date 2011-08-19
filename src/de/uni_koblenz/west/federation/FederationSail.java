@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
-import de.uni_koblenz.west.statistics.Void2StatsRepository;
+import de.uni_koblenz.west.statistics.VoidStatistics;
 
 /**
  * Wraps multiple data sources (remote repositories) within a single
@@ -151,7 +151,7 @@ public class FederationSail extends SailBase {
 		}
 		
 		// initialize statistics and source selector
-		Void2StatsRepository stats = Void2StatsRepository.getInstance();
+		VoidStatistics stats = VoidStatistics.getInstance();
 		this.selector.setStatistics(stats);
 		this.selector.initialize();
 		

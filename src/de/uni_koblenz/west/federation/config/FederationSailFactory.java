@@ -49,7 +49,7 @@ import de.uni_koblenz.west.federation.sources.IndexAskSelector;
 import de.uni_koblenz.west.federation.sources.IndexSelector;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.federation.sources.AskSelector;
-import de.uni_koblenz.west.statistics.Void2StatsRepository;
+import de.uni_koblenz.west.statistics.VoidStatistics;
 
 /**
  * A {@link SailFactory} that creates {@link FederationSail}s
@@ -137,7 +137,7 @@ public class FederationSailFactory implements SailFactory {
 		if ("VOID_PLUS".equalsIgnoreCase(estType))
 			voidPlus = true;
 		
-		Void2StatsRepository stats = Void2StatsRepository.getInstance();
+		VoidStatistics stats = VoidStatistics.getInstance();
 		AbstractCardinalityEstimator cardEstim = new SPLENDIDCardinalityEstimator(stats, voidPlus);
 		AbstractCostEstimator costEstim = new SPLENDIDCostEstimator();
 		costEstim.setCardinalityEstimator(cardEstim);

@@ -32,8 +32,7 @@ import org.junit.Test;
 import org.openrdf.model.impl.ValueFactoryImpl;
 
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.statistics.Void2StatsRepository;
-import de.uni_koblenz.west.statistics.Void2Statistics;
+import de.uni_koblenz.west.statistics.VoidStatistics;
 import de.uni_koblenz.west.vocabulary.RDF;
 
 /**
@@ -41,10 +40,10 @@ import de.uni_koblenz.west.vocabulary.RDF;
  * 
  * @author Olaf Goerlitz
  */
-public class Void2StatisticsTest {
+public class VoidStatisticsTest {
 	
 	private static final String[] STAT_FILES = {"void1.n3", "void2.n3"};
-	private static final Void2Statistics voidStats = Void2StatsRepository.getInstance();
+	private static final VoidStatistics voidStats = VoidStatistics.getInstance();
 	
 	private static URI RDF_TYPE;
 	private static URI FOAF_NAME;
@@ -70,7 +69,7 @@ public class Void2StatisticsTest {
 	@BeforeClass
 	public static void setUp() {
 		for (String statFile : STAT_FILES) {
-			URL url = Void2StatisticsTest.class.getResource(statFile);
+			URL url = VoidStatisticsTest.class.getResource(statFile);
 			try {
 				voidStats.load(new ValueFactoryImpl().createURI(url.getPath()), null);
 			} catch (Exception e) {
@@ -91,15 +90,15 @@ public class Void2StatisticsTest {
 
 		sources = voidStats.findSources(null, GEO_LAT.toString(), null, false);
 		Assert.assertTrue(sources.size() == 1);
-		Assert.assertTrue(15000 == voidStats.getSize(sources.iterator().next()));
-		Assert.assertTrue(5000 == (Long) voidStats.pCard(sources.iterator().next(), GEO_LAT.toString()));
-		Assert.assertTrue(5000 == (Long) voidStats.typeCard(sources.iterator().next(), GML_FEATURE.toString()));
+		Assert.assertTrue(15000 == voidStats.getTripleCount(sources.iterator().next()));
+		Assert.assertTrue(5000 == (Long) voidStats.getPredicateCount(sources.iterator().next(), GEO_LAT.toString()));
+		Assert.assertTrue(5000 == (Long) voidStats.getTypeCount(sources.iterator().next(), GML_FEATURE.toString()));
 		
 		sources = voidStats.findSources(null, FOAF_NAME.toString(), null, false);
 		Assert.assertTrue(sources.size() == 1);
-		Assert.assertTrue(19000 == voidStats.getSize(sources.iterator().next()));
-		Assert.assertTrue(9000 == (Long) voidStats.pCard(sources.iterator().next(), FOAF_NAME.toString()));
-		Assert.assertTrue(9000 == (Long) voidStats.typeCard(sources.iterator().next(), FOAF_PERSON.toString()));
+		Assert.assertTrue(19000 == voidStats.getTripleCount(sources.iterator().next()));
+		Assert.assertTrue(9000 == (Long) voidStats.getPredicateCount(sources.iterator().next(), FOAF_NAME.toString()));
+		Assert.assertTrue(9000 == (Long) voidStats.getTypeCount(sources.iterator().next(), FOAF_PERSON.toString()));
 	}
 	
 }

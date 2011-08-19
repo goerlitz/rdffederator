@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.config.VoidRepositoryConfig;
-import de.uni_koblenz.west.statistics.Void2StatsRepository;
+import de.uni_koblenz.west.statistics.VoidStatistics;
 
 /**
  * A proxy for a remote repository which is accessed via a SPARQL endpoint.
@@ -90,7 +90,7 @@ public class VoidRepository implements Repository {
 		}
 		
 		try {
-			this.endpoint = Void2StatsRepository.getInstance().load(this.voidURI, this.endpoint);
+			this.endpoint = VoidStatistics.getInstance().load(this.voidURI, this.endpoint);
 		} catch (IOException e) {
 			throw new RepositoryException("can not read voiD description: " + this.voidURI + e.getMessage(), e);
 		}
