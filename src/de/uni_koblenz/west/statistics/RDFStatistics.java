@@ -31,22 +31,85 @@ import de.uni_koblenz.west.federation.index.Graph;
  */
 public interface RDFStatistics {
 	
+	/**
+	 * Returns a set of data sources which can potentially return results for the supplied s, p, o values.
+	 * 
+	 * @param sValue subject value.
+	 * @param pValue predicate value.
+	 * @param oValue object value.
+	 * @param handleType defines whether rdf:type definitions should be evaluated. TODO: should not be method parameter.
+	 * @return the set of matched data sources.
+	 */
 	public Set<Graph> findSources(String sValue, String pValue, String oValue, boolean handleType);
 	
-	public long getSize(Graph g);
+	/**
+	 * Returns the number of triples in a data source.
+	 * 
+	 * @param g the data source.
+	 * @return the number of triples.
+	 */
+	public long getTripleCount(Graph g);
 	
-	public long distinctPredicates(Graph g);
+	/**
+	 * Returns the number of triples with the specified predicate in a data source.
+	 * 
+	 * @param g the data source.
+	 * @param predicate the predicate.
+	 * @return the number of triples.
+	 */
+	public long getPredicateCount(Graph g, String predicate);
 	
-	public long distinctSubjects(Graph g);
+	/**
+	 * Returns the number of triples with rdf:type definition of the specified type in a data source.
+	 * 
+	 * @param g the data source.
+	 * @param type the desired type.
+	 * @return the number of triples.
+	 */
+	public long getTypeCount(Graph g, String type);
 	
-	public long distinctSubjects(Graph g, String predicate);
+	/**
+	 * Returns the number of distinct predicates in a data source.
+	 * 
+	 * @param g the data source.
+	 * @return the number of distinct predicates.
+	 */
+	public long getDistinctPredicates(Graph g);
 	
-	public long distinctObjects(Graph g);
+	/**
+	 * Returns the number of distinct subjects in a data source.
+	 * 
+	 * @param g the data source.
+	 * @return the number of distinct subjects.
+	 */
+	public long getDistinctSubjects(Graph g);
 	
-	public long distinctObjects(Graph g, String predicate);
+	/**
+	 * Returns the number of distinct subjects in a data source
+	 * which occur in triples with the specified predicate.
+	 * 
+	 * @param g the data source.
+	 * @param predicate the predicate which occurs with the subjects.
+	 * @return the number of distinct subjects.
+	 */
+	public long getDistinctSubjects(Graph g, String predicate);
 	
-	public Number pCard(Graph g, String predicate);
-	
-	public Number typeCard(Graph g, String type);
+	/**
+	 * Returns the number of distinct objects in a data source.
+	 * 
+	 * @param g the data source.
+	 * @return the number of distinct objects.
+	 */
+	public long getDistinctObjects(Graph g);
+
+	/**
+	 * Returns the number of distinct subjects in a data source
+	 * which occur in triples with the specified predicate.
+	 * 
+	 * @param g the data source.
+	 * @param predicate the predicate which occurs with the subjects.
+	 * @return the number of distinct subjects.
+	 */
+	public long getDistinctObjects(Graph g, String predicate);
 	
 }
