@@ -20,12 +20,16 @@
  */
 package de.uni_koblenz.west.statistics;
 
+import static org.openrdf.query.QueryLanguage.SPARQL;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -33,7 +37,10 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.query.BindingSet;
+import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
@@ -46,19 +53,105 @@ import org.openrdf.sail.memory.MemoryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.vocabulary.VOID2;
 
 /**
- * Sesame repository keeping RDF statistics represented with Void 2 vocabulary.
+ * voiD-based statistics implementation.
  * 
  * @author Olaf Goerlitz
  */
-public class VoidStatistics extends Void2Statistics {
+public class VoidStatistics implements RDFStatistics {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(VoidStatistics.class);
+	
 	private static final String USER_DIR = System.getProperty("user.dir") + File.separator;
+	
+	private static final String VOID_PREFIX = "PREFIX void: <" + VOID2.NAMESPACE + ">\n";
+	
+	private static final String VAR_GRAPH = "$GRAPH$";
+	private static final String VAR_TYPE  = "$TYPE$";
+	private static final String VAR_PRED  = "$PRED$";
+
+	private static final String PRED_SOURCE = VOID_PREFIX +
+			"SELECT ?source WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint ?source ;" +
+			"     void:propertyPartition ?part ." +
+			"  ?part void:property <" + VAR_PRED + "> ." +
+			"}";
+	
+	private static final String TYPE_SOURCE = VOID_PREFIX +
+			"SELECT ?source WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint ?source ;" +
+			"     void:classPartition ?part ." +
+			"  ?part void:class <" + VAR_TYPE + ">" +
+			"}";
+	
+	private static final String TRIPLE_COUNT = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:triples ?count ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ." +
+			"}";
+	
+	private static final String DISTINCT_PREDICATES = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
+			"     void:properties ?count ." +
+			"}";
+
+	private static final String DISTINCT_SUBJECTS = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
+			"     void:distinctSubjects ?count ." +
+			"}";
+
+	private static final String DISTINCT_PRED_SUBJECTS = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
+			"     void:propertyPartition ?part ." +
+			"  ?part void:property <" + VAR_PRED + "> ;" +
+			"        void:distinctSubjects ?count ." +
+			"}";
+	
+	private static final String DISTINCT_OBJECTS = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
+			"     void:distinctObjects ?count ." +
+			"}";
+	
+	private static final String DISTINCT_PRED_OBJECTS = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
+			"     void:propertyPartition ?part ." +
+			"  ?part void:property <" + VAR_PRED + "> ;" +
+			"        void:distinctObjects ?count ." +
+			"}";
+	
+	private static final String TYPE_TRIPLES = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
+			"     void:classPartition ?part ." +
+			"  ?part void:class <" + VAR_TYPE + "> ;" +
+			"        void:entities ?count ." +
+			"}";
+	
+	private static final String PRED_TRIPLES = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <" + VAR_GRAPH + "> ;" +
+			"     void:propertyPartition ?part ." +
+			"  ?part void:property <" + VAR_PRED + "> ;" +
+			"        void:triples ?count ." +
+			"}";
 	
 	private static final ValueFactory uf = ValueFactoryImpl.getInstance();
 	private static final URI DATASET = uf.createURI(VOID2.Dataset.toString());
@@ -67,11 +160,18 @@ public class VoidStatistics extends Void2Statistics {
 	protected static final VoidStatistics singleton = new VoidStatistics();
 	
 	private final Repository voidRepository;
+	
+	// --- STATIC -------------------------------------------------------------
 
 	public static VoidStatistics getInstance() {
 		return singleton;
 	}
 	
+	// --- PRIVATE ------------------------------------------------------------
+	
+	/**
+	 * Private constructor used for singleton creation.
+	 */
 	private VoidStatistics() {
 		this.voidRepository = new SailRepository(new MemoryStore());
 		try {
@@ -81,21 +181,165 @@ public class VoidStatistics extends Void2Statistics {
 		}
 	}
 	
-	@Override
-	protected List<String> evalVar(String query, String var) {
-		List<String> result = new ArrayList<String>();
-		for (BindingSet bs : QueryExecutor.eval(voidRepository, query)) {
-			result.add(bs.getValue(var).stringValue());
+	/**
+	 * Returns the count value defined by the supplied query and variable substitutions.
+	 * 
+	 * @param query the query to be executed on the voiD repository.
+	 * @param vars the variable bindings to be substituted in the query.
+	 * @return the resulting count value.
+	 */
+	private long getCount(String query, String... vars) {
+		
+		// replace query variables
+		for (int i = 0; i < vars.length; i++) {
+			query = query.replace(vars[i], vars[++i]);
 		}
-		return result;
+		
+		List<String> bindings = evalQuery(query, "count");
+		
+		// check result validity
+		if (bindings.size() == 0) {
+			LOGGER.warn("found no count for " + vars);
+			return -1;
+		}
+		if (bindings.size() > 1)
+			LOGGER.warn("found multiple counts for " + vars);
+		
+		return Long.parseLong(bindings.get(0));
 	}
+	
+	/**
+	 * Evaluates the given query and returns the result values for the specified binding name.
+	 * 
+	 * @param query the query to evaluate.
+	 * @param bindingName the desired result bindings.
+	 * @return a list of result binding values.
+	 */
+	private List<String> evalQuery(String query, String bindingName) {
+		try {
+			RepositoryConnection con = this.voidRepository.getConnection();
+			try {
+				TupleQuery tupleQuery = con.prepareTupleQuery(SPARQL, query);
+				TupleQueryResult result = tupleQuery.evaluate();
+				
+				try {
+					List<String> bindings = new ArrayList<String>();
+					while (result.hasNext()) {
+						bindings.add(result.next().getValue(bindingName).stringValue());
+					}
+					return bindings;
+				} catch (QueryEvaluationException e) {
+					LOGGER.error("failed to handle query result from voiD repository, " + e.getMessage() + "\n" + query, e);
+				} finally {
+					result.close();
+				}
+			} catch (IllegalArgumentException e) {
+				LOGGER.error("not a tuple query, " + e.getMessage() + "\n" + query, e);	
+			} catch (RepositoryException e) {
+				LOGGER.error("failed to create tuple query, " + e.getMessage() + "\n" + query, e);
+			} catch (MalformedQueryException e) {
+				LOGGER.error("malformed query, " + e.getMessage() + "\n" + query, e);
+			} catch (QueryEvaluationException e) {
+				LOGGER.error("failed to evaluate query on voiD repository, " + e.getMessage() + "\n" + query, e);
+			} finally {
+				con.close();
+			}
+		} catch (RepositoryException e) {
+			LOGGER.error("failed to open/close voiD repository connection, " + e.getMessage() + "\n" + query, e);
+		}
+		return null;
+	}
+	
+	private List<URI> getEndpoints(URI voidURI, RepositoryConnection con) throws RepositoryException {
+		ValueFactory uf = this.voidRepository.getValueFactory();
+		URI voidDataset = uf.createURI(VOID2.Dataset.toString());
+		URI sparqlEndpoint = uf.createURI(VOID2.sparqlEndpoint.toString());
+		List<URI> endpoints = new ArrayList<URI>();
+		
+		for (Statement dataset : con.getStatements(null, RDF.TYPE, voidDataset, false, voidURI).asList()) {
+			for (Statement endpoint : con.getStatements(dataset.getSubject(), sparqlEndpoint, null, false, voidURI).asList()) {
+				// TODO: endpoint may be a literal
+				endpoints.add((URI) endpoint.getObject());
+			}
+		}
+		return endpoints;
+	}
+	
+	// -------------------------------------------------------------------------
+	
+	@Override
+	public Set<Graph> findSources(String sValue, String pValue, String oValue, boolean handleType) {
+		
+		Set<Graph> sources = new HashSet<Graph>();
+		
+		if (pValue == null) {
+			LOGGER.info("found triple pattern with unbound predicate: selecting all sources");
+			sources.addAll(getEndpoints());
+			return sources;
+		}
+		
+		String query = null;
+		// query for RDF type occurrence if rdf:type with bound object is used
+		if (handleType && RDF.TYPE.stringValue().equals(pValue) && oValue != null) {
+			query = TYPE_SOURCE.replace(VAR_TYPE, oValue);
+		} else { // else query for predicate occurrence
+			query = PRED_SOURCE.replace(VAR_PRED, pValue);
+		}
+		
+		// execute query and get all source bindings
+		for (String graph : evalQuery(query, "source")) {
+			sources.add(new Graph(graph));
+		}
+		return sources;
+	}
+	
+	@Override
+	public long getTripleCount(Graph g) {
+		return getCount(TRIPLE_COUNT, VAR_GRAPH, g.toString());
+	}
+	
+	@Override
+	public long getPredicateCount(Graph g, String predicate) {
+		return getCount(PRED_TRIPLES, VAR_GRAPH, g.toString(), VAR_PRED, predicate);
+	}
+	
+	@Override
+	public long getTypeCount(Graph g, String type) {
+		return getCount(TYPE_TRIPLES, VAR_GRAPH, g.toString(), VAR_TYPE, type);
+	}
+	
+	@Override
+	public long getDistinctPredicates(Graph g) {
+		return getCount(DISTINCT_PREDICATES, VAR_GRAPH, g.toString());
+	}
+	
+	@Override
+	public long getDistinctSubjects(Graph g) {
+		return getCount(DISTINCT_SUBJECTS, VAR_GRAPH, g.toString());
+	}
+	
+	@Override
+	public long getDistinctSubjects(Graph g, String predicate) {
+		return getCount(DISTINCT_PRED_SUBJECTS, VAR_GRAPH, g.toString(), VAR_PRED, predicate);
+	}
+	
+	@Override
+	public long getDistinctObjects(Graph g) {
+		return getCount(DISTINCT_OBJECTS, VAR_GRAPH, g.toString());
+	}
+
+	@Override
+	public long getDistinctObjects(Graph g, String predicate) {
+		return getCount(DISTINCT_PRED_OBJECTS, VAR_GRAPH, g.toString(), VAR_PRED, predicate);
+	}
+	
+	// -------------------------------------------------------------------------
 	
 	/**
 	 * Extracts all SPARQL endpoints of the datasets.
 	 * 
 	 * @return the list of SPARQL endpoints.
 	 */
-	@Override
 	public List<Graph> getEndpoints() {
 		
 		List<Graph> sources = new ArrayList<Graph>();
@@ -124,23 +368,6 @@ public class VoidStatistics extends Void2Statistics {
 		
 		return sources;
 	}
-	
-	private List<URI> getEndpoints(URI voidURI, RepositoryConnection con) throws RepositoryException {
-		ValueFactory uf = this.voidRepository.getValueFactory();
-		URI voidDataset = uf.createURI(VOID2.Dataset.toString());
-		URI sparqlEndpoint = uf.createURI(VOID2.sparqlEndpoint.toString());
-		List<URI> endpoints = new ArrayList<URI>();
-		
-		for (Statement dataset : con.getStatements(null, RDF.TYPE, voidDataset, false, voidURI).asList()) {
-			for (Statement endpoint : con.getStatements(dataset.getSubject(), sparqlEndpoint, null, false, voidURI).asList()) {
-				// TODO: endpoint may be a literal
-				endpoints.add((URI) endpoint.getObject());
-			}
-		}
-		return endpoints;
-	}
-	
-	// -------------------------------------------------------------------------
 	
 	/**
 	 * Loads the supplied voiD description into the statistics repository.
