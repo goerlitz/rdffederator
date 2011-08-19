@@ -30,9 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.vocabulary.RDF;
+import de.uni_koblenz.west.vocabulary.VOID2;
 
 /**
- * RDF statistics represented with Void 2 vocabulary.
+ * RDF statistics represented with voiD vocabulary.
  * 
  * @author Olaf Goerlitz
  */
@@ -40,7 +41,87 @@ public abstract class Void2Statistics implements RDFStatistics {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(Void2Statistics.class);
 	
-	protected static final String VOID_PREFIX = "PREFIX void: <http://rdfs.org/ns/void#>\n";
+	protected static final String VOID_PREFIX = "PREFIX void: <" + VOID2.NAMESPACE + ">\n";
+
+	private static final String PRED_SOURCE = VOID_PREFIX +
+			"SELECT ?source WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint ?source ;" +
+			"     void:propertyPartition ?part ." +
+			"  ?part void:property <$PRED$> ." +
+			"}";
+	
+	private static final String TYPE_SOURCE = VOID_PREFIX +
+			"SELECT ?source WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint ?source ;" +
+			"     void:classPartition ?part ." +
+			"  ?part void:class <$TYPE$>" +
+			"}";
+	
+	private static final String TRIPLE_COUNT = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:triples ?count ;" +
+			"     void:sparqlEndpoint <$GRAPH$> ." +
+			"}";
+	
+	private static final String DISTINCT_PREDICATES = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:properties ?count ." +
+			"}";
+
+	private static final String DISTINCT_SUBJECTS = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:distinctSubjects ?count ." +
+			"}";
+
+	private static final String DISTINCT_PRED_SUBJECTS = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:propertyPartition ?part ." +
+			"  ?part void:property <$PRED$> ;" +
+			"        void:distinctSubjects ?count ." +
+			"}";
+	
+	private static final String DISTINCT_OBJECTS = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:distinctObjects ?count ." +
+			"}";
+	
+	private static final String DISTINCT_PRED_OBJECTS = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:propertyPartition ?part ." +
+			"  ?part void:property <$PRED$> ;" +
+			"        void:distinctObjects ?count ." +
+			"}";
+	
+	private static final String TYPE_TRIPLES = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:classPartition ?part ." +
+			"  ?part void:class <$TYPE$> ;" +
+			"        void:entities ?count ." +
+			"}";
+	
+	private static final String PRED_TRIPLES = VOID_PREFIX +
+			"SELECT ?count WHERE {" +
+			"  [] a void:Dataset ;" +
+			"     void:sparqlEndpoint <$GRAPH$> ;" +
+			"     void:propertyPartition ?part ." +
+			"  ?part void:property <$PRED$> ;" +
+			"        void:triples ?count ." +
+			"}";
 	
 	// -------------------------------------------------------------------------
 	
@@ -52,11 +133,31 @@ public abstract class Void2Statistics implements RDFStatistics {
 	
 	// -------------------------------------------------------------------------
 	
-	protected static final String concat(String... parts) {
-		StringBuffer buf = new StringBuffer();
-		for (String part : parts)
-			buf.append(part);
-		return buf.toString();
+	/**
+	 * Returns the count value defined by the supplied query and variable substitutions.
+	 * 
+	 * @param query the query to be executed on the voiD repository.
+	 * @param vars the variable bindings to be substituted in the query.
+	 * @return the resulting count value.
+	 */
+	private long getCount(String query, String... vars) {
+		
+		// replace query variables
+		for (int i = 0; i < vars.length; i++) {
+			query = query.replace(vars[i], vars[++i]);
+		}
+		
+		List<String> bindings = evalVar(query, "count");
+		
+		// check result validity
+		if (bindings.size() == 0) {
+			LOGGER.warn("found no count for " + vars);
+			return -1;
+		}
+		if (bindings.size() > 1)
+			LOGGER.warn("found multiple counts for " + vars);
+		
+		return Long.parseLong(bindings.get(0));
 	}
 	
 	// -------------------------------------------------------------------------
@@ -75,23 +176,9 @@ public abstract class Void2Statistics implements RDFStatistics {
 		String query = null;
 		// query for RDF type occurrence if rdf:type with bound object is used
 		if (handleType && RDF.type.toString().equals(pValue) && oValue != null) {
-			query = concat(
-					VOID_PREFIX,
-					"SELECT ?source WHERE {",
-					"  [] a void:Dataset ;",
-					"     void:sparqlEndpoint ?source ;",
-					"     void:classPartition ?part .",
-					"  ?part void:class <", oValue, ">",
-					"}");
+			query = TYPE_SOURCE.replace("$TYPE$", oValue);
 		} else { // else query for predicate occurrence
-			query = concat(
-					VOID_PREFIX,
-					"SELECT ?source WHERE {",
-					"  [] a void:Dataset ;",
-					"     void:sparqlEndpoint ?source ;",
-					"     void:propertyPartition ?part .",
-					"  ?part void:property <", pValue, "> .",
-					"}");
+			query = PRED_SOURCE.replace("$PRED$", pValue);
 		}
 		
 		// execute query and get all source bindings
@@ -102,177 +189,43 @@ public abstract class Void2Statistics implements RDFStatistics {
 	}
 	
 	@Override
-	public long getSize(Graph g) {
-		String query = concat(
-				VOID_PREFIX,
-				"SELECT ?size WHERE {",
-				"  [] a void:Dataset ;",
-				"     void:triples ?size ;",
-				"     void:sparqlEndpoint <", g.toString(), "> .",
-				"}");
-		
-		List<String> bindings = evalVar(query, "size");
-		if (bindings.size() == 0) {
-			LOGGER.info("unable to find size of graph: " + g.toString());
-			return -1;
-		}
-		if (bindings.size() > 1)
-			LOGGER.warn("found multiple size values for graph: " + g.toString());
-		return Long.parseLong(bindings.get(0));
+	public long getTripleCount(Graph g) {
+		return getCount(TRIPLE_COUNT, "$GRAPH$", g.toString());
 	}
 	
 	@Override
-	public Number typeCard(Graph g, String type) {
-		String query = concat(
-				VOID_PREFIX,
-				"SELECT ?card WHERE {",
-				"  [] a void:Dataset ;",
-				"     void:sparqlEndpoint <", g.toString(), "> ;",
-				"     void:classPartition ?part .",
-				"  ?part void:class <", type, "> ;",
-				"        void:entities ?card .",
-				"}");
-		
-		List<String> bindings = evalVar(query, "card");
-		if (bindings.size() == 0) {
-			LOGGER.debug("unable to find cardinality for type " + type + " in graph " + g.toString());
-			return -1;
-		}
-		if (bindings.size() > 1)
-			LOGGER.warn("found multiple cardinality values for type " + type + " in graph: " + g.toString());
-		return Long.parseLong(bindings.get(0));
-	}
-	
-	public long distinctPredicates(Graph g) {
-		String query = concat(
-				VOID_PREFIX,
-				"SELECT ?predicate WHERE {",
-				"  [] a void:Dataset ;",
-				"     void:sparqlEndpoint <", g.toString(), "> ;",
-				"     void:properties ?predicate .",
-				"}");
-		
-		List<String> bindings = evalVar(query, "predicate");
-		if (bindings.size() == 0) {
-			LOGGER.info("unable to find number of distinct predicates in graph " + g.toString());
-			return -1;
-		}
-		if (bindings.size() > 1)
-			LOGGER.warn("found multiple distinct predicates for endpoint: " + g.toString() + ". There exists probably more than one void decription for it.");
-		
-		long value = 0;
-		for (String count : bindings)
-			value += Long.parseLong(count);
-		return value;
-	}
-	
-	public long distinctSubjects(Graph g) {
-		String query = concat(
-				VOID_PREFIX,
-				"SELECT ?subjects WHERE {",
-				"  [] a void:Dataset ;",
-				"     void:sparqlEndpoint <", g.toString(), "> ;",
-				"     void:distinctSubjects ?subjects .",
-				"}");
-		
-		List<String> bindings = evalVar(query, "subjects");
-		if (bindings.size() == 0) {
-			LOGGER.info("unable to find number of distinct subjects in graph " + g.toString());
-			return -1;
-		}
-		if (bindings.size() > 1)
-			LOGGER.warn("found multiple distinct subjects for endpoint: " + g.toString() + ". There exists probably more than one void decription for it.");
-		
-		long value = 0;
-		for (String count : bindings)
-			value += Long.parseLong(count);
-		return value;
+	public long getPredicateCount(Graph g, String predicate) {
+		return getCount(PRED_TRIPLES, "$GRAPH$", g.toString(), "$PRED$", predicate);
 	}
 	
 	@Override
-	public long distinctSubjects(Graph g, String predicate) {
-		String query = concat(
-				VOID_PREFIX,
-				"SELECT ?subjects WHERE {",
-				"  [] a void:Dataset ;",
-				"     void:sparqlEndpoint <", g.toString(), "> ;",
-				"     void:propertyPartition ?part .",
-				"  ?part void:property <", predicate, "> ;",
-				"        void:distinctSubjects ?subjects .",
-				"}");
-		
-		List<String> bindings = evalVar(query, "subjects");
-		if (bindings.size() == 0) {
-			LOGGER.info("failed to find number of distinct subjects for predicate " + predicate + " in graph " + g.toString());
-			return -1;
-		}
-		if (bindings.size() > 1)
-			LOGGER.warn("found multiple numbers of distinct subjects for predicate " + predicate + " in graph " + g.toString());
-		return Long.parseLong(bindings.get(0));
+	public long getTypeCount(Graph g, String type) {
+		return getCount(TYPE_TRIPLES, "$GRAPH$", g.toString(), "$TYPE$", type);
 	}
 	
-	public long distinctObjects(Graph g) {
-		String query = concat(
-				VOID_PREFIX,
-				"SELECT ?objects WHERE {",
-				"  [] a void:Dataset ;",
-				"     void:sparqlEndpoint <", g.toString(), "> ;",
-				"     void:distinctObjects ?objects .",
-				"}");
-		
-		List<String> bindings = evalVar(query, "objects");
-		if (bindings.size() == 0) {
-			LOGGER.info("unable to find number of distinct objects in graph " + g.toString());
-			return -1;
-		}
-		if (bindings.size() > 1)
-			LOGGER.warn("found multiple numbers for distinct objects in graph: " + g.toString());
-		return Long.parseLong(bindings.get(0));
+	@Override
+	public long getDistinctPredicates(Graph g) {
+		return getCount(DISTINCT_PREDICATES, "$GRAPH$", g.toString());
+	}
+	
+	@Override
+	public long getDistinctSubjects(Graph g) {
+		return getCount(DISTINCT_SUBJECTS, "$GRAPH$", g.toString());
+	}
+	
+	@Override
+	public long getDistinctSubjects(Graph g, String predicate) {
+		return getCount(DISTINCT_PRED_SUBJECTS, "$GRAPH$", g.toString(), "$PRED$", predicate);
+	}
+	
+	@Override
+	public long getDistinctObjects(Graph g) {
+		return getCount(DISTINCT_OBJECTS, "$GRAPH$", g.toString());
 	}
 
 	@Override
-//	public long distinctObjects(Graph g, URI predicate) {
-	public long distinctObjects(Graph g, String predicate) {
-		String query = concat(
-				VOID_PREFIX,
-				"SELECT ?objects WHERE {",
-				"  [] a void:Dataset ;",
-				"     void:sparqlEndpoint <", g.toString(), "> ;",
-				"     void:propertyPartition ?part .",
-				"  ?part void:property <", predicate, "> ;",
-				"        void:distinctObjects ?objects .",
-				"}");
-		
-		List<String> bindings = evalVar(query, "objects");
-		if (bindings.size() == 0) {
-			LOGGER.info("failed to find number of distinct objects for predicate " + predicate + " in graph " + g.toString());
-			return -1;
-		}
-		if (bindings.size() > 1)
-			LOGGER.warn("found multiple numbers of distinct objects for predicate " + predicate + " in graph " + g.toString());
-		return Long.parseLong(bindings.get(0));
-	}
-	
-	@Override
-	public Number pCard(Graph g, String predicate) {
-		String query = concat(
-				VOID_PREFIX,
-				"SELECT ?card WHERE {",
-				"  [] a void:Dataset ;",
-				"     void:sparqlEndpoint <", g.toString(), "> ;",
-				"     void:propertyPartition ?part .",
-				"  ?part void:property <", predicate.toString(), "> ;",
-				"        void:triples ?card .",
-				"}");
-		
-		List<String> bindings = evalVar(query, "card");
-		if (bindings.size() == 0) {
-			LOGGER.info("failed to find cardinality for predicate " + predicate + " in graph " + g.toString());
-			return -1;
-		}
-		if (bindings.size() > 1)
-			LOGGER.warn("found multiple cardinality values for predicate " + predicate + " in graph " + g.toString());
-		return Long.parseLong(bindings.get(0));
+	public long getDistinctObjects(Graph g, String predicate) {
+		return getCount(DISTINCT_PRED_OBJECTS, "$GRAPH$", g.toString(), "$PRED$", predicate);
 	}
 	
 }
