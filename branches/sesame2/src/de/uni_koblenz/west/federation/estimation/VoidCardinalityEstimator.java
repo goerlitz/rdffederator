@@ -21,8 +21,9 @@
 package de.uni_koblenz.west.federation.estimation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +31,7 @@ import java.util.Set;
 import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import org.openrdf.query.algebra.helpers.VarNameCollector;
 import org.slf4j.Logger;
@@ -37,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.index.Graph;
 import de.uni_koblenz.west.federation.model.MappedStatementPattern;
-import de.uni_koblenz.west.federation.model.RemoteQuery;
 import de.uni_koblenz.west.statistics.RDFStatistics;
 
 /**
@@ -82,71 +83,211 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		setIndexCard(pattern, card);
 	}
 	
-//	protected void meet(RemoteQuery node) {
-//		
-//		// check cardinality index first
-//		if (getIndexCard(node) != null)
-//			return;
-//		
-//		Map<String, List<StatementPattern>> patternGroup = new HashMap<String, List<StatementPattern>>();
-//		
-//		// group patterns by subject
-//		for (StatementPattern p : StatementPatternCollector.process(node.getArg())) {
-//			
-//			// get cardinality first
-//			meet(p);
-//			
-//			String varName = p.getSubjectVar().getName();
-//			List<StatementPattern> pList = patternGroup.get(varName);
-//			if (pList == null) {
-//				pList = new ArrayList<StatementPattern>();
-//				patternGroup.put(varName, pList);
-//			}
-//			pList.add(p);
-//		}
-//		
-//		// process each pattern group: start with patterns where P+O is bound
-//		for (String varName : patternGroup.keySet()) {
-//
-//			List<StatementPattern> pList = patternGroup.get(varName);
-//			LOGGER.warn("PGroup: " + varName + " -> " + pList);
-//			
-//			// find minimum cardinality for all pattern which have P+O bound
-//			Double minCard = Double.POSITIVE_INFINITY;
-//			Iterator<StatementPattern> it = pList.iterator();
-//			while (it.hasNext()) {
-//				StatementPattern p = it.next();
-//				if (p.getObjectVar().getValue() != null) {
-//					Double pCard = getIndexCard(p);
-//					if (pCard.compareTo(minCard) < 0) {
-//						minCard = pCard;
-//					}
-//					it.remove();
-//				}
-//			}
-//			
-//			// check if we have found a minimum cardinality
-//			if (minCard.equals(Double.POSITIVE_INFINITY)) {
-//				LOGGER.warn("no pattern with bound P+O for " + varName);
-//				minCard = 1d;
-//			}
-//			
-//			// the remaining patterns are multiplied like a cross product
-//			for (StatementPattern p : pList) {
-//				minCard = minCard * getIndexCard(p);
-//				double varSel = getVarSelectivity((MappedStatementPattern) p, varName);
-//				LOGGER.warn("varsel: " + varSel + " ++ " + p);
-//			}
-//			
-//			LOGGER.warn("PGroup: " + varName + " -> " + minCard);
-//			
-//		}
-//		
-//		
-//		node.getArg().visit(this);
-//		// add same cardinality as child argument
-//		setIndexCard(node, getIndexCard(node.getArg()));
-//	}
+	/**
+	 * Group a list of triple patterns by subject.
+	 * 
+	 * @param patterns the patterns to group.
+	 * @return a mapping of subject variables to triple patterns.
+	 */
+	private Map<Var, List<StatementPattern>> groupBySubject(List<StatementPattern> patterns) {
+		Map<Var, List<StatementPattern>> patternGroups = new HashMap<Var, List<StatementPattern>>();
+		
+		for (StatementPattern p : patterns) {
+			
+			Var subjectVar = p.getSubjectVar();
+			List<StatementPattern> pList = patternGroups.get(subjectVar);
+			if (pList == null) {
+				pList = new ArrayList<StatementPattern>();
+				patternGroups.put(subjectVar, pList);
+			}
+			pList.add(p);
+		}
+		return patternGroups;
+	}
+	
+	/**
+	 * Returns the cardinality of the supplied pattern.
+	 * 
+	 * @param p the pattern.
+	 * @return the cardinality of the pattern.
+	 */
+	private double getCardinality(StatementPattern p) {
+		Double card = getIndexCard(p);
+		if (card == null) {
+			meet(p);
+			card = getIndexCard(p);
+		}
+		return card;
+	}
+
+	/**
+	 * Returns the get selectivity of the supplied pattern.
+	 * Based on the distinct subjects per source.
+	 * 
+	 * @param p the pattern.
+	 * @return the selectivity of the pattern.
+	 */
+	private double getSelectivity(StatementPattern p) {
+		long distinctSubjects = 0;
+		Set<Graph> sources = ((MappedStatementPattern) p).getSources();
+		for (Graph source : sources) {
+			// TODO: check that predicate value is not null
+			distinctSubjects += stats.getDistinctSubjects(source, p.getPredicateVar().getValue().stringValue());
+		}
+		return 1.0 / distinctSubjects;
+	}
+	
+	private double getJoinSelectivity(String varName, List<StatementPattern> leftPatterns, List<StatementPattern> rightPatterns) {
+
+		// compute minimum of all selectivity values (left or right)
+		double selectivity = 1;
+
+		// get left pattern selectivity (minimum of all selectivity values)
+		for (StatementPattern p : leftPatterns) {
+			if (VarNameCollector.process(p).contains(varName)) {
+				// get left pattern selectivity
+				double pSel = getVarSelectivity((MappedStatementPattern) p, varName);
+				if (Double.compare(pSel, selectivity) < 0)
+					selectivity = pSel;
+			}
+		}
+		
+		// get right pattern selectivity (minimum of all selectivity values)
+		for (StatementPattern p : leftPatterns) {
+			if (VarNameCollector.process(p).contains(varName)) {
+				double pSel = getVarSelectivity((MappedStatementPattern) p, varName);
+				if (Double.compare(pSel, selectivity) < 0)
+					selectivity = pSel;
+			}
+		}
+		
+		return selectivity;
+	}
+	
+	private void computeSubjectBasedCardinality(List<StatementPattern> patterns, Map<Var, Double> sVarCardinality, Map<Var, Double> sVarSelectivity) {
+		
+		Map<Var, List<StatementPattern>> sVarGroups = groupBySubject(patterns);
+		for (Var var : sVarGroups.keySet()) {
+			
+			// ignore bound subject variables
+			if (var.getValue() != null)
+				continue;
+
+			List<StatementPattern> sVarPatterns = sVarGroups.get(var);
+			
+			// TODO: optimization: handle list with only one element
+			
+			boolean boundPO = false;
+			Double minPOCardinality = Double.POSITIVE_INFINITY;
+			Double minPOSelectivity = Double.POSITIVE_INFINITY;
+			List<Double> nonPOCardinalities = new ArrayList<Double>();
+			List<Double> nonPOSelectivities = new ArrayList<Double>();
+			
+			// process all pattern with the same subject variable
+			// and compute the join cardinality + selectivity
+			for (StatementPattern p : sVarPatterns) {
+				
+				double cardinality = getCardinality(p);
+				double selectivity = getSelectivity(p);
+				
+				// compute minimum cardinality/selectivity only if P+O are bound
+				if (p.getPredicateVar().getValue() != null && p.getObjectVar().getValue() != null) {
+					if (Double.compare(cardinality, minPOCardinality) < 0)
+						minPOCardinality = cardinality;
+					if (Double.compare(selectivity, minPOSelectivity) < 0)
+						minPOSelectivity = selectivity;
+					boundPO = true;
+				} else {
+					nonPOCardinalities.add(cardinality);
+					nonPOSelectivities.add(selectivity);
+				}
+			}
+			
+			// add minimum cardinality/selectivity if computed for patterns with bound P+O
+			if (boundPO) {
+				nonPOCardinalities.add(minPOCardinality);
+				nonPOSelectivities.add(minPOSelectivity);
+			}
+			
+			// compute the join cardinality over all patterns with the same subject 
+			Collections.sort(nonPOSelectivities);
+			double joinCardinality = nonPOCardinalities.get(0);
+			for (int i = 1; i < nonPOCardinalities.size(); i++) {
+				joinCardinality *= nonPOCardinalities.get(i);
+				joinCardinality *= nonPOSelectivities.get(i-1);
+			}
+			
+			// TODO: check for a possible second join variable in the patterns 
+			
+			// store cardinality for set of patterns with same subject variable
+			// store minimum selectivity 
+			sVarCardinality.put(var, joinCardinality);
+			sVarSelectivity.put(var, nonPOSelectivities.get(0));
+
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("VAR ?" + var.getName() + " [" + sVarPatterns.size() + "]: " + sVarPatterns);
+				LOGGER.debug("VAR ?" + var.getName() + ": card=" + joinCardinality + ", sel=" + nonPOSelectivities.get(0));
+			}
+		}
+		
+		// collect join variables for each group
+		Map<Var, Set<String>> joinVarMap = new HashMap<Var, Set<String>>();
+		
+		for (Var var : sVarGroups.keySet()) {
+			List<StatementPattern> sVarPatterns = sVarGroups.get(var);
+			
+			// collect variable names
+			Set<String> vars = new HashSet<String>();
+			for (StatementPattern p : sVarPatterns) {
+				vars.addAll(VarNameCollector.process(p));
+			}
+			joinVarMap.put(var, vars);
+		}
+		
+		// compute join selectivity for all possible combination of the groups
+		List<Double> selectivityList = new ArrayList<Double>();
+		List<Var> vars = new ArrayList<Var>(joinVarMap.keySet());
+		for (int i = 0; i < vars.size(); i++) {
+			for (int j = i+1; j < vars.size(); j++) {
+				Set<String> joinVars = new HashSet<String>(joinVarMap.get(vars.get(i)));
+				joinVars.retainAll(joinVarMap.get(vars.get(j)));
+				
+				double selectivity = 1;
+				// if not a cross product: selectivity < 1
+				if (!joinVars.isEmpty()) {
+					// get selectivity for both join arguments
+					
+					if (joinVars.size() > 1)
+						LOGGER.warn("join estimation for multiple vars");
+					
+					List<StatementPattern> leftPatterns = sVarGroups.get(vars.get(i));
+					List<StatementPattern> rightPatterns = sVarGroups.get(vars.get(j));
+					
+					// compute selectivity for all join variables (usually just one) and take minimum
+					for (String varName : joinVars) {
+						double jSel = getJoinSelectivity(varName, leftPatterns, rightPatterns);
+						if (Double.compare(jSel, selectivity) < 0)
+							selectivity = jSel;
+					}
+				}
+				// add selectivity to list of selectivity values
+				selectivityList.add(selectivity);
+				
+				LOGGER.warn("compare: " + selectivity + " for " + joinVars + " <-- " + joinVarMap.get(vars.get(i)) + " <-> " + joinVarMap.get(vars.get(j)));
+			}
+		}
+		
+		// sort selectivity list
+		Collections.sort(selectivityList);
+		
+		double joinCardinality = sVarCardinality.get(vars.get(0));
+		for (int i = 1; i < vars.size(); i++) {
+			joinCardinality *= sVarCardinality.get(vars.get(i));
+			joinCardinality *= sVarSelectivity.get(vars.get(i-1));
+		}
+		
+		LOGGER.warn("join cardinality: " + joinCardinality);
+	}
 	
 	// -------------------------------------------------------------------------
 	
@@ -158,11 +299,33 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 			throw new IllegalArgumentException("cannot estimate cardinality for triple pattern without sources: " + pattern);
 	}
 	
+	/**
+	 * Computing the cardinality of a join.
+	 * It does not depend on the join order of the triple patterns.
+	 * First, joins with the same subject variable are specially treated.
+	 * Then, object-object joins and subject-objects joins are handled.
+	 * 
+	 * @param join the joins used for the cardinality computation.
+	 */
+	@Override
 	public void meet(Join join) throws RuntimeException {
 		
 		// check cardinality index first
 		if (getIndexCard(join) != null)
 			return;
+		
+		// collect all statement patterns
+		List<StatementPattern> patterns = StatementPatternCollector.process(join);
+		
+		// ----------------------------------------------------------
+		
+		Map<Var, Double> sVarCardinality = new HashMap<Var, Double>();
+		Map<Var, Double> sVarSelectivity = new HashMap<Var, Double>();
+		
+		// group by subject variable and compute cardinality/selectivity for each group
+		computeSubjectBasedCardinality(patterns, sVarCardinality, sVarSelectivity);
+		
+		// ----------------------------------------------------------
 		
 		// TODO: does the estimated cardinality depend on the current join?
 		//       -> no: different join order should yield same cardinality
