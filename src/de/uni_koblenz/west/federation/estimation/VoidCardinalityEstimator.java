@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.model.Value;
 import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
@@ -130,9 +131,15 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 	private double getSelectivity(StatementPattern p) {
 		long distinctSubjects = 0;
 		Set<Graph> sources = ((MappedStatementPattern) p).getSources();
+		Value pValue = p.getPredicateVar().getValue();
+		
 		for (Graph source : sources) {
 			// TODO: check that predicate value is not null
-			distinctSubjects += stats.getDistinctSubjects(source, p.getPredicateVar().getValue().stringValue());
+			if (pValue == null) {
+				distinctSubjects += stats.getDistinctSubjects(source);
+			} else {
+				distinctSubjects += stats.getDistinctSubjects(source, pValue.stringValue());
+			}
 		}
 		return 1.0 / distinctSubjects;
 	}
@@ -164,16 +171,23 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		return selectivity;
 	}
 	
-	private void computeSubjectBasedCardinality(List<StatementPattern> patterns, Map<Var, Double> sVarCardinality, Map<Var, Double> sVarSelectivity) {
+	private double computeSubjectBasedCardinality(List<StatementPattern> patterns, Map<Var, Double> sVarCardinality, Map<Var, Double> sVarSelectivity) {
 		
 		Map<Var, List<StatementPattern>> sVarGroups = groupBySubject(patterns);
 		for (Var var : sVarGroups.keySet()) {
 			
-			// ignore bound subject variables
-			if (var.getValue() != null)
-				continue;
-
 			List<StatementPattern> sVarPatterns = sVarGroups.get(var);
+			
+			// handle bound subject variables
+			if (var.getValue() != null) {
+				for (StatementPattern p : sVarPatterns) {
+					double cardinality = getCardinality(p);
+					double selectivity = getSelectivity(p);
+					sVarCardinality.put(var, cardinality);
+					sVarSelectivity.put(var, selectivity);
+				}
+				continue;
+			}
 			
 			// TODO: optimization: handle list with only one element
 			
@@ -265,6 +279,8 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 					
 					// compute selectivity for all join variables (usually just one) and take minimum
 					for (String varName : joinVars) {
+//						LOGGER.warn("JS " + varName + ": " + leftPatterns + " <-> " + rightPatterns);
+						
 						double jSel = getJoinSelectivity(varName, leftPatterns, rightPatterns);
 						if (Double.compare(jSel, selectivity) < 0)
 							selectivity = jSel;
@@ -273,7 +289,7 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 				// add selectivity to list of selectivity values
 				selectivityList.add(selectivity);
 				
-				LOGGER.warn("compare: " + selectivity + " for " + joinVars + " <-- " + joinVarMap.get(vars.get(i)) + " <-> " + joinVarMap.get(vars.get(j)));
+//				LOGGER.warn("compare: " + selectivity + " for " + joinVars + " <-- " + joinVarMap.get(vars.get(i)) + " <-> " + joinVarMap.get(vars.get(j)));
 			}
 		}
 		
@@ -286,7 +302,9 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 			joinCardinality *= sVarSelectivity.get(vars.get(i-1));
 		}
 		
-		LOGGER.warn("join cardinality: " + joinCardinality);
+//		LOGGER.warn("join cardinality: " + joinCardinality);
+		
+		return joinCardinality;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -323,25 +341,28 @@ public abstract class VoidCardinalityEstimator extends AbstractCardinalityEstima
 		Map<Var, Double> sVarSelectivity = new HashMap<Var, Double>();
 		
 		// group by subject variable and compute cardinality/selectivity for each group
-		computeSubjectBasedCardinality(patterns, sVarCardinality, sVarSelectivity);
+		double card = computeSubjectBasedCardinality(patterns, sVarCardinality, sVarSelectivity);
 		
-		// ----------------------------------------------------------
-		
-		// TODO: does the estimated cardinality depend on the current join?
-		//       -> no: different join order should yield same cardinality
-		
-		// estimate cardinality of join arguments first
-		join.getLeftArg().visit(this);
-		join.getRightArg().visit(this);
-		
-		double joinSelectivity = getJoinSelectivity(join.getLeftArg(), join.getRightArg());
-		
-		double leftCard = getIndexCard(join.getLeftArg());
-		double rightCard = getIndexCard(join.getRightArg());
-		double card = joinSelectivity * leftCard * rightCard;
-
 		// add cardinality to index
 		setIndexCard(join, card);
+		
+//		// ----------------------------------------------------------
+//		
+//		// TODO: does the estimated cardinality depend on the current join?
+//		//       -> no: different join order should yield same cardinality
+//		
+//		// estimate cardinality of join arguments first
+//		join.getLeftArg().visit(this);
+//		join.getRightArg().visit(this);
+//		
+//		double joinSelectivity = getJoinSelectivity(join.getLeftArg(), join.getRightArg());
+//		
+//		double leftCard = getIndexCard(join.getLeftArg());
+//		double rightCard = getIndexCard(join.getRightArg());
+//		double card = joinSelectivity * leftCard * rightCard;
+//
+//		// add cardinality to index
+//		setIndexCard(join, card);
 	}
 	
 	// -------------------------------------------------------------------------
