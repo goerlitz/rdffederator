@@ -1,0 +1,20 @@
+#!/usr/bin/awk -f
+BEGIN {}
+{
+  FS="[ ]";
+  o=$3;
+  for (i=4;i<=NF-1;i++)
+    o=o" "$i;
+
+  # build id lookup table for predicates
+  if (!(o in o_list))
+    o_list[o] = count++;
+}
+END {
+  count=0;
+
+  # process all stored subjects/objects
+  for (o in o_list) {
+    print o_list[o], o;
+  }
+}

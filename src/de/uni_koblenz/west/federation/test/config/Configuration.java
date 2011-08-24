@@ -34,7 +34,6 @@ import java.util.Properties;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.impl.GraphImpl;
-import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfig;
@@ -54,10 +53,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_koblenz.west.federation.FederationSail;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
 
 /**
- * Configuration object holding all setting for a test scenarios.
+ * Configuration object holding all settings for a test scenarios.
  * Provides methods to create the corresponding repository etc.
  * 
  * @author Olaf Goerlitz
@@ -71,20 +69,42 @@ public class Configuration {
 	private static final String PROP_QUERY_EXT  = "query.extension";
 	private static final String PROP_OUT_FILE   = "output.file";
 	
-	private static final String PROP_RDF_TYPE   = "source.select_by_type";
-	private static final String PROP_SAME_AS    = "source.merge_sameAs";
-	
 	private File cfgFile;
 	private Properties props = new Properties();
 	
+	private Repository repository;
+	
+	/**
+	 * Private constructor for reading the configuration settings from a file.
+	 *  
+	 * @param fileName the file containing the configuration settings.
+	 * @throws IOException if an error occurred when reading from the file.
+	 */
 	private Configuration(String fileName) throws IOException {
 		this.cfgFile = new File(fileName).getAbsoluteFile();
 		this.props.load(new FileReader(this.cfgFile));
-		LOGGER.info("loaded config properties from " + cfgFile);
+		LOGGER.info("loaded configuration from " + cfgFile);
 	}
 	
-	public static Configuration create(String configFile) throws IOException {
+	/**
+	 * Load configurations setting from a file.
+	 * 
+	 * @param configFile the file containing the configuration settings.
+	 * @return instantiation of the configuration settings
+	 * @throws IOException if an error occurred when reading from the file.
+	 */
+	public static Configuration load(String configFile) throws IOException {
 		return new Configuration(configFile);
+	}
+	
+	// -------------------------------------------------------------------------
+	
+	public FederationSail getFederationSail() throws ConfigurationException {
+		
+		if (this.repository == null)
+			createRepository();
+
+		return ((FederationSail) ((SailRepository) this.repository).getSail());
 	}
 	
 	/**
@@ -94,6 +114,9 @@ public class Configuration {
 	 * @throws ConfigurationException if an error occurs during the repository configuration.
 	 */
 	public Repository createRepository() throws ConfigurationException {
+		
+		if (this.repository != null)
+			throw new IllegalStateException("repository has already been created");
 		
 		// get repository config file
 		String repConfig = props.getProperty(PROP_REP_CONFIG);
@@ -112,9 +135,9 @@ public class Configuration {
 			if (factory == null) {
 				throw new ConfigurationException("Unsupported repository type: " + implConf.getType() + " in repository config");
 			}
-			Repository repository = factory.getRepository(implConf);
-			repository.initialize();
-			return repository;
+			this.repository = factory.getRepository(implConf);
+			this.repository.initialize();
+			return this.repository;
 		} catch (RepositoryConfigException e) {
 			throw new ConfigurationException("cannot create repository: " + e.getMessage());
 		} catch (RepositoryException e) {
@@ -122,25 +145,6 @@ public class Configuration {
 		}
 	}
 
-	/**
-	 * Returns the source finder for the supplied repository configuration.
-	 * 
-	 * @return the source finder.
-	 * @throws ConfigurationException if an error occurs during the repository configuration.
-	 */
-	public SourceFinder<StatementPattern> getSourceFinder() throws ConfigurationException {
-
-		boolean handleRDFType = Boolean.parseBoolean(props.getProperty(PROP_RDF_TYPE));
-		boolean handleSameAs = Boolean.parseBoolean(props.getProperty(PROP_SAME_AS));
-
-		Repository rep = createRepository();
-		FederationSail sail = ((FederationSail) ((SailRepository) rep).getSail());
-		SourceFinder<StatementPattern> finder = sail.getSourceFinder();
-		finder.setHandleRDFType(handleRDFType);
-		finder.setHandleOWLSameAs(handleSameAs);
-		return finder;
-	}
-	
 	/**
 	 * Returns an iterator over the specified SPARQL Queries.
 	 * 
@@ -234,7 +238,6 @@ public class Configuration {
 			File dir = new File(cfgFile.toURI().resolve(qDir)).getAbsoluteFile();
 			if (!dir.isDirectory() || !dir.canRead())
 				LOGGER.warn("cannot read query directory: " + dir);
-//				throw new ConfigurationException("cannot read query directory: " + dir);
 			
 			for (File file : dir.listFiles()) {
 				if (file.isFile() && file.getName().endsWith(queryExt)) {
@@ -244,7 +247,7 @@ public class Configuration {
 		}
 		
 		if (queries.size() == 0)
-			throw new ConfigurationException("found no matching queries");
+			LOGGER.error("found no matching queries");
 		
 		Collections.sort(queries);
 		return queries;
@@ -283,7 +286,6 @@ public class Configuration {
 			throw new ConfigurationException("unknown RDF format of repository config: " + file);
 		
 		try {
-//			Model model = new LinkedHashModel();
 			Graph model = new GraphImpl();
 			RDFParser parser = Rio.createParser(format);
 			parser.setRDFHandler(new StatementCollector(model));

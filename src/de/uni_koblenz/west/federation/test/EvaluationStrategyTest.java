@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,10 +44,8 @@ import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.memory.MemoryStore;
-//import org.openrdf.store.StoreException;
 
 import de.uni_koblenz.west.federation.FederationSail;
-import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 
 /**
@@ -97,7 +94,8 @@ public class EvaluationStrategyTest {
 		
 //		sourceFinder = new SourceFinder(repositories);
 //		evalStrategy = new FederationEvalStrategy(sourceFinder, vf);
-		federationSail = new FederationSail(new Properties(), Arrays.asList(repositories));
+		federationSail = new FederationSail();
+		federationSail.setMembers(Arrays.asList(repositories));
 		federationSail.initialize();
 	}
 	

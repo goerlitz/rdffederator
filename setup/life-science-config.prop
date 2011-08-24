@@ -1,7 +1,0 @@
-repository.config=sesame/RDF-Rep-life-science_config.n3
-
-query.directory=queries/ls
-query.extension=.txt
-
-#optimizer.strategy=DYNAMIC_PROGRAMMING
-#optimizer.estimator=STATISTICS

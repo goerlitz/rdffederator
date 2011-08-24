@@ -39,6 +39,7 @@ public enum VOID2 {
 	distinctSubjects,
 	distinctObjects,
 	triples,
+	classes,
 	entities,
 	properties,
 	classPartition,

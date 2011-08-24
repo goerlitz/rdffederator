@@ -1,6 +1,6 @@
 /*
  * This file is part of RDF Federator.
- * Copyright 2010 Olaf Goerlitz
+ * Copyright 2011 Olaf Goerlitz
  * 
  * RDF Federator is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,6 @@
  */
 package de.uni_koblenz.west.statistics;
 
-import java.net.URI;
 import java.util.Set;
 
 import de.uni_koblenz.west.federation.index.Graph;
@@ -32,34 +31,85 @@ import de.uni_koblenz.west.federation.index.Graph;
  */
 public interface RDFStatistics {
 	
+	/**
+	 * Returns a set of data sources which can potentially return results for the supplied s, p, o values.
+	 * 
+	 * @param sValue subject value.
+	 * @param pValue predicate value.
+	 * @param oValue object value.
+	 * @param handleType defines whether rdf:type definitions should be evaluated. TODO: should not be method parameter.
+	 * @return the set of matched data sources.
+	 */
 	public Set<Graph> findSources(String sValue, String pValue, String oValue, boolean handleType);
 	
-	public long getSize(Graph g);
+	/**
+	 * Returns the number of triples in a data source.
+	 * 
+	 * @param g the data source.
+	 * @return the number of triples.
+	 */
+	public long getTripleCount(Graph g);
 	
-	public long distinctSubjects(Graph g);
+	/**
+	 * Returns the number of triples with the specified predicate in a data source.
+	 * 
+	 * @param g the data source.
+	 * @param predicate the predicate.
+	 * @return the number of triples.
+	 */
+	public long getPredicateCount(Graph g, String predicate);
 	
-	public long distinctSubjects(Graph g, URI predicate);
+	/**
+	 * Returns the number of triples with rdf:type definition of the specified type in a data source.
+	 * 
+	 * @param g the data source.
+	 * @param type the desired type.
+	 * @return the number of triples.
+	 */
+	public long getTypeCount(Graph g, String type);
 	
-	public long distinctObjects(Graph g);
+	/**
+	 * Returns the number of distinct predicates in a data source.
+	 * 
+	 * @param g the data source.
+	 * @return the number of distinct predicates.
+	 */
+	public long getDistinctPredicates(Graph g);
 	
-	public long distinctObjects(Graph g, URI predicate);
+	/**
+	 * Returns the number of distinct subjects in a data source.
+	 * 
+	 * @param g the data source.
+	 * @return the number of distinct subjects.
+	 */
+	public long getDistinctSubjects(Graph g);
 	
-//	public Number patternCard(Graph g, URI s, URI p, RDFTerm o);
+	/**
+	 * Returns the number of distinct subjects in a data source
+	 * which occur in triples with the specified predicate.
+	 * 
+	 * @param g the data source.
+	 * @param predicate the predicate which occurs with the subjects.
+	 * @return the number of distinct subjects.
+	 */
+	public long getDistinctSubjects(Graph g, String predicate);
 	
-	public Number sCard(Graph g, URI subject);
-	
-	public Number pCard(Graph g, URI predicate);
-	
-	public Number oCard(Graph g, RDFValue object);
-	
-	public Number poCard(Graph g, URI predicate, RDFValue object);
-	
-	public Number poCard(Graph g, URI predicate, RDFValue object, URI datatype);
-	
-	public Number spCard(Graph g, URI subject, URI predicate);
-	
-	public Number soCard(Graph g, URI subject, RDFValue object);
-	
-	public Number typeCard(Graph g, URI type);
+	/**
+	 * Returns the number of distinct objects in a data source.
+	 * 
+	 * @param g the data source.
+	 * @return the number of distinct objects.
+	 */
+	public long getDistinctObjects(Graph g);
+
+	/**
+	 * Returns the number of distinct subjects in a data source
+	 * which occur in triples with the specified predicate.
+	 * 
+	 * @param g the data source.
+	 * @param predicate the predicate which occurs with the subjects.
+	 * @return the number of distinct subjects.
+	 */
+	public long getDistinctObjects(Graph g, String predicate);
 	
 }
