@@ -1,0 +1,13 @@
+PREFIX owl:         <http://www.w3.org/2002/07/owl#>
+PREFIX rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX nytimes:     <http://data.nytimes.com/elements/>
+PREFIX dbpedia:     <http://dbpedia.org/resource/>
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
+
+SELECT ?pres ?party ?page WHERE {
+   ?pres rdf:type dbpedia-owl:President .
+   ?pres dbpedia-owl:nationality dbpedia:United_States .
+   ?pres dbpedia-owl:party ?party .
+   ?x nytimes:topicPage ?page .
+   ?x owl:sameAs ?pres 
+}

@@ -1,0 +1,26 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix void: <http://rdfs.org/ns/void#> .
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+
+_:node1 a void:Dataset ;
+	void:sparqlEndpoint <http://example1.org/sparql> ;
+	void:triples "15000"^^xsd:integer ;
+	void:entities "5000"^^xsd:integer ;
+	void:properties "3"^^xsd:integer ;
+	void:propertyPartition [
+		void:property rdf:type ;
+		void:triples "5000"^^xsd:integer
+	] , [
+		void:property geo:lat ;
+		void:triples "5000"^^xsd:integer
+	] , [
+		void:property geo:long ;
+		void:triples "5000"^^xsd:integer
+	] ;
+	void:classPartition [
+		void:class <http://www.opengis.net/gml/_Feature> ;
+		void:entities "5000"^^xsd:integer
+	] .
