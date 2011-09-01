@@ -255,6 +255,7 @@ public class StructurednessAnalyzer extends RDFHandlerBase {
 		StructurednessAnalyzer handler = new StructurednessAnalyzer();
 		RDFParser parser = Rio.createParser(format);
 		parser.setRDFHandler(handler);
+		parser.setStopAtFirstError(false);
 		
 		try {
 			parser.parse(input, "");
