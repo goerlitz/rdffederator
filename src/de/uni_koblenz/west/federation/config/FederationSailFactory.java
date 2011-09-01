@@ -20,10 +20,8 @@
  */
 package de.uni_koblenz.west.federation.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.openrdf.repository.Repository;
+import org.openrdf.query.algebra.evaluation.QueryOptimizer;
+import org.openrdf.query.impl.AbstractQuery;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
@@ -32,9 +30,26 @@ import org.openrdf.sail.Sail;
 import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
-//import org.openrdf.store.StoreConfigException;
 
 import de.uni_koblenz.west.federation.FederationSail;
+import de.uni_koblenz.west.federation.estimation.AbstractCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
+import de.uni_koblenz.west.federation.estimation.CardinalityCostEstimator;
+import de.uni_koblenz.west.federation.estimation.SPLENDIDCostEstimator;
+import de.uni_koblenz.west.federation.estimation.ModelEvaluator;
+import de.uni_koblenz.west.federation.estimation.SPLENDIDCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.TrueCardinalityEstimator;
+import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
+import de.uni_koblenz.west.federation.helpers.Format;
+import de.uni_koblenz.west.federation.model.SubQueryBuilder;
+import de.uni_koblenz.west.federation.optimizer.AbstractFederationOptimizer;
+import de.uni_koblenz.west.federation.optimizer.DynamicProgrammingOptimizer;
+import de.uni_koblenz.west.federation.optimizer.PatternSelectivityOptimizer;
+import de.uni_koblenz.west.federation.sources.IndexAskSelector;
+import de.uni_koblenz.west.federation.sources.IndexSelector;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
+import de.uni_koblenz.west.federation.sources.AskSelector;
+import de.uni_koblenz.west.statistics.VoidStatistics;
 
 /**
  * A {@link SailFactory} that creates {@link FederationSail}s
@@ -46,7 +61,7 @@ import de.uni_koblenz.west.federation.FederationSail;
  * @author Olaf Goerlitz
  */
 public class FederationSailFactory implements SailFactory {
-
+	
 	/**
 	 * The type of repositories that are created by this factory.
 	 * 
@@ -79,39 +94,110 @@ public class FederationSailFactory implements SailFactory {
 	 * @param config
 	 *            the Sail configuration.
 	 * @return The created (but un-initialized) Sail.
-	 * @throws StoreConfigException
+	 * @throws SailConfigException
 	 *             If no Sail could be created due to invalid or incomplete
 	 *             configuration data.
 	 */
 	@Override
-//	public Sail getSail(SailImplConfig config) throws StoreConfigException {
-	public Sail getSail(SailImplConfig config) throws SailConfigException {
+//	public Sail getSail(SailImplConfig config) throws StoreConfigException { // Sesame 3
+	public Sail getSail(SailImplConfig config) throws SailConfigException { // Sesame 2
 
 		if (!SAIL_TYPE.equals(config.getType())) {
-//			throw new StoreConfigException("Invalid Sail type: " + config.getType());
 			throw new SailConfigException("Invalid Sail type: " + config.getType());
 		}
+		
+		RepositoryRegistry registry = RepositoryRegistry.getInstance();
+		
 		assert config instanceof FederationSailConfig;
-		FederationSailConfig fedConfig = (FederationSailConfig) config;
-
-		// initialize federation members
-		List<Repository> repositories = new ArrayList<Repository>();
-		RepositoryFactory factory;
-		for (RepositoryImplConfig member : fedConfig.getMemberConfigs()) {
-			factory = RepositoryRegistry.getInstance().get(member.getType());
+		FederationSailConfig cfg = (FederationSailConfig)config;
+		FederationSail sail = new FederationSail();
+		
+		// Create all member repositories
+		for (RepositoryImplConfig repConfig : cfg.getMemberConfigs()) {
+			RepositoryFactory factory = registry.get(repConfig.getType());
 			if (factory == null) {
-//				throw new StoreConfigException("Unsupported repository type: " + config.getType());
-				throw new SailConfigException("Unsupported repository type: " + config.getType());
+				throw new SailConfigException("Unsupported repository type: " + repConfig.getType());
 			}
-//			repositories.add(factory.getRepository(member));
 			try {
-				repositories.add(factory.getRepository(member));
+				sail.addMember(factory.getRepository(repConfig));
 			} catch (RepositoryConfigException e) {
-				throw new SailConfigException(e);
+				throw new SailConfigException("invalid repository configuration: " + e.getMessage(), e);
 			}
 		}
-		
-		return new FederationSail(fedConfig.getProperties(), repositories);
-	}
 
+		// create query optimizer
+		QueryOptimizerConfig optConfig = cfg.getOptimizerConfig(); 
+		AbstractFederationOptimizer opt = getQueryOptimizer(optConfig);
+		sail.setFederationOptimizer(opt);
+		
+		boolean voidPlus = true;
+		String estType = optConfig.getEstimatorType();
+		if ("VOID".equalsIgnoreCase(estType))
+			voidPlus = false;
+		if ("VOID_PLUS".equalsIgnoreCase(estType))
+			voidPlus = true;
+		
+		VoidStatistics stats = VoidStatistics.getInstance();
+		AbstractCardinalityEstimator cardEstim = new SPLENDIDCardinalityEstimator(stats, voidPlus);
+		AbstractCostEstimator costEstim = new SPLENDIDCostEstimator();
+		costEstim.setCardinalityEstimator(cardEstim);
+//		ModelEvaluator modelEval = new TrueCardinalityEstimator(sail.getEvalStrategy());
+		
+		// Create source selector from configuration settings
+		SourceSelector selector = getSourceSelector(cfg.getSelectorConfig());
+		sail.setSourceSelector(selector);
+		
+		opt.setBuilder(new SubQueryBuilder(optConfig));
+		opt.setSelector(selector);
+		opt.setCostEstimator(costEstim);
+//		opt.setModelEvaluator(cardEstim);
+		opt.setModelEvaluator(costEstim);
+//		opt.setModelEvaluator(modelEval);
+		
+
+		return sail;
+	}
+	
+	// --------------------------------------------------------------
+	
+	/**
+	 * Creates a sources selector for the given configuration settings.
+	 * 
+	 * @param selConf the source selector configuration settings.
+	 * @return the created sources selector.
+	 * @throws SailConfigException If no source selector could be created due to invalid or incomplete
+	 *             configuration data.
+	 */
+	private SourceSelector getSourceSelector(SourceSelectorConfig selConf) throws SailConfigException {
+		String selectorType = selConf.getType();
+		
+		if ("ASK".equalsIgnoreCase(selectorType))
+			return new AskSelector();
+		else if ("INDEX".equalsIgnoreCase(selectorType))
+			return new IndexSelector(selConf.isUseTypeStats());
+		else if ("INDEX_ASK".equalsIgnoreCase(selectorType))
+			return new IndexAskSelector(selConf.isUseTypeStats());
+		
+		throw new SailConfigException("invalid source selector type: " + selectorType);
+	}
+	
+	/**
+	 * Creates a query optimizer for the given configuration settings.
+	 *  
+	 * @param optConf the query optimizer configuration settings.
+	 * @return the created query optimizer.
+	 * @throws SailConfigException If no query optimizer could be created due to invalid or incomplete
+	 *             configuration data.
+	 */
+	private AbstractFederationOptimizer getQueryOptimizer(QueryOptimizerConfig optConf) throws SailConfigException {
+		String optimizerType = optConf.getType();
+		
+		if ("DYNAMIC_PROGRAMMING".equals(optimizerType))
+			return new DynamicProgrammingOptimizer(optConf.isUseHashJoin(), optConf.isUseBindJoin());
+		else if ("PATTERN_HEURISTIC".equals(optimizerType))
+			return new PatternSelectivityOptimizer();
+		
+		throw new SailConfigException("invalid query optimizer type: " + optConf.getType());
+	}
+	
 }

@@ -67,7 +67,7 @@ public class VoidRepositoryConnection extends ReadOnlyRepositoryConnection {
 	public VoidRepositoryConnection(VoidRepository repository) {
 		super(repository);
 		
-		this.endpoint = repository.getEndpoint();
+		this.endpoint = repository.getEndpoint().stringValue();
 		
 		// reuse repository specific factories for better performance
 //		BNodeFactoryImpl bf = new BNodeFactoryImpl();

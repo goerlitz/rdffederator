@@ -20,43 +20,25 @@
  */
 package de.uni_koblenz.west.federation;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
-//import org.openrdf.model.LiteralFactory;
-//import org.openrdf.model.URIFactory;
-//import org.openrdf.model.impl.LiteralFactoryImpl;
-//import org.openrdf.model.impl.URIFactoryImpl;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.query.algebra.StatementPattern;
-import org.openrdf.query.algebra.ValueExpr;
+import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
-//import org.openrdf.sail.federation.Federation;
+import org.openrdf.sail.federation.Federation;
 import org.openrdf.sail.helpers.SailBase;
-//import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.adapter.SesameAdapter;
-import de.uni_koblenz.west.federation.helpers.Format;
-import de.uni_koblenz.west.optimizer.eval.CardinalityEstimatorType;
-import de.uni_koblenz.west.optimizer.eval.CostCalculator;
-import de.uni_koblenz.west.optimizer.eval.CostModel;
-import de.uni_koblenz.west.optimizer.eval.QueryModelEvaluator;
-import de.uni_koblenz.west.optimizer.rdf.BGPOperator;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
-import de.uni_koblenz.west.optimizer.rdf.eval.QueryModelVerifier;
-import de.uni_koblenz.west.statistics.Void2StatsRepository;
+import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
+import de.uni_koblenz.west.federation.sources.SourceSelector;
+import de.uni_koblenz.west.statistics.VoidStatistics;
 
 /**
  * Wraps multiple data sources (remote repositories) within a single
@@ -73,55 +55,70 @@ public class FederationSail extends SailBase {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationSail.class);
 	
-	private static final String DEFAULT_OPTIMIZER = "DYNAMIC_PROGRAMMING";
-	private static final String DEFAULT_ESTIMATOR = CardinalityEstimatorType.STATISTICS.toString();
-	
-	private Void2StatsRepository stats = new Void2StatsRepository();
-	private List<Repository> members = new ArrayList<Repository>();
-	private SourceFinder<StatementPattern> finder;
-	private FederationOptimizer optimizer;
-	
-	String optStrategy;
-	String estimatorType;
+	private List<Repository> members;
+	private SourceSelector selector;
+	private QueryOptimizer optimizer;
+	private EvaluationStrategy evalStrategy;
+
 	private boolean initialized = false;
 	
-	/**
-	 * Creates a federation Sail using the properties and federation members.
-	 * 
-	 * @param config the Sail's configuration settings.
-	 * @param members the federation members.
-	 */
-	public FederationSail(Properties config, List<Repository> members) {
-		
-		if (config == null)
-			throw new IllegalArgumentException("config is NULL");
-		if (members == null)
-			throw new IllegalArgumentException("member list is NULL");
-		
-		// set federation members
-		this.members = members;
-		
-		// set optimizer type
-		optStrategy = config.getProperty("optimizer.type");
-		if (optStrategy == null) {
-			optStrategy = DEFAULT_OPTIMIZER;
-			LOGGER.debug("using default optimization strategy: " + DEFAULT_OPTIMIZER);
-		}
-		
-		// set cardinality estimator type (statistics-based or true counts)
-		estimatorType = config.getProperty("estimator.type");
-		if (estimatorType == null) {
-			estimatorType = DEFAULT_ESTIMATOR;
-			LOGGER.debug("using default estimator: " + DEFAULT_ESTIMATOR);
-		}
+	public FederationSail() {
+		this.evalStrategy = new FederationEvalStrategy(this.vf);
+		this.members = new ArrayList<Repository>();
+	}
+	
+	public void addMember(Repository rep) {
+		if (rep == null)
+			throw new IllegalArgumentException("federation member must not be NULL");
+		this.members.add(rep);
+	}
+	
+	// --- GETTER --------------------------------------------------------------
+	
+	public EvaluationStrategy getEvalStrategy() {
+		return this.evalStrategy;
 	}
 	
 	public QueryOptimizer getFederationOptimizer() {
 		return this.optimizer;
 	}
 	
-	public SourceFinder<StatementPattern> getSourceFinder() {
-		return this.finder;
+	public List<Repository> getMembers() {
+		return this.members;
+	}
+	
+	public SourceSelector getSourceSelector() {
+		return this.selector;
+	}
+	
+	// --- SETTER --------------------------------------------------------------
+
+	public void setEvalStrategy(EvaluationStrategy evalStrategy) {
+		if (evalStrategy == null)
+			throw new IllegalArgumentException("evaluation strategy must not be NULL");
+		this.evalStrategy = evalStrategy;
+	}
+	
+	public void setFederationOptimizer(QueryOptimizer optimizer) {
+		if (optimizer == null)
+			throw new IllegalArgumentException("query optimizer must not be NULL");
+		this.optimizer = optimizer;
+	}
+	
+	public void setMembers(List<Repository> members) {
+		if (members == null)
+			throw new IllegalArgumentException("federation members must not be NULL");
+		for (Repository rep : members) {
+			if (rep == null)
+				throw new IllegalArgumentException("federation member must not be NULL");
+		}
+		this.members = members;
+	}
+
+	public void setSourceSelector(SourceSelector selector) {
+		if (selector == null)
+			throw new IllegalArgumentException("source selector must not be NULL");
+		this.selector = selector;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -133,62 +130,32 @@ public class FederationSail extends SailBase {
 	 *         If the Sail could not be initialized.
 	 */
 	@Override
-//	public void initialize() throws StoreException {
 	public void initialize() throws SailException {
 		
-		// only Sesame 2 needs to initialize super class
-		super.initialize();
+		if (initialized) {
+			LOGGER.info("Federation Sail is already initialized");
+			return;
+		}
 		
-		// initialize member repositories
+		super.initialize();  // only Sesame 2 needs to initialize super class
+		
+		// initialize all members
 		for (Repository rep : this.members) {
 			try {
-				if (rep instanceof VoidRepository) {
-					VoidRepository voidRep = (VoidRepository) rep;
-					URI context = stats.load(voidRep.getVoidUrl());
-					stats.setEndpoint(voidRep.getEndpoint(), context);
-				}
 				rep.initialize();
-//			} catch (URISyntaxException e) {
-//				throw new SailException("can not read voiD description: " + e.getMessage(), e);
-			} catch (IOException e) {
-				LOGGER.error("can not read voiD description " + ((VoidRepository) rep).getVoidUrl(), e.getMessage());
-//				throw new StoreException("can not read voiD description: " + e.getMessage(), e);
-				throw new SailException("can not read voiD description: " + e.getMessage(), e);
 			} catch (RepositoryException e) {
-				throw new SailException("can not initialize void repository: " + e.getMessage(), e);
+				throw new SailException("can not initialize repository: " + e.getMessage(), e);
 			} catch (IllegalStateException e) {
 				LOGGER.debug("member repository is already initialized", e);
 			}
 		}
-
-		this.finder = new SourceFinder<StatementPattern>(stats, new SesameAdapter());
 		
-		// initialize optimizer
-		CostModel costModel = new CostModel();
-		FederationOptimizerFactory factory = new FederationOptimizerFactory();
-		factory.setStatistics(stats);
-		factory.setSourceFinder(finder);
-		factory.setCostmodel(costModel);
-//		factory.setOptimizationListener(true);
-		this.optimizer = factory.getOptimizer(optStrategy, estimatorType);
-		
-		// enable optimization result verification
-		this.optimizer.setResultVerifier(createOptimizationVeryfier(factory.getCostCalculator(CardinalityEstimatorType.valueOf(estimatorType), costModel)));
+		// initialize statistics and source selector
+		VoidStatistics stats = VoidStatistics.getInstance();
+		this.selector.setStatistics(stats);
+		this.selector.initialize();
 		
 		initialized = true;
-	}
-	
-	private QueryModelVerifier<StatementPattern, ValueExpr> createOptimizationVeryfier(final CostCalculator<BGPOperator<StatementPattern, ValueExpr>> costEval) {
-		return new QueryModelVerifier<StatementPattern, ValueExpr>() {
-			@Override
-			public QueryModelEvaluator<BGPOperator<StatementPattern, ValueExpr>, ? extends Number> getEvaluator() {
-				return costEval;
-			}
-			@Override
-			public void resultObtained(Number value) {
-				System.out.println(Format.d(value.doubleValue(), 2));
-			}
-		};
 	}
 	
 	/**
@@ -198,10 +165,8 @@ public class FederationSail extends SailBase {
 	 *         If the Sail encountered an error or unexpected internal state.
 	 */
 	@Override
-//	protected void shutDownInternal() throws StoreException {
 	protected void shutDownInternal() throws SailException {
 		for (Repository rep : this.members) {
-//			rep.shutDown();
 			try {
 				rep.shutDown();
 			} catch (RepositoryException e) {
@@ -219,7 +184,6 @@ public class FederationSail extends SailBase {
 	 * @return the Sail connection wrapper.
 	 */
 	@Override
-//	protected SailConnection getConnectionInternal() throws StoreException {
 	protected SailConnection getConnectionInternal() throws SailException {
 		
 		if (!this.initialized)
@@ -228,7 +192,7 @@ public class FederationSail extends SailBase {
 		return new FederationSailConnection(this);
 	}
 
-	// SESAME 2.3.2 ============================================================
+	// SESAME 2 ================================================================
 	
 	private final ValueFactory vf = new ValueFactoryImpl();
 	
@@ -242,31 +206,4 @@ public class FederationSail extends SailBase {
 		return false;
 	}
 	
-	// SESAME 3.0 ==============================================================
-	
-//	private final URIFactory uf = new URIFactoryImpl();
-//	private final LiteralFactory lf = new LiteralFactoryImpl();
-
-//	/**
-//	 * Gets a LiteralFactory object that can be used to create Sail-specific
-//	 * literal objects.
-//	 * 
-//	 * @return a LiteralFactory object for this Sail object.
-//	 */
-//	@Override
-//	public LiteralFactory getLiteralFactory() {
-//		return lf;
-//	}
-//
-//	/**
-//	 * Gets a URIFactory object that can be used to create Sail-specific URI
-//	 * objects.
-//	 * 
-//	 * @return a URIFactory object for this Sail object.
-//	 */
-//	@Override
-//	public URIFactory getURIFactory() {
-//		return uf;
-//	}
-
 }

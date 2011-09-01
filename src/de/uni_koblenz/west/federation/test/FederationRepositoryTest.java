@@ -47,10 +47,7 @@ public class FederationRepositoryTest {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationRepositoryTest.class);
 	
-	private static final String CONFIG     = "setup/fed-test.properties";
-	
-//	private static final String STRATEGY   = "optimizer.strategy";
-//	private static final String ESTIMATOR  = "optimizer.estimator";
+	private static final String CONFIG = "setup/fed-test.properties";
 	
 	private static Repository REPOSITORY;
 	private static Iterator<Query> QUERIES;
@@ -65,7 +62,7 @@ public class FederationRepositoryTest {
     @BeforeClass
     public static void setUp() {
 		try {
-			Configuration config = Configuration.create(CONFIG);
+			Configuration config = Configuration.load(CONFIG);
 			REPOSITORY = config.createRepository();
 			QUERIES = config.getQueryIterator();
 		} catch (IOException e) {
@@ -118,7 +115,8 @@ public class FederationRepositoryTest {
 			
 			long start = System.currentTimeMillis();
 			List<BindingSet> result = QueryExecutor.eval(REPOSITORY, query.getQuery());
-			LOGGER.info("Evaluation time: " + (System.currentTimeMillis() - start));
+//			LOGGER.info("Evaluation time: " + (System.currentTimeMillis() - start));
+			LOGGER.info((System.currentTimeMillis() - start)/1000 + " seconds elapsed");
 			LOGGER.info("RESULT SIZE: " + (result != null ? result.size() : -1));
 		}
 	}

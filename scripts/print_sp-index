@@ -1,0 +1,24 @@
+#!/usr/bin/awk -f
+BEGIN {}
+{
+  p=$2;
+  s=$1;
+
+  # build id lookup table for predicates
+  if (!(p in p_list))
+    p_list[p] = p_count++;
+
+  # build id lookup table for subjects
+  if (!(s in s_list))
+    s_list[s] = s_count++;
+
+  sp_list[p_list[p] ":" s_list[s]]++;
+}
+END {
+  count=0;
+
+  # process all stored subjects/objects
+  for (i in sp_list) {
+    print i, sp_list[i];
+  }
+}

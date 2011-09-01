@@ -8,7 +8,7 @@ if [[ "$ext" = "png" ]]
 then
   term="png enhanced truecolor size 900,500"
 else
-  term="postscript eps enhanced solid \"Helvetica\" 14"
+  term="postscript eps enhanced solid \"Helvetica,16\""
 fi
 
 # generate charts from data using gnuplot via a crafted plot file
