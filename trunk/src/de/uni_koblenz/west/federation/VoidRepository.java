@@ -1,6 +1,6 @@
 /*
  * This file is part of RDF Federator.
- * Copyright 2010 Olaf Goerlitz
+ * Copyright 2011 Olaf Goerlitz
  * 
  * RDF Federator is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,39 +20,90 @@
  */
 package de.uni_koblenz.west.federation;
 
-import java.net.URL;
+import java.io.File;
+import java.io.IOException;
 
+import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.http.HTTPRepository;
-//import org.openrdf.store.StoreException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import de.uni_koblenz.west.federation.config.VoidRepositoryConfig;
+import de.uni_koblenz.west.statistics.VoidStatistics;
 
 /**
- * Wrapper for remote repositories with voiD description and SPARQL endpoint.
+ * A proxy for a remote repository which is accessed via a SPARQL endpoint.
  * 
  * @author Olaf Goerlitz
  */
-public class VoidRepository extends HTTPRepository {
+public class VoidRepository implements Repository {
 	
-	protected final String endpoint;
-	protected final URL voidUrl;
-
-	public VoidRepository(URL voidUrl, URL endpoint) {
-		super(endpoint.toString());
-		this.endpoint = endpoint.toString();
-		this.voidUrl = voidUrl;
+	private static final Logger LOGGER = LoggerFactory.getLogger(VoidRepository.class);
+	
+	protected final ValueFactory vf = new ValueFactoryImpl();
+	protected URI endpoint;
+	protected final URI voidURI;
+	
+	protected boolean initialized = false;
+	
+	public VoidRepository(VoidRepositoryConfig config) {
+		this.endpoint = config.getEndpoint();
+		this.voidURI = config.getVoidURI();
 	}
 	
-	public String getEndpoint() {
+	public URI getEndpoint() {
 		return this.endpoint;
 	}
+
+	// --------------------------------------------------------------
 	
-	public URL getVoidUrl() {
-		return this.voidUrl;
+	@Override
+	public void setDataDir(File dataDir) {
+		throw new UnsupportedOperationException("SPARQL endpoint repository has no data dir");
+	}
+
+	@Override
+	public File getDataDir() {
+		throw new UnsupportedOperationException("SPARQL endpoint repository has no data dir");
 	}
 	
 	@Override
-//	public RepositoryConnection getConnection() throws StoreException {
+	public boolean isWritable() throws RepositoryException {
+		return false;
+	}
+
+	@Override
+	public ValueFactory getValueFactory() {
+		return this.vf;
+	}
+
+	@Override
+	public void initialize() throws RepositoryException {
+		
+		if (this.initialized) {
+			LOGGER.info("Void repository has already been initialized");
+			return;
+		}
+		
+		try {
+			this.endpoint = VoidStatistics.getInstance().load(this.voidURI, this.endpoint);
+		} catch (IOException e) {
+			throw new RepositoryException("can not read voiD description: " + this.voidURI + e.getMessage(), e);
+		}
+		
+		this.initialized = true;
+	}
+
+	@Override
+	public void shutDown() throws RepositoryException {
+		// TODO: remove statistics from VOID repository?
+	}
+
+	@Override
 	public RepositoryConnection getConnection() throws RepositoryException {
 		return new VoidRepositoryConnection(this);
 	}	

@@ -26,11 +26,8 @@ import info.aduna.iteration.EmptyIteration;
 import info.aduna.iteration.UnionIteration;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -50,10 +47,12 @@ import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.evaluation.TripleSource;
 //import org.openrdf.query.algebra.evaluation.cursors.DistinctCursor;
 //import org.openrdf.query.algebra.evaluation.cursors.UnionCursor;
 import org.openrdf.query.algebra.evaluation.impl.EvaluationStrategyImpl;
+import org.openrdf.query.algebra.evaluation.iterator.JoinIterator;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 //import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
@@ -63,14 +62,16 @@ import de.uni_koblenz.west.federation.helpers.OperatorTreePrinter;
 import de.uni_koblenz.west.federation.helpers.QueryExecutor;
 import de.uni_koblenz.west.federation.helpers.SparqlPrinter;
 import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.optimizer.rdf.SourceFinder;
+import de.uni_koblenz.west.federation.model.BindJoin;
+import de.uni_koblenz.west.federation.model.HashJoin;
+import de.uni_koblenz.west.federation.model.MappedStatementPattern;
+import de.uni_koblenz.west.federation.model.RemoteQuery;
 
 /**
  * Implementation of the evaluation strategy for querying distributed data
  * sources. This strategy prefers parallel execution of query operators.
  * 
- * A {@link SourceFinder} is used to provide connections to suitable remote
- * repositories. Sesame's {@link TripleSource}s are not applicable, since
+ * Sesame's {@link TripleSource}s are not applicable, since
  * they only allow for matching single statement patterns. Hence, a dummy
  * {@link TripleSource} is provided to the {@link EvaluationStrategyImpl}
  * which demands it in the constructor (in order to have access to the
@@ -87,16 +88,13 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	private static final boolean MULTI_THREADED = true;
 	private static final boolean COLLECT_BGP_PATTERNS = true;
 	
-	private SourceFinder<StatementPattern> finder;
-	private Map<StatementPattern, Set<Graph>> graphMap;
-
 	/**
 	 * Creates a new Evaluation strategy using the supplied source finder.
 	 * 
 	 * @param finder the source finder to use.
 	 * @param vf the value factory to use.
 	 */
-	public FederationEvalStrategy(SourceFinder<StatementPattern> finder, final ValueFactory vf) {
+	public FederationEvalStrategy(final ValueFactory vf) {
 	
 		// use a dummy triple source
 		// it can handle only single triple patterns but no basic graph patterns
@@ -111,11 +109,6 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 				throw new UnsupportedOperationException("Statement retrieval is not supported in federation");
 			}
 		});
-		
-		if (finder == null)
-			throw new IllegalArgumentException("source finder must not be null");
-		
-		this.finder = finder;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -143,22 +136,15 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		
 		return result;
 	}
-
-	/**
-	 * Evaluates the join with the specified set of variable bindings as input.
-	 * 
-	 * @param join
-	 *        The Join to evaluate
-	 * @param bindings
-	 *        The variables bindings to use for evaluating the expression, if
-	 *        applicable.
-	 * @return A cursor over the variable binding sets that match the join.
-	 */
-	@Override
-//	public Cursor<BindingSet> evaluate(Join join, BindingSet bindings) throws StoreException {
+	
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
-			Join join, BindingSet bindings) throws QueryEvaluationException {
-		
+			BindJoin join, BindingSet bindings) throws QueryEvaluationException {
+		return new JoinIterator(this, join, bindings);
+//		throw new UnsupportedOperationException("bind join not supported");
+	}
+	
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			HashJoin join, BindingSet bindings) throws QueryEvaluationException {
 		// eval query if all sub operators are applied on same source
 		// TODO optimize with caching
 		Set<Graph> sources = new SourceCollector().getSources(join);
@@ -170,15 +156,12 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 		// TODO: support different join strategies
 
 		Set<String> resultVars = null;
-//		Cursor<BindingSet> joinCursor = null;
 		CloseableIteration<BindingSet, QueryEvaluationException> joinCursor = null;
 		
-//		List<? extends TupleExpr> joinArgs = join.getArgs();
 		TupleExpr[] joinArgs = {join.getLeftArg(), join.getRightArg()};
 		
 		for (TupleExpr joinArg : joinArgs) {
 			
-//			Cursor<BindingSet> argCursor;
 			CloseableIteration<BindingSet, QueryEvaluationException> argCursor;
 //			if (MULTI_THREADED) {
 //				argCursor = fetchArgResults(joinArg, bindings); 
@@ -225,6 +208,30 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	}
 
 	/**
+	 * Evaluates the join with the specified set of variable bindings as input.
+	 * 
+	 * @param join
+	 *        The Join to evaluate
+	 * @param bindings
+	 *        The variables bindings to use for evaluating the expression, if
+	 *        applicable.
+	 * @return A cursor over the variable binding sets that match the join.
+	 */
+	@Override
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			Join join, BindingSet bindings) throws QueryEvaluationException {
+		
+		if (join instanceof BindJoin) {
+			return evaluate((BindJoin) join, bindings);
+		}
+		if (join instanceof HashJoin) {
+			return evaluate((HashJoin) join, bindings);
+		}
+		
+		throw new IllegalArgumentException("join type not supported: " + join);
+	}
+
+	/**
 	 * Evaluates the statement pattern against the supplied sources with the
 	 * specified set of variable bindings as input.
 	 * 
@@ -240,65 +247,55 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 //	public Cursor<BindingSet> evaluate(StatementPattern sp, BindingSet bindings) throws StoreException {
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(StatementPattern sp, BindingSet bindings) throws QueryEvaluationException {
 
-		Set<Graph> sources = graphMap.get(sp);
-		
-		if (LOGGER.isDebugEnabled())
-			LOGGER.debug("EVAL PATTERN {" + OperatorTreePrinter.print(sp) + "} on sources " + sources);
-		return sendSparqlQuery(sp, sources , bindings);
+		if (sp instanceof MappedStatementPattern) {
+//			Set<Graph> sources = graphMap.get(sp);
+			Set<Graph> sources = ((MappedStatementPattern) sp).getSources();
+			
+			if (LOGGER.isDebugEnabled())
+				LOGGER.debug("EVAL PATTERN {" + OperatorTreePrinter.print(sp) + "} on sources " + sources);
+			return sendSparqlQuery(sp, sources , bindings);
+		}
+		throw new IllegalArgumentException("pattern has no sources");
+
 	}
 	
-	private TupleExpr currentQuery = null;
-	
-	// TODO move source finding from evaluation to sailconnection
 	@Override
-	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(TupleExpr expr, BindingSet bindings)
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			UnaryTupleOperator expr, BindingSet bindings)
 			throws QueryEvaluationException {
-		
-		synchronized (this) {
-		if (currentQuery == null) {
-			currentQuery = expr;
-
-			graphMap = new HashMap<StatementPattern, Set<Graph>>();
-			Set<StatementPattern> patterns = PatternCollector.getPattern(expr);
-			Map<Set<Graph>, List<StatementPattern>> graphSets = finder.findPlanSetsPerSource(patterns);
-			for (Set<Graph> graphSet : graphSets.keySet()) {
-				for (StatementPattern pattern : graphSets.get(graphSet)) {
-					graphMap.put(pattern, graphSet);
-				}
-			}
-		}
-		}
-		
-		
-		try {
+		if (expr instanceof RemoteQuery) {
+			return this.evaluate((RemoteQuery) expr, bindings);
+		} else {
 			return super.evaluate(expr, bindings);
-		} finally {
-			synchronized (this) {
-			if (currentQuery == expr)
-				currentQuery = null;
-			}
 		}
+	}
+	
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(RemoteQuery query, BindingSet bindings) throws QueryEvaluationException {
+		// evaluate query on SPARQL endpoint
+		// 1. pattern group on single source OR
+		// 2. single pattern on multiple sources
+//		return this.evaluate(query.getArg(), bindings);
+		return this.sendSparqlQuery(query.getArg(), query.getSources(), bindings);
 	}
 	
 	// -------------------------------------------------------------------------
 	
-//	private Cursor<BindingSet> sendSparqlQuery(TupleExpr expr, Collection<Repository> sources, BindingSet bindings) {
 	private CloseableIteration<BindingSet, QueryEvaluationException> sendSparqlQuery(TupleExpr expr, Set<Graph> sources, BindingSet bindings) {
 		
 		// check if there are any sources to query
 		if (sources.size() == 0) {
 			LOGGER.warn("Cannot find any source for: " + OperatorTreePrinter.print(expr));
-//			return EmptyCursor.getInstance();
 			return new EmptyIteration<BindingSet, QueryEvaluationException>();
 		}
 		
+//		if (expr instanceof StatementPattern)
+//			LOGGER.error("is statement pattern");
+		
 		// TODO: need to know actual projection and join variables to reduce transmitted data
 		
-//		Cursor<BindingSet> cursor;
 		CloseableIteration<BindingSet, QueryEvaluationException> cursor;
-//		List<Cursor<BindingSet>> cursors = new ArrayList<Cursor<BindingSet>>(sources.size());
 		List<CloseableIteration<BindingSet, QueryEvaluationException>> cursors = new ArrayList<CloseableIteration<BindingSet, QueryEvaluationException>>(sources.size());
-		final String query = "SELECT DISTINCT * WHERE {" + SparqlPrinter.print(expr) + "}";
+		final String query = "SELECT REDUCED * WHERE {" + SparqlPrinter.print(expr) + "}";
 		
 		if (LOGGER.isDebugEnabled())
 			LOGGER.debug("Sending SPARQL query to '" + sources + " with bindings " + bindings + "\n" + query);
@@ -309,6 +306,7 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 			else
 				cursors.add(QueryExecutor.eval(rep.toString(), query, bindings));
 		}
+		
 
 		// create union if multiple sources are involved
 		if (cursors.size() > 1) {
@@ -375,9 +373,11 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 
 		@Override
 		public void meet(StatementPattern pattern) throws RuntimeException {
-			sources.addAll(graphMap.get(pattern));
-//			String[] values = adapter.getPatternConstants(pattern);
-//			sources.addAll(stats.findSources(values[0], values[1], values[2]));
+			if (pattern instanceof MappedStatementPattern) {
+				sources.addAll(((MappedStatementPattern) pattern).getSources());
+			} else {
+				throw new IllegalArgumentException("pattern has no source");
+			}
 		}
 		
 	}

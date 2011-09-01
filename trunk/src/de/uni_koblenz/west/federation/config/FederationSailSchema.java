@@ -34,12 +34,20 @@ public class FederationSailSchema {
 	private static final ValueFactory vf = ValueFactoryImpl.getInstance();
 	
 	/** The SailRepository schema namespace 
-	 * (<tt>http://west.uni-koblenz.de/federation/config/sail#</tt>). */
+	 * (<tt>http://west.uni-koblenz.de/config/federation/sail#</tt>). */
 	public static final String NAMESPACE = "http://west.uni-koblenz.de/config/federation/sail#";
 	
 	public static final URI MEMBER    = vf.createURI(NAMESPACE + "member");
-	public static final URI OPTIMIZER = vf.createURI(NAMESPACE + "optimizer");
-	public static final URI ESTIMATOR = vf.createURI(NAMESPACE + "estimator");
+	public static final URI QUERY_OPT = vf.createURI(NAMESPACE + "queryOptimization");
+	public static final URI OPT_TYPE  = vf.createURI(NAMESPACE + "optimizerType");
+	public static final URI SRC_SELECTION = vf.createURI(NAMESPACE + "sourceSelection");
+	public static final URI SELECTOR_TYPE = vf.createURI(NAMESPACE + "selectorType");
+	public static final URI USE_TYPE_STATS = vf.createURI(NAMESPACE + "useTypeStats");
+	public static final URI GROUP_BY_SAMEAS = vf.createURI(NAMESPACE + "groupBySameAs");
+	public static final URI GROUP_BY_SOURCE = vf.createURI(NAMESPACE + "groupBySource");
+	public static final URI USE_BIND_JOIN = vf.createURI(NAMESPACE + "useBindJoin");
+	public static final URI USE_HASH_JOIN = vf.createURI(NAMESPACE + "useHashJoin");
+	public static final URI ESTIMATOR = vf.createURI(NAMESPACE + "cardEstimator");
 	public static final URI STATISTIC = vf.createURI(NAMESPACE + "statistic");
 	public static final URI VOID_URI  = vf.createURI(NAMESPACE + "voidDescription");
 

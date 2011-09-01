@@ -41,7 +41,9 @@ import java.util.Map;
 //import org.openrdf.cursor.EmptyCursor;
 //import org.openrdf.http.client.TupleQueryClient;
 //import org.openrdf.http.client.connections.HTTPConnectionPool;
+import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryLanguage;
@@ -49,6 +51,7 @@ import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.UnsupportedQueryLanguageException;
 //import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.impl.EmptyBindingSet;
@@ -170,7 +173,8 @@ public final class QueryExecutor {
 			
 			try {
 				TupleQuery tupleQuery = con.prepareTupleQuery(SPARQL, query);
-				return asList(wrapResult(tupleQuery, rep.toString()));
+//				return asList(wrapResult(tupleQuery, rep.toString()));
+				return asList(wrapResult(tupleQuery, rep.toString(), query));
 			} catch (IllegalArgumentException e) {
 				LOGGER.error("not a tuple query:\n" + query, e);
 			} catch (MalformedQueryException e) {
@@ -195,6 +199,45 @@ public final class QueryExecutor {
 		return null;
 	}
 	
+	public static boolean ask(String target, String triplePattern) {
+		String query = "ASK { " + triplePattern + " }";
+		try {
+			try {
+				return prepareBooleanQuery(query, target).evaluate();
+			} catch (QueryEvaluationException e) {  // Sesame 3: StoreException
+				// first check for network connection error
+				Throwable cause = e.getCause();
+				for (; cause != null; cause = cause.getCause()) {
+					if (cause instanceof UnknownHostException) {
+						LOGGER.error("cannot resolve endpoint " + target + ", " + cause);
+						throw new RuntimeException("cannot resolve endpoint " + target, e);
+					}
+					if (cause instanceof ConnectException) {
+						LOGGER.error("cannot connect to " + target + ", " + cause);
+						throw new RuntimeException("cannot connect to " + target, e);
+					}
+					if (cause instanceof IOException) {
+						LOGGER.error("problem with connection to " + target + ", " + cause);
+						throw new RuntimeException("problem with cannot connect to " + target, e);
+					}
+				}
+				LOGGER.error("cannot evaluate query on " + target + ", " + cause, e);
+				throw new RuntimeException("cannot evaluate query on " + target, e);
+//				return new EmptyBindingSet();
+			}
+		} catch (MalformedQueryException e) {
+			LOGGER.error("Malformed query:\n" + query, e.getMessage());
+			throw new IllegalArgumentException("Malformed query:\n" + query, e);
+//		} catch (StoreException e) {
+		} catch (RepositoryException e) {
+			System.out.println("ARGGGHH");
+			LOGGER.error("failed to evaluate query on endpoint: " + target + "\n" + query, e);
+//			return EmptyCursor.getInstance();
+			return false;
+		}
+		
+	}
+	
 	/**
 	 * Evaluates a given SPARQL query on the specified SPARQL endpoint.
 	 * 
@@ -205,16 +248,40 @@ public final class QueryExecutor {
 //	public static Cursor<BindingSet> eval(String endpoint, String query) {
 	public static CloseableIteration<BindingSet, QueryEvaluationException> eval(String endpoint, String query, BindingSet bindings) {
 		try {
-			return wrapResult(prepareTupleQuery(query, endpoint, bindings), endpoint);
+			return wrapResult(prepareTupleQuery(query, endpoint, bindings), endpoint, query);
 		} catch (MalformedQueryException e) {
 			LOGGER.error("Malformed query:\n" + query, e.getMessage());
 			throw new IllegalArgumentException("Malformed query:\n" + query, e);
 //		} catch (StoreException e) {
 		} catch (RepositoryException e) {
-			System.out.println("ARGGGHH");
 			LOGGER.error("failed to evaluate query on endpoint: " + endpoint + "\n" + query, e);
 //			return EmptyCursor.getInstance();
 			return new EmptyIteration<BindingSet, QueryEvaluationException>();
+		}
+	}
+	
+	/**
+	 * Prepares a TupleQuery for a SPARQL endpoint.
+	 */
+	public static BooleanQuery prepareBooleanQuery(String query, String endpoint)
+			throws RepositoryException, MalformedQueryException {
+		
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("query endpoint " + endpoint + ": '" + query.replace("\n", " ") + "'");
+		}
+		
+		try {
+			SPARQLRepository http = httpMap.get(endpoint);
+			if (http == null) {
+				http = new SPARQLRepository(endpoint);
+				httpMap.put(endpoint, http);
+			}
+			
+			return http.getConnection().prepareBooleanQuery(QueryLanguage.SPARQL, query);
+		} catch (RepositoryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw e;
 		}
 	}
 	
@@ -237,7 +304,12 @@ public final class QueryExecutor {
 				httpMap.put(endpoint, http);
 			}
 			
-			return http.getConnection().prepareTupleQuery(QueryLanguage.SPARQL, query, null);
+			TupleQuery tq = http.getConnection().prepareTupleQuery(QueryLanguage.SPARQL, query, null);
+			for (Binding b : bindings) {
+				tq.setBinding(b.getName(), b.getValue());
+			}
+			return tq;
+//			return http.getConnection().prepareTupleQuery(QueryLanguage.SPARQL, query, null);
 		} catch (RepositoryException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -314,28 +386,44 @@ public final class QueryExecutor {
 	 * @target the target of the evaluation. (for debugging. TODO change to getDataset())
 	 */
 //	private static Cursor<BindingSet> wrapResult(TupleQuery tupleQuery, final String target) {
-	private static CloseableIteration<BindingSet, QueryEvaluationException> wrapResult(final TupleQuery tupleQuery, final String target) {
+	private static CloseableIteration<BindingSet, QueryEvaluationException> wrapResult(final TupleQuery tupleQuery, final String target, final String query) {
 		
 		// Use result wrapper to catch (HTTP) communication errors.
 		// next result will be null if an error occurs.
 //		return new DelegatingCursor<BindingSet>(tupleQuery.evaluate()) {
 		return new LookAheadIteration<BindingSet, QueryEvaluationException>() {
 
-			private TupleQuery query = tupleQuery;
 			private TupleQueryResult result;
+			
+			private BindingSet last;
 
 			@Override
-//			public BindingSet next() throws StoreException {
-			public BindingSet getNextElement() {
+//			public BindingSet next() throws StoreException { // Sesame 3
+			public BindingSet getNextElement() { // Sesame 2
 				try {
 //					return super.next();
 					if (result == null)
 						result = tupleQuery.evaluate();
-					if (result.hasNext())
-						return result.next();
+					if (result.hasNext()) {
+						last = result.next();
+						return last;
+//						return result.next();						
+					}
 					else
 						return null;
 				} catch (QueryEvaluationException e) {  // Sesame 3: StoreException
+					
+					// print information about error.
+					StringBuffer causes = new StringBuffer();
+					Throwable err = e;
+					while (err != null) {
+						causes.append(err.getClass().getName()).append(": ").append(err.getMessage()).append("\n");
+						err = err.getCause();
+					}
+					causes.append(query);
+					
+					LOGGER.error("Evaluation error: last result: " + last, e);
+					
 					// first check for network connection error
 					Throwable cause = e.getCause();
 					for (; cause != null; cause = cause.getCause()) {
@@ -352,7 +440,7 @@ public final class QueryExecutor {
 							throw new RuntimeException("problem with cannot connect to " + target, e);
 						}
 					}
-					LOGGER.error("cannot evaluate query on " + target + ", " + cause, e);
+					LOGGER.error("cannot evaluate query on " + target + ", " + causes.toString(), e);
 					throw new RuntimeException("cannot evaluate query on " + target, e);
 //					return new EmptyBindingSet();
 				}

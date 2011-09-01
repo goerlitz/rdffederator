@@ -1,0 +1,43 @@
+#!/usr/bin/awk -f
+BEGIN {}
+{
+  x=$1; # subject
+  p=$2; # predicate
+
+  # build id lookup table for predicates
+  if (!(p in p_list))
+    p_list[p] = count++;
+
+  # concat all occurring predicate ids for subject/object
+  arr[x] = (x in arr) ? arr[x]","p_list[p] : p_list[p];
+}
+END {
+  count=0;
+
+  # process all stored subjects/objects
+  for (no in arr) {
+
+    count++;
+
+    # split concatenated predicate ids
+    split(arr[no], id_list, ",");
+
+    # remove duplicates from id list
+    for (i in id_list)
+      occ[id_list[i]]++;
+
+    # increase counter for each predicate id
+    for (i in occ)
+      stat[i]++;
+
+    # reset occurrence index for next subject/object
+    delete occ;
+  }
+
+  # print all predicates with occurrence count of subject/object
+  for (no in p_list)
+    print no, stat[p_list[no]];
+
+  # print overall number of distinct subjects/objects
+  print "x_count", count;
+}

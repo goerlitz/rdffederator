@@ -43,5 +43,10 @@ public class Graph {
 	public String toString() {
 		return this.name;
 	}
+	
+	public String getNamespaceURL() {
+		// TODO: implement proper hamespace handling
+		return this.name.replaceFirst("http://lodse.west.uni-koblenz.de:8080/openrdf-sesame/repositories/", "west:");
+	}
 
 }

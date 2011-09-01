@@ -1,6 +1,6 @@
 /*
  * This file is part of RDF Federator.
- * Copyright 2010 Olaf Goerlitz
+ * Copyright 2011 Olaf Goerlitz
  * 
  * RDF Federator is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,72 +30,62 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-//import org.openrdf.cursor.Cursor;
+import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
-//import org.openrdf.query.EvaluationException;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
-//import org.openrdf.store.StoreException;
 
 /**
- * Hash join on two cursors.
+ * Hash join on two result sets.
+ * First the bindings of the left join argument are put in a hash table.
+ * Then the bindings of the right argument are matched.
  * 
  * @author Olaf Goerlitz
  */
-//public class HashJoinCursor implements Cursor<BindingSet> {
 public class HashJoinCursor extends LookAheadIteration<BindingSet, QueryEvaluationException> {
 	
-//	protected final Cursor<BindingSet> leftIter;
-//	protected final Cursor<BindingSet> rightIter;
 	protected final CloseableIteration<BindingSet, QueryEvaluationException> leftIter;
 	protected final CloseableIteration<BindingSet, QueryEvaluationException> rightIter;
-	protected final String joinAttr;
+	protected final List<String> joinBindingNames;
 	
-	Deque<BindingSet> joinedBindings = new ArrayDeque<BindingSet>();
-	protected HashMap<String, List<BindingSet>> hashMap;
+	protected Deque<BindingSet> joinedBindings = new ArrayDeque<BindingSet>();
+	protected HashMap<List<Binding>, List<BindingSet>> joinHashMap;
 	
 	private volatile boolean closed;
 	
-//	public HashJoinCursor(Cursor<BindingSet> leftIter, Cursor<BindingSet> rightIter, Set<String> joinVars)
-//			throws EvaluationException {
 	public HashJoinCursor(CloseableIteration<BindingSet, QueryEvaluationException> leftIter, CloseableIteration<BindingSet, QueryEvaluationException> rightIter, Set<String> joinVars)
 		throws QueryEvaluationException {
 
-		if (joinVars.size() == 0)
-			throw new UnsupportedOperationException("cross products not supported");
-		if (joinVars.size() > 1)
-			throw new UnsupportedOperationException("multiple join vars not supported");
-		
 		this.leftIter = leftIter;
 		this.rightIter = rightIter;
-		this.joinAttr = joinVars.iterator().next();
+		this.joinBindingNames = new ArrayList<String>(joinVars);
 	}
 	
 	private void buildHashMap() {
 		
 		try {
-			this.hashMap = new HashMap<String, List<BindingSet>>();
-			BindingSet next;
-			String joinValue;
-			
-			// TODO: handle cross product and multiple join variables
+			this.joinHashMap = new HashMap<List<Binding>, List<BindingSet>>();
 			
 			// populate hash map with left side results
-//			while (!closed && (next = leftIter.next()) != null) {
 			while (!closed && leftIter.hasNext()) {
-				next = leftIter.next();
+				BindingSet next = leftIter.next();
 				
-				joinValue = next.getBinding(joinAttr).getValue().stringValue();
-				List<BindingSet> bindings  = hashMap.get(joinValue);
+				// compile join bindings of current binding set
+				// (cross product will result in empty bindings list)
+				List<Binding> joinBindings = new ArrayList<Binding>();
+				for (String bindingName : this.joinBindingNames) {
+					joinBindings.add(next.getBinding(bindingName));
+				}
+
+				// add join bindings to hash map
+				List<BindingSet> bindings = joinHashMap.get(joinBindings);
 				if (bindings == null) {
 					bindings = new ArrayList<BindingSet>();
-					hashMap.put(joinValue, bindings);
+					joinHashMap.put(joinBindings, bindings);
 				}
 				bindings.add(next);
 			}
-//		} catch (StoreException e) {
 		} catch (QueryEvaluationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -104,7 +94,6 @@ public class HashJoinCursor extends LookAheadIteration<BindingSet, QueryEvaluati
 	 * Stop the evaluation and close any open cursor.
 	 */
 	@Override
-//	public void close() throws StoreException {
 	protected void handleClose() throws QueryEvaluationException {
 		closed = true;
 
@@ -114,37 +103,39 @@ public class HashJoinCursor extends LookAheadIteration<BindingSet, QueryEvaluati
 	}
 
 	@Override
-//	public BindingSet next() throws StoreException {
 	protected BindingSet getNextElement() throws QueryEvaluationException {
 		
-		if (hashMap == null)
+		if (joinHashMap == null)
 			buildHashMap();
 		
 		// return next joined binding if available
 		if (joinedBindings.size() != 0)
 			return joinedBindings.remove();
 		
+		if (!rightIter.hasNext())
+			return null;
+		
 		// or generate next join bindings
 		// get next original binding set until join partner is found
-		// TODO: handle cross product and multiple join variables
 		List<BindingSet> bindings = null;
 		BindingSet next = null;
+
 		while (bindings == null) {
-			
-			// Sesame 3:
-//			if ((next = rightIter.next()) == null)
-//				return null;
-			
-			// Sesame 2:
-			if (rightIter.hasNext())
-				next = rightIter.next();
-			else
+
+			if (!rightIter.hasNext())
 				return null;
+
+			next = rightIter.next();
 			
-			// get the binding's join value and matching left side bindings
-			String joinValue = next.getBinding(joinAttr).getValue().stringValue();
-			bindings = hashMap.get(joinValue);
-		}
+			// compile join bindings of current binding set
+			// (cross product will result in empty bindings list)
+			List<Binding> joinBindings = new ArrayList<Binding>();
+			for (String bindingName : this.joinBindingNames) {
+				joinBindings.add(next.getBinding(bindingName));
+			}
+			
+			bindings = joinHashMap.get(joinBindings);
+		}			
 		
 		// create all join combinations
 		for (BindingSet binding : bindings) {
