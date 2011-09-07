@@ -1,9 +1,9 @@
 # !/bin/sh
-# generates void statistics from ntriple files.
+# generates DARQ service descriptions from ntriple files.
+# ATTENTION: absolute URIs containing white spaces are not handled correctly
 
 # check script arguments
-# if [ $# = 0 ]; then
-if test $# -lt 2; then
+if [ $# -lt 2 ]; then
     echo "USAGE: ${0##*/} RDF_FILE.nt DARQ_FILE.n3";
     exit;
 fi
@@ -37,8 +37,8 @@ start=$(date +%s)
 echo "counting triples and properties"
 props=($(awk '{ arr[$2]++ } END { OFS="\t"; for(no in arr) { print arr[no], no } }' $ntriples | sort -k2))
 
-#echo "counting types and entities"
-#types=($(grep '#type' $ntriples | awk '{ arr[$3]++ } END { OFS="\t"; for(no in arr) { print arr[no], no } }' | sort -k2))
+echo "counting types and entities"
+types=($(grep '#type' $ntriples | awk '{ arr[$3]++ } END { OFS="\t"; for(no in arr) { print arr[no], no } }' | sort -k2))
 
 #echo "counting distinct objects"
 #disto=($(./count_predicate_distinct_o $ntriples | sort))
@@ -48,7 +48,7 @@ props=($(awk '{ arr[$2]++ } END { OFS="\t"; for(no in arr) { print arr[no], no }
 
 # collect numbers of general statistics
 let "p_count = ${#props[*]} / 2"
-#let "t_count = ${#types[*]} / 2"
+let "t_count = ${#types[*]} / 2"
 #let "s_count = ${dists[$p_count*2+1]}"
 #let "o_count = ${disto[$p_count*2+1]}"
 for (( i = 0 ;  i < $p_count;  i++ )); do let "triple_count += ${props[$i*2]}"; done
@@ -56,22 +56,29 @@ for (( i = 0 ;  i < $p_count;  i++ )); do let "triple_count += ${props[$i*2]}"; 
 # print general statistics
 echo >>$voidfile -e "\tsd:totalTriples \"$triple_count\" ;"
 
+# create DARQ regex for all types
+#regex="REGEX(STR(?object),'${types[1]}')"
+for (( i = 0 ;  i < $t_count;  i++ )); do
+  if [ "$regex" != "" ]; then regex=$regex" || "; fi
+  type=${types[$i*2+1]}
+  type=${type#<};type=${type%>} # remove angle brackets
+  regex=$regex"REGEX(STR(?object),'$type')"
+done
+
+#echo "REGEX: $regex"
+
 # print predicate statistics
 for (( i = 0 ;  i < $p_count;  i++ )); do
     echo >>$voidfile -e "\t"`[ $i = 0 ] && echo "sd:capability [" || echo "] , ["`
     echo >>$voidfile -e "\t\tsd:predicate ${props[$i*2+1]} ;"
     echo >>$voidfile -e "\t\tsd:triples \"${props[$i*2]}\" ;"
-    echo >>$voidfile -e "\t\tsd:sofilter \"\" ."
+    if [ "${props[$i*2+1]}" == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" ]; then
+        echo >>$voidfile -e "\t\tsd:sofilter \"$regex\"^^<http://www.w3.org/2001/XMLSchema#string> ;"
+    else
+        echo >>$voidfile -e "\t\tsd:sofilter \"\" ;"
+    fi
 done
-echo >>$voidfile -e "\t] ;"
-
-## print type statistics
-#for (( i = 0 ;  i < $t_count;  i++ )); do
-#    echo >>$voidfile -e "\t"`[ $i = 0 ] && echo "void:classPartition [" || echo "] , ["`
-#    echo >>$voidfile -e "\t\tvoid:class ${types[$i*2+1]} ;"
-#    echo >>$voidfile -e "\t\tvoid:entities \"${types[$i*2]}\" ;"
-#done
-#echo >>$voidfile -e "\t] ."
+echo >>$voidfile -e "\t] ."
 
 let "time=$(date +%s)-$start"
 echo "time taken: $time seconds"
