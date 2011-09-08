@@ -1,15 +1,13 @@
 # !/bin/sh
-# generates DARQ service descriptions from ntriple files.
-# ATTENTION: absolute URIs containing white spaces are not handled correctly
+#
+# Generator for DARQ service descriptions.
+# Input:  RDF graph in N-Triples format (one triple per line).
+# Output: DARQ service description in N3 format.
+#####################################################################
 
-# check script arguments
-if [ $# -lt 2 ]; then
-    echo "USAGE: ${0##*/} RDF_FILE.nt DARQ_FILE.n3";
-    exit;
-fi
-
+# use handy variable names for arguments
 ntriples=$1;
-voidfile=$2;
+statfile=$2;
 
 # check existence of input file
 if [ ! -e $ntriples ]; then
@@ -18,67 +16,84 @@ if [ ! -e $ntriples ]; then
 fi
 
 # check existence of output file, do not overwrite
-if [ -e $voidfile ]; then
-    echo "ERROR: VOID output file '$voidfile' already exist";
+if [ -e $statfile ]; then
+    echo "ERROR: output file '$statfile' already exist";
     # TODO: ask for permission to overwrite
     exit;
 fi
 
-# generate void output
-echo  >$voidfile "@prefix sd: <http://darq.sf.net/dose/0.1#> ."
-echo >>$voidfile ""
-echo >>$voidfile "[] a sd:Service ;"
-
-# define arrays for the properties, types, and distinct subjects/objects
-declare -a props types dists disto
-
 start=$(date +%s)
 
-echo "counting triples and properties"
-props=($(awk '{ arr[$2]++ } END { OFS="\t"; for(no in arr) { print arr[no], no } }' $ntriples | sort -k2))
+echo "counting triples, properties, and types"
+#declare -a map_pred_type
 
-echo "counting types and entities"
-types=($(grep '#type' $ntriples | awk '{ arr[$3]++ } END { OFS="\t"; for(no in arr) { print arr[no], no } }' | sort -k2))
+# count number of occurrences of predicates and types in input file
+# ignore blank and comment lines (sed is faster than awk)
+#map_pred_type=($(cat $1 | awk 'NF && ($1 !~ "^#") {
+map_pred_type=($(cat $ntriples | sed '/^ *#/d;/^ *$/d' | awk '{
+  s=$1; p=$2; o=$3
 
-#echo "counting distinct objects"
-#disto=($(./count_predicate_distinct_o $ntriples | sort))
+  # check URIs (regular splitting fails for URIs with whitespace)
+  if ( ! (p ~ /^</ && p ~ />$/) ) {  # slow, but faster than /^<.*>$/
+    # do splitting again taking spaces in URIs into account
+    col=0;
+    s=$++col; while (s ~ /^</ && ! (s ~ />$/)) s=s" "$++col
+    p=$++col; while (p ~ /^</ && ! (p ~ />$/)) p=p" "$++col
+    o=$++col; for (i=++col;i<=NF-1;i++) o=o" "$i
+  }
 
-#echo "counting distinct subjects"
-#dists=($(./count_predicate_distinct_s $ntriples | sort))
+  # count predicates and types
+  pred[p]++
+  if (p == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>") type[o]++
+}
+END {
+  OFS="\t";
+  # print count and URI of predicate/type with prefix 'P:' or 'T:'
+  for (no in pred) print pred[no],"P:"no
+  for (no in type) print type[no],"T:"no
+}' | sort -k2))
 
-# collect numbers of general statistics
-let "p_count = ${#props[*]} / 2"
-let "t_count = ${#types[*]} / 2"
-#let "s_count = ${dists[$p_count*2+1]}"
-#let "o_count = ${disto[$p_count*2+1]}"
-for (( i = 0 ;  i < $p_count;  i++ )); do let "triple_count += ${props[$i*2]}"; done
-
-# print general statistics
-echo >>$voidfile -e "\tsd:totalTriples \"$triple_count\" ;"
+# count triples, predicates, and types
+let "map_count = ${#map_pred_type[*]} / 2"
+for (( i = 0 ;  i < $map_count;  i++ )); do
+  value=${map_pred_type[$i*2+1]}
+  if [ ${value%%<*} == "P:" ]; then
+    let "pred_count++"
+    let "triple_count += ${map_pred_type[$i*2]}"
+  else
+    let "type_count++"
+  fi
+done
 
 # create DARQ regex for all types
-#regex="REGEX(STR(?object),'${types[1]}')"
-for (( i = 0 ;  i < $t_count;  i++ )); do
+# regex="REGEX(STR(?object),'${types[1]}')"
+for (( i = $pred_count ;  i < $map_count;  i++ )); do
   if [ "$regex" != "" ]; then regex=$regex" || "; fi
-  type=${types[$i*2+1]}
-  type=${type#<};type=${type%>} # remove angle brackets
+  type=${map_pred_type[$i*2+1]}
+  type=${type#T:<};type=${type%>} # remove prefix and angle brackets
   regex=$regex"REGEX(STR(?object),'$type')"
 done
 
-#echo "REGEX: $regex"
+# print header
+echo  >$statfile "@prefix sd: <http://darq.sf.net/dose/0.1#> ."
+echo >>$statfile ""
+echo >>$statfile "[] a sd:Service ;"
 
-# print predicate statistics
-for (( i = 0 ;  i < $p_count;  i++ )); do
-    echo >>$voidfile -e "\t"`[ $i = 0 ] && echo "sd:capability [" || echo "] , ["`
-    echo >>$voidfile -e "\t\tsd:predicate ${props[$i*2+1]} ;"
-    echo >>$voidfile -e "\t\tsd:triples \"${props[$i*2]}\" ;"
-    if [ "${props[$i*2+1]}" == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" ]; then
-        echo >>$voidfile -e "\t\tsd:sofilter \"$regex\"^^<http://www.w3.org/2001/XMLSchema#string> ;"
-    else
-        echo >>$voidfile -e "\t\tsd:sofilter \"\" ;"
-    fi
+# print statistics
+echo >>$statfile -e "\tsd:totalTriples \"$triple_count\" ;"
+for (( i = 0 ;  i < $pred_count;  i++ )); do
+  pred=${map_pred_type[$i*2+1]}
+  pred=${pred#P:}; # remove prefix
+  echo >>$statfile -e "\t"`[ $i = 0 ] && echo "sd:capability [" || echo "] , ["`
+  echo >>$statfile -e "\t\tsd:predicate $pred ;"
+  echo >>$statfile -e "\t\tsd:triples \"${map_pred_type[$i*2]}\" ;"
+  if [ "$pred" == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" ]; then
+    echo >>$statfile -e "\t\tsd:sofilter \"$regex\"^^<http://www.w3.org/2001/XMLSchema#string> ;"
+  else
+    echo >>$statfile -e "\t\tsd:sofilter \"\" ;"
+  fi
 done
-echo >>$voidfile -e "\t] ."
+echo >>$statfile -e "\t] ."
 
 let "time=$(date +%s)-$start"
 echo "time taken: $time seconds"
