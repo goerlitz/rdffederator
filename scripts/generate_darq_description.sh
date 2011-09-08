@@ -127,8 +127,8 @@ for (( i = 0 ;  i < $pred_count;  i++ )); do
   else
     sel_s=$(echo "1/${rest%:*}" | bc -l)  # first value of y:z
     sel_o=$(echo "1/${rest#*:}" | bc -l)  # rest of y:z
-    echo >>$statfile -e "\t\tsd:subjectSelectivity $sel_s ;"
-    echo >>$statfile -e "\t\tsd:objectSelectivity $sel_o ;"
+    echo >>$statfile -e "\t\tsd:subjectSelectivity \"$sel_s\"^^<http://www.w3.org/2001/XMLSchema#double> ;"
+    echo >>$statfile -e "\t\tsd:objectSelectivity \"$sel_o\"^^<http://www.w3.org/2001/XMLSchema#double> ;"
     echo >>$statfile -e "\t\tsd:sofilter \"\" ;"
   fi
 done
