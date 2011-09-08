@@ -62,8 +62,6 @@ declare -a map_pred_type=($(cat $ntriples | sed '/^ *#/d;/^ *$/d' | awk '{
   arr_ps[s] = (s in arr_ps) ? arr_ps[s]","p_list[p] : p_list[p];
 
 } END {
-#  OFS=""; for (no in pred) print "DEBUG: ",pred[no]," -> P:"no >"/dev/stderr"  # DEBUGGING
-#  for (no in arr_po) print "DEBUG: ",no," -> "arr_po[no] >"/dev/stderr"  # DEBUGGING
 
   # count subjects per predicate
   for (no in arr_ps) {
@@ -79,18 +77,13 @@ declare -a map_pred_type=($(cat $ntriples | sed '/^ *#/d;/^ *$/d' | awk '{
     for (i in occ) o_stat[i]++;            # increase counter for each predicate id
     delete occ;                            # reset occurrence index for next subject
   }
-  # print all predicates with occurrence count of object
-  for (no in pred) print "DEBUG: ",no," - ",pred[no],":",s_stat[p_list[no]]":",o_stat[p_list[no]] >"/dev/stderr"  # DEBUGGING
 
   OFS="\t";
-  # print count and URI of predicate/type with prefix 'P:' or 'T:'
-#  for (no in pred) print pred[no],"P:"no
+  # print counts and URI of predicate/type with prefix 'P:' or 'T:'
   for (no in pred) print pred[no]":"s_stat[p_list[no]]":"o_stat[p_list[no]],"P:"no
   for (no in type) print type[no],"T:"no
 }' | sort -k2))
 unset IFS  # restore default field seperators (' \t \n')
-#echo ${#map_pred_type[*]} " elements"
-#for (( i=0 ;  i<${#map_pred_type[*]} ;  i++ )); do echo "KEY=${map_pred_type[i]}, VAL=${map_pred_type[++i]}"; done
 
 # count triples, predicates, and types
 let "map_count = ${#map_pred_type[*]} / 2"
@@ -123,24 +116,19 @@ echo >>$statfile "[] a sd:Service ;"
 echo >>$statfile -e "\tsd:totalTriples \"$triple_count\" ;"
 for (( i = 0 ;  i < $pred_count;  i++ )); do
   pred=${map_pred_type[$i*2+1]}
-  trpl=${map_pred_type[$i*2]}
   pred=${pred#P:}; # remove prefix
-  rest=${trpl#*:}  # rest of x:y:z
-  trpl=${trpl%%:*} # first value of x:y:z
-#  dsts=${rest%:*}  # first value of y:z
-#  dsto=${rest#*:}  # rest of y:z
-#  let "dsts = ${rest%:*} / $trpl"  # first value of y:z
-#  let "dsto = ${rest#*:} / $trpl"  # rest of y:z
-  dsts=$(echo "${rest%:*}/$trpl" | bc -l)  # first value of y:z
-  dsto=$(echo "${rest#*:}/$trpl" | bc -l)  # rest of y:z
+  vals=${map_pred_type[$i*2]}
+  rest=${vals#*:}; trpl=${vals%%:*};  # split counts for triples:subjects:objects
   echo >>$statfile -e "\t"`[ $i = 0 ] && echo "sd:capability [" || echo "] , ["`
   echo >>$statfile -e "\t\tsd:predicate $pred ;"
   echo >>$statfile -e "\t\tsd:triples \"$trpl\" ;"
-  echo >>$statfile -e "\t\tsd:subjectSelectivity $dsts ;"
-  echo >>$statfile -e "\t\tsd:objectSelectivity $dsto ;"
   if [ "$pred" == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" ]; then
     echo >>$statfile -e "\t\tsd:sofilter \"$regex\"^^<http://www.w3.org/2001/XMLSchema#string> ;"
   else
+    sel_s=$(echo "1/${rest%:*}" | bc -l)  # first value of y:z
+    sel_o=$(echo "1/${rest#*:}" | bc -l)  # rest of y:z
+    echo >>$statfile -e "\t\tsd:subjectSelectivity $sel_s ;"
+    echo >>$statfile -e "\t\tsd:objectSelectivity $sel_o ;"
     echo >>$statfile -e "\t\tsd:sofilter \"\" ;"
   fi
 done
