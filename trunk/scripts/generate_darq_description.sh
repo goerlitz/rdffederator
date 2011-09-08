@@ -51,12 +51,41 @@ declare -a map_pred_type=($(cat $ntriples | sed '/^ *#/d;/^ *$/d' | awk '{
   # count predicates and types
   pred[p]++
   if (p == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>") type[o]++
+
+  # build id lookup table for predicates
+  if (!(p in p_list)) p_list[p] = count++
+
+  # concat all occurring predicate ids for objects
+  arr_po[o] = (o in arr_po) ? arr_po[o]","p_list[p] : p_list[p];
+
+  # concat all occurring predicate ids for objects
+  arr_ps[s] = (s in arr_ps) ? arr_ps[s]","p_list[p] : p_list[p];
+
 } END {
 #  OFS=""; for (no in pred) print "DEBUG: ",pred[no]," -> P:"no >"/dev/stderr"  # DEBUGGING
+#  for (no in arr_po) print "DEBUG: ",no," -> "arr_po[no] >"/dev/stderr"  # DEBUGGING
+
+  # count subjects per predicate
+  for (no in arr_ps) {
+    split(arr_ps[no], id_list, ",");       # split concatenated predicate ids
+    for (i in id_list) occ[id_list[i]]++;  # remove duplicates from id list
+    for (i in occ) s_stat[i]++;            # increase counter for each predicate id
+    delete occ;                            # reset occurrence index for next object
+  }
+  # count objects per predicate
+  for (no in arr_po) {
+    split(arr_po[no], id_list, ",");       # split concatenated predicate ids
+    for (i in id_list) occ[id_list[i]]++;  # remove duplicates from id list
+    for (i in occ) o_stat[i]++;            # increase counter for each predicate id
+    delete occ;                            # reset occurrence index for next subject
+  }
+  # print all predicates with occurrence count of object
+  for (no in pred) print "DEBUG: ",no," - ",pred[no],":",s_stat[p_list[no]]":",o_stat[p_list[no]] >"/dev/stderr"  # DEBUGGING
 
   OFS="\t";
   # print count and URI of predicate/type with prefix 'P:' or 'T:'
-  for (no in pred) print pred[no],"P:"no
+#  for (no in pred) print pred[no],"P:"no
+  for (no in pred) print pred[no]":"s_stat[p_list[no]]":"o_stat[p_list[no]],"P:"no
   for (no in type) print type[no],"T:"no
 }' | sort -k2))
 unset IFS  # restore default field seperators (' \t \n')
@@ -67,9 +96,11 @@ unset IFS  # restore default field seperators (' \t \n')
 let "map_count = ${#map_pred_type[*]} / 2"
 for (( i = 0 ;  i < $map_count;  i++ )); do
   value=${map_pred_type[$i*2+1]}
+  tripl=${map_pred_type[$i*2]}
+  tripl=${tripl%%:*} # first value of x:y:z
   if [ ${value%%<*} == "P:" ]; then
     let "pred_count++"
-    let "triple_count += ${map_pred_type[$i*2]}"
+    let "triple_count += $tripl"
   else
     let "type_count++"
   fi
@@ -92,10 +123,21 @@ echo >>$statfile "[] a sd:Service ;"
 echo >>$statfile -e "\tsd:totalTriples \"$triple_count\" ;"
 for (( i = 0 ;  i < $pred_count;  i++ )); do
   pred=${map_pred_type[$i*2+1]}
+  trpl=${map_pred_type[$i*2]}
   pred=${pred#P:}; # remove prefix
+  rest=${trpl#*:}  # rest of x:y:z
+  trpl=${trpl%%:*} # first value of x:y:z
+#  dsts=${rest%:*}  # first value of y:z
+#  dsto=${rest#*:}  # rest of y:z
+#  let "dsts = ${rest%:*} / $trpl"  # first value of y:z
+#  let "dsto = ${rest#*:} / $trpl"  # rest of y:z
+  dsts=$(echo "${rest%:*}/$trpl" | bc -l)  # first value of y:z
+  dsto=$(echo "${rest#*:}/$trpl" | bc -l)  # rest of y:z
   echo >>$statfile -e "\t"`[ $i = 0 ] && echo "sd:capability [" || echo "] , ["`
   echo >>$statfile -e "\t\tsd:predicate $pred ;"
-  echo >>$statfile -e "\t\tsd:triples \"${map_pred_type[$i*2]}\" ;"
+  echo >>$statfile -e "\t\tsd:triples \"$trpl\" ;"
+  echo >>$statfile -e "\t\tsd:subjectSelectivity $dsts ;"
+  echo >>$statfile -e "\t\tsd:objectSelectivity $dsto ;"
   if [ "$pred" == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" ]; then
     echo >>$statfile -e "\t\tsd:sofilter \"$regex\"^^<http://www.w3.org/2001/XMLSchema#string> ;"
   else
