@@ -5,11 +5,13 @@
 # Input:  RDF graph in N-Triples format (one triple per line).
 # Output: DARQ service description in N3 format.
 #
-# Features: correct handling of URIs containing whitespaces
-#           ignores blank lines and comment lines starting with '#'
+# Due to limited RDF parsing capabilities this script requires well
+# formed N-Triple input files with one triple per line. Nevertheless,
+# the script ignores blank lines and comment lines starting with '#'.
+# Moreover, URIs containing whitespaces are handled correctly.
 #
 # Author: goerlitz@uni-koblenz.de
-#####################################################################
+##########################################################################
 
 # use handy variable names for arguments
 ntriples=$1;
@@ -108,7 +110,8 @@ for (( i = $pred_count ;  i < $map_count;  i++ )); do
 done
 
 # print header
-echo  >$statfile "@prefix sd: <http://darq.sf.net/dose/0.1#> ."
+echo  >$statfile "@prefix sd:  <http://darq.sf.net/dose/0.1#> ."
+echo >>$statfile "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> ."
 echo >>$statfile ""
 echo >>$statfile "[] a sd:Service ;"
 
@@ -118,17 +121,17 @@ for (( i = 0 ;  i < $pred_count;  i++ )); do
   pred=${map_pred_type[$i*2+1]}
   pred=${pred#P:}; # remove prefix
   vals=${map_pred_type[$i*2]}
-  rest=${vals#*:}; trpl=${vals%%:*};  # split counts for triples:subjects:objects
+  rest=${vals#*:}; trpl=${vals%%:*};  # split triples:subjects:objects counts
   echo >>$statfile -e "\t"`[ $i = 0 ] && echo "sd:capability [" || echo "] , ["`
   echo >>$statfile -e "\t\tsd:predicate $pred ;"
   echo >>$statfile -e "\t\tsd:triples \"$trpl\" ;"
   if [ "$pred" == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" ]; then
-    echo >>$statfile -e "\t\tsd:sofilter \"$regex\"^^<http://www.w3.org/2001/XMLSchema#string> ;"
+    echo >>$statfile -e "\t\tsd:sofilter \"$regex\"^^xsd:string ;"
   else
     sel_s=$(echo "1/${rest%:*}" | bc -l)  # first value of y:z
     sel_o=$(echo "1/${rest#*:}" | bc -l)  # rest of y:z
-    echo >>$statfile -e "\t\tsd:subjectSelectivity \"$sel_s\"^^<http://www.w3.org/2001/XMLSchema#double> ;"
-    echo >>$statfile -e "\t\tsd:objectSelectivity \"$sel_o\"^^<http://www.w3.org/2001/XMLSchema#double> ;"
+    echo >>$statfile -e "\t\tsd:subjectSelectivity \"$sel_s\"^^xsd:double ;"
+    echo >>$statfile -e "\t\tsd:objectSelectivity \"$sel_o\"^^xsd:double ;"
     echo >>$statfile -e "\t\tsd:sofilter \"\" ;"
   fi
 done
