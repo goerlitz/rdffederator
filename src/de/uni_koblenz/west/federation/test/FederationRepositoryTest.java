@@ -47,14 +47,21 @@ public class FederationRepositoryTest {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FederationRepositoryTest.class);
 	
-	private static final String CONFIG = "setup/fed-test.properties";
+	private static final String CONFIG = "eval/federation-test.properties";
 	
 	private static Repository REPOSITORY;
 	private static Iterator<Query> QUERIES;
+	private static String configFile;
 	
 	private String query;
 	
 	public static void main(String[] args) {
+		if (args.length == 0) {
+			String className = FederationRepositoryTest.class.getName();
+			System.out.println("USAGE: java " + className + " <CONFIG_FILE>");
+			System.exit(1);
+		}
+		configFile = args[0];
 		setUp();
 		new FederationRepositoryTest().testQueries();
 	}
@@ -62,7 +69,9 @@ public class FederationRepositoryTest {
     @BeforeClass
     public static void setUp() {
 		try {
-			Configuration config = Configuration.load(CONFIG);
+			if (configFile == null)
+				configFile = CONFIG;
+			Configuration config = Configuration.load(configFile);
 			REPOSITORY = config.createRepository();
 			QUERIES = config.getQueryIterator();
 		} catch (IOException e) {
