@@ -1,9 +1,0 @@
-PREFIX geonames:    <http://www.geonames.org/ontology#>
-PREFIX foaf:        <http://xmlns.com/foaf/0.1/>
-
-SELECT ?name ?location ?news WHERE {
-   ?artist foaf:name ?name .
-   ?artist foaf:based_near ?location .
-   ?location geonames:parentFeature ?germany .
-   ?germany geonames:name 'Federal Republic of Germany' 
-}

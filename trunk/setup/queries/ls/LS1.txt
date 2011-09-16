@@ -1,8 +1,0 @@
-PREFIX drugbank: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/>
-PREFIX dbpo-drug:  <http://dbpedia.org/ontology/drug/>
-
-SELECT ?drug ?melt WHERE {
-   { ?drug drugbank:meltingPoint ?melt . }
-  UNION
-   { ?drug dbpo-drug:meltingPoint ?melt . }
-}
