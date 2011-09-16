@@ -40,10 +40,97 @@ echo "counting types and entities"
 types=($(grep '#type' $ntriples | awk '{ arr[$3]++ } END { OFS="\t"; for(no in arr) { print arr[no], no } }' | sort -k2))
 
 echo "counting distinct objects"
-disto=($(./count_predicate_distinct_o $ntriples | sort))
+#disto=($(./count_predicate_distinct_o $ntriples | sort))
+disto=($(awk '
+{
+  p=$2;
+  FS="[ ]";
+  x=$3;
+  for (i=4;i<=NF-1;i++)
+    x=x" "$i;
+
+  # build id lookup table for predicates
+  if (!(p in p_list))
+    p_list[p] = count++;
+
+  # concat all occurring predicate ids
+  arr[x] = (x in arr) ? arr[x]","p_list[p] : p_list[p];
+}
+END {
+  count=0;
+
+  # process all stored subjects/objects
+  for (no in arr) {
+
+    count++;
+
+    # split concatenated predicate ids
+    split(arr[no], id_list, ",");
+
+    # remove duplicates from id list
+    for (i in id_list)
+      occ[id_list[i]]++;
+
+    # increase counter for each predicate id
+    for (i in occ)
+      stat[i]++;
+
+    # reset occurrence index for next subject/object
+    delete occ;
+  }
+
+  # print all predicates with occurrence count of subject/object
+  for (no in p_list)
+    print no, stat[p_list[no]];
+
+  # print overall number of distinct subjects/objects
+  print "x_count", count;
+}' $ntriples | sort))
 
 echo "counting distinct subjects"
-dists=($(./count_predicate_distinct_s $ntriples | sort))
+#dists=($(./count_predicate_distinct_s $ntriples | sort))
+dists=($(awk '
+{
+  x=$1; # subject
+  p=$2; # predicate
+
+  # build id lookup table for predicates
+  if (!(p in p_list))
+    p_list[p] = count++;
+
+  # concat all occurring predicate ids for subject/object
+  arr[x] = (x in arr) ? arr[x]","p_list[p] : p_list[p];
+}
+END {
+  count=0;
+
+  # process all stored subjects/objects
+  for (no in arr) {
+
+    count++;
+
+    # split concatenated predicate ids
+    split(arr[no], id_list, ",");
+
+    # remove duplicates from id list
+    for (i in id_list)
+      occ[id_list[i]]++;
+
+    # increase counter for each predicate id
+    for (i in occ)
+      stat[i]++;
+
+    # reset occurrence index for next subject/object
+    delete occ;
+  }
+
+  # print all predicates with occurrence count of subject/object
+  for (no in p_list)
+    print no, stat[p_list[no]];
+
+  # print overall number of distinct subjects/objects
+  print "x_count", count;
+}' $ntriples | sort))
 
 # collect numbers of general statistics
 let "p_count = ${#props[*]} / 2"
