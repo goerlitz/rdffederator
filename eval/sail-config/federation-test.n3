@@ -1,5 +1,5 @@
 ################################################################################
-# Sesame configuration for the RDF federator.
+# Sesame configuration for SPLENDID Federation.
 #
 # ATTENTION: the Sail implementing the sail:sailType must be published
 #            in META-INF/services/org.openrdf.sail.SailFactory
@@ -9,16 +9,15 @@
 @prefix sr:   <http://www.openrdf.org/config/repository/sail#>.
 @prefix sail: <http://www.openrdf.org/config/sail#>.
 @prefix fed:  <http://west.uni-koblenz.de/config/federation/sail#>.
-@prefix west: <http://lodse.west.uni-koblenz.de:8080/openrdf-sesame/repositories/>.
-@prefix fed1: <http://141.26.24.51:8080/openrdf-sesame/repositories/>.
-@prefix fed2: <http://141.26.24.52:8080/openrdf-sesame/repositories/>.
-@prefix fed3: <http://141.26.24.53:8080/openrdf-sesame/repositories/>.
-@prefix fed4: <http://141.26.24.54:8080/openrdf-sesame/repositories/>.
-@prefix fed5: <http://141.26.24.55:8080/openrdf-sesame/repositories/>.
+@prefix src1: <http://141.26.24.51:8080/openrdf-sesame/repositories/>.
+@prefix src2: <http://141.26.24.52:8080/openrdf-sesame/repositories/>.
+@prefix src3: <http://141.26.24.53:8080/openrdf-sesame/repositories/>.
+@prefix src4: <http://141.26.24.54:8080/openrdf-sesame/repositories/>.
+@prefix src5: <http://141.26.24.55:8080/openrdf-sesame/repositories/>.
 
 [] a rep:Repository ;
-   rep:repositoryTitle "RDF Federator" ;
-   rep:repositoryID "RDFFederator" ;
+   rep:repositoryTitle "SPLENDID Federation" ;
+   rep:repositoryID "SPLENDID" ;
    rep:repositoryImpl [
       rep:repositoryType "openrdf:SailRepository" ;
       sr:sailImpl [
@@ -50,48 +49,39 @@
          fed:member [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/dbpedia3.5.1_subset-void.n3> ;
-#            void:sparqlEndpoint west:dbpedia351-subset
-            void:sparqlEndpoint fed3:dbpedia351
+            void:sparqlEndpoint src3:dbpedia351
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/nytimes-2010-01-13-void.n3> ;
-#            void:sparqlEndpoint west:nyt
-            void:sparqlEndpoint fed5:nyt
+            void:sparqlEndpoint src5:nyt
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/linkedmdb-dump-2010-01-19-void.n3> ;
-#            void:sparqlEndpoint west:lmdb
-             void:sparqlEndpoint fed1:linkedmdb
+             void:sparqlEndpoint src1:linkedmdb
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/all-geonames-2010-11-28_cleaned-void.n3> ;
-#            void:sparqlEndpoint west:geonames
-            void:sparqlEndpoint fed2:geonames
+            void:sparqlEndpoint src2:geonames
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/jamendo-void.n3> ;
-#            void:sparqlEndpoint west:jamendo
-            void:sparqlEndpoint fed4:jamendo
+            void:sparqlEndpoint src4:jamendo
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/semanticwebdog-void.n3> ;
-#            void:sparqlEndpoint west:sw-dogfood
-            void:sparqlEndpoint fed5:swdf
+            void:sparqlEndpoint src5:swdf
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/chebi-2010-11-26-void.n3> ;
-#            void:sparqlEndpoint west:chebi
-            void:sparqlEndpoint fed4:chebi
+            void:sparqlEndpoint src4:chebi
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/KEGG-2010-11-26-void.n3> ;
-#            void:sparqlEndpoint west:kegg
-            void:sparqlEndpoint fed5:kegg
+            void:sparqlEndpoint src5:kegg
          ], [
             rep:repositoryType "west:VoidRepository" ;
             fed:voidDescription <void/drugbank_dump_cleaned-2010-11.26-void.n3> ;
-#            void:sparqlEndpoint west:drugbank
-            void:sparqlEndpoint fed1:drugbank
+            void:sparqlEndpoint src1:drugbank
          ]
       ]
    ] .

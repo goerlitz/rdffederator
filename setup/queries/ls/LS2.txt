@@ -1,9 +1,0 @@
-PREFIX owl:  <http://www.w3.org/2002/07/owl#>
-PREFIX drug: <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugs/>
-
-SELECT ?predicate ?object WHERE {
-   { drug:DB00201 ?predicate ?object . }
-  UNION
-   { drug:DB00201 owl:sameAs ?caff .
-     ?caff ?predicate ?object . } 
-}
