@@ -19,24 +19,27 @@
       sr:sailImpl [
          sail:sailType "west:FederationSail" ;
 
-         # source selection settings; type={Ask, Stats}
+         # source selection {ASK, INDEX, INDEX_ASK}
          fed:sourceSelection [
-            fed:selectorType "Stats";
-            fed:useTypeStats true ;
-            fed:attachSameAs true ;
-         ];
+            fed:selectorType "INDEX";
+            fed:useTypeStats true ;  # deprecated
+         ] ;
 
-         # optimizer settings (DP, heuristic)
-         fed:optimizer "DYNAMIC_PROGRAMMING" ;
-
-         # optimizer settings; type={PatternSelectivity, DynamicProgramming}
+         # optimizer settings {DYNAMIC_PROGRAMMING, PATTERN_HEURISTIC}
          fed:queryOptimization [
-            fed:optimizerType "DynamicProgramming" ;
-            fed:cardEstimator "Statistics" ;
-         ];
+            fed:optimizerType "DYNAMIC_PROGRAMMING" ;
 
-         # cardinality estimator settings
-         fed:estimator "STATISTICS" ;
+            # cardinality estimation setting {VOID, VOID_PLUS, TRUE_CARD}            
+            fed:cardEstimator "VOID_PLUS" ;
+            
+            # sub query grouping
+            fed:groupBySource true ;
+            fed:groupBySameAs true ;
+            
+            # join operator implementation
+            fed:useBindJoin true ;
+            fed:useHashJoin true ;
+         ] ;
 
          # sparql endpoints
          fed:member [
