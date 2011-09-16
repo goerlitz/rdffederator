@@ -15,7 +15,7 @@
 
 # check input parameters
 if [ $# -lt 2 ]; then
-    echo "USAGE: ${0##*/} <N-TRIPLES> <DARQ_SD>";
+    echo "USAGE: ${0##*/} <N-TRIPLES> <VOID_FILE>";
     exit;
 fi
 
@@ -96,51 +96,54 @@ unset IFS  # restore default field seperators (' \t \n')
 # count triples, predicates, and types
 let "map_count = ${#map_pred_type[*]} / 2"
 for (( i = 0 ;  i < $map_count;  i++ )); do
-  value=${map_pred_type[$i*2+1]}
-  tripl=${map_pred_type[$i*2]}
-  tripl=${tripl%%:*} # first value of x:y:z
-  if [ ${value%%<*} == "P:" ]; then
-    let "pred_count++"
-    let "triple_count += $tripl"
-  else
-    let "type_count++"
-  fi
-done
-
-# create DARQ regex string for all types
-for (( i = $pred_count ;  i < $map_count;  i++ )); do
-  if [ "$regex" != "" ]; then regex=$regex" || "; fi
-  type=${map_pred_type[$i*2+1]}
-  type=${type#T:<};type=${type%>} # remove prefix and angle brackets
-  regex=$regex"REGEX(STR(?object),'$type')"
+    value=${map_pred_type[$i*2+1]}
+    tripl=${map_pred_type[$i*2]}
+    tripl=${tripl%%:*} # first value of x:y:z
+    if [ ${value%%<*} == "P:" ]; then
+        let "pred_count++"
+        let "triple_count += $tripl"
+    else
+        let "type_count++"
+    fi
 done
 
 # print header
-echo  >$statfile "@prefix sd:  <http://darq.sf.net/dose/0.1#> ."
-echo >>$statfile "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> ."
+echo  >$statfile "@prefix void: <http://rdfs.org/ns/void#> ."
 echo >>$statfile ""
-echo >>$statfile "[] a sd:Service ;"
+echo >>$statfile "[] a void:Dataset ;"
 
-# print statistics
-echo >>$statfile -e "\tsd:totalTriples \"$triple_count\" ;"
+# print general statistics
+let "class_count=$map_count-$pred_count"
+echo >>$statfile -e "\tvoid:triples \"$triple_count\" ;"
+echo >>$statfile -e "\tvoid:classes \"$class_count\" ;"
+echo >>$statfile -e "\tvoid:properties \"$pred_count\" ;"
+#echo >>$statfile -e "\tvoid:distinctSubjects \"$s_count\" ;"
+#echo >>$statfile -e "\tvoid:distinctObjects \"$o_count\" ;"
+
+# print property statistics
 for (( i = 0 ;  i < $pred_count;  i++ )); do
-  pred=${map_pred_type[$i*2+1]}
-  pred=${pred#P:}; # remove prefix
-  vals=${map_pred_type[$i*2]}
-  rest=${vals#*:}; trpl=${vals%%:*};  # split triples:subjects:objects counts
-  echo >>$statfile -e "\t"`[ $i = 0 ] && echo "sd:capability [" || echo "] , ["`
-  echo >>$statfile -e "\t\tsd:predicate $pred ;"
-  echo >>$statfile -e "\t\tsd:triples \"$trpl\" ;"
-  if [ "$pred" == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>" ]; then
-    echo >>$statfile -e "\t\tsd:sofilter \"$regex\"^^xsd:string ;"
-  else
-    sel_s=$(echo "1/${rest%:*}" | bc -l)  # first value of y:z
-    sel_o=$(echo "1/${rest#*:}" | bc -l)  # rest of y:z
-    echo >>$statfile -e "\t\tsd:subjectSelectivity \"$sel_s\"^^xsd:double ;"
-    echo >>$statfile -e "\t\tsd:objectSelectivity \"$sel_o\"^^xsd:double ;"
-    echo >>$statfile -e "\t\tsd:sofilter \"\" ;"
-  fi
+    pred=${map_pred_type[$i*2+1]}
+    pred=${pred#P:}; # remove prefix
+    vals=${map_pred_type[$i*2]}
+    rest=${vals#*:}; trpl=${vals%%:*};  # split triples:subjects:objects counts
+
+    echo >>$statfile -e "\t"`[ $i = 0 ] && echo "void:propertyPartition [" || echo "] , ["`
+    echo >>$statfile -e "\t\tvoid:property $pred ;"
+    echo >>$statfile -e "\t\tvoid:triples \"$trpl\" ;"
+    echo >>$statfile -e "\t\tvoid:distinctSubjects \"${rest%:*}\" ;"
+    echo >>$statfile -e "\t\tvoid:distinctObjects  \"${rest#*:}\" ;"
 done
+
+# print type statistics
+for (( i = $pred_count ;  i < $map_count;  i++ )); do
+    type=${map_pred_type[$i*2+1]}
+    type=${type#T:}; # remove prefix
+
+    echo >>$statfile -e "\t"`[ $i = 0 ] && echo "void:classPartition [" || echo "] , ["`
+    echo >>$statfile -e "\t\tvoid:class $type ;"
+    echo >>$statfile -e "\t\tvoid:entities \"${map_pred_type[$i*2]}\" ;"
+done
+
 echo >>$statfile -e "\t] ."
 
 let "time=$(date +%s)-$start"
