@@ -2,8 +2,7 @@
 # generates void statistics from ntriple files.
 
 # check script arguments
-# if [ $# = 0 ]; then
-if test $# -lt 2; then
+if [ $# -lt 2 ]; then
     echo "USAGE: ${0##*/} RDF_FILE.nt VOID_FILE.n3";
     exit;
 fi
