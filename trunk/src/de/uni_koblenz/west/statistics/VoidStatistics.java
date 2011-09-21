@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -199,11 +200,11 @@ public class VoidStatistics implements RDFStatistics {
 		
 		// check result validity
 		if (bindings.size() == 0) {
-			LOGGER.warn("found no count for " + vars);
+			LOGGER.warn("found no count for " + Arrays.asList(vars));
 			return -1;
 		}
 		if (bindings.size() > 1)
-			LOGGER.warn("found multiple counts for " + vars);
+			LOGGER.warn("found multiple counts for " + Arrays.asList(vars));
 		
 		return Long.parseLong(bindings.get(0));
 	}
@@ -400,7 +401,15 @@ public class VoidStatistics implements RDFStatistics {
 				}
 				
 				// add voiD file content to repository
-				con.add(in, voidURI.stringValue(), format, voidURI);
+				try {
+					con.add(in, voidURI.stringValue(), format, voidURI);
+				} catch (RDFParseException e) {
+					LOGGER.error("can not parse VOID file " + voidURI + ": " + e.getMessage());
+					return null;
+				} catch (RepositoryException e) {
+					LOGGER.error("can not add VOID file: " + voidURI, e);
+					return null;
+				}
 				
 				if (LOGGER.isDebugEnabled())
 					LOGGER.debug("loaded VOID: " + voidURL.getPath().replace(USER_DIR, ""));
@@ -435,10 +444,10 @@ public class VoidStatistics implements RDFStatistics {
 				
 			} catch (RepositoryException e) {
 				e.printStackTrace();
-			} catch (RDFParseException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
+//			} catch (RDFParseException e) {
+//				e.printStackTrace();
+//			} catch (IOException e) {
+//				e.printStackTrace();
 			} finally {
 				con.close();
 			}
