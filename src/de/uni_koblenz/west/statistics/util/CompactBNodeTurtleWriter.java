@@ -131,7 +131,7 @@ public class CompactBNodeTurtleWriter extends TurtleWriter {
 			if (!subj.equals(storedBNodes.peek())) {
 				
 				// close last statement and finish [] block
-				writer.write(" .");
+				writer.write(" ;");
 				writer.writeEOL();
 				writer.decreaseIndentation();
 				writer.write("]");

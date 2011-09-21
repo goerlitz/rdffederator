@@ -277,6 +277,8 @@ public class VoidGenerator extends RDFHandlerBase {
 		// initalize parser
 		VoidGenerator handler = new VoidGenerator();
 		RDFParser parser = Rio.createParser(format);
+//		parser.setVerifyData(false);
+		parser.setStopAtFirstError(false);
 		parser.setRDFHandler(handler);
 		
 		try {
