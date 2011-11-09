@@ -20,8 +20,13 @@
  */
 package de.uni_koblenz.west.federation.config;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.impl.AbstractQuery;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
@@ -32,6 +37,7 @@ import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
 
 import de.uni_koblenz.west.federation.FederationSail;
+import de.uni_koblenz.west.federation.VoidRepository;
 import de.uni_koblenz.west.federation.estimation.AbstractCardinalityEstimator;
 import de.uni_koblenz.west.federation.estimation.AbstractCostEstimator;
 import de.uni_koblenz.west.federation.estimation.CardinalityCostEstimator;
@@ -40,6 +46,8 @@ import de.uni_koblenz.west.federation.estimation.ModelEvaluator;
 import de.uni_koblenz.west.federation.estimation.SPLENDIDCardinalityEstimator;
 import de.uni_koblenz.west.federation.estimation.TrueCardinalityEstimator;
 import de.uni_koblenz.west.federation.estimation.VoidCardinalityEstimator;
+import de.uni_koblenz.west.federation.evaluation.FedXEvaluationStrategy;
+import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.helpers.Format;
 import de.uni_koblenz.west.federation.model.SubQueryBuilder;
 import de.uni_koblenz.west.federation.optimizer.AbstractFederationOptimizer;
@@ -99,7 +107,6 @@ public class FederationSailFactory implements SailFactory {
 	 *             configuration data.
 	 */
 	@Override
-//	public Sail getSail(SailImplConfig config) throws StoreConfigException { // Sesame 3
 	public Sail getSail(SailImplConfig config) throws SailConfigException { // Sesame 2
 
 		if (!SAIL_TYPE.equals(config.getType())) {
@@ -130,6 +137,12 @@ public class FederationSailFactory implements SailFactory {
 		AbstractFederationOptimizer opt = getQueryOptimizer(optConfig);
 		sail.setFederationOptimizer(opt);
 		
+		// create evaluation strategy
+		sail.setEvalStrategy(optConfig.getEvalStrategy());
+//		sail.setEvalStrategy(new FederationEvalStrategy(sail.getValueFactory()));
+//		sail.setEvalStrategy(new FedXEvaluationStrategy(sail.getValueFactory(), sail.getMembers()));
+		
+		// setup statistics
 		boolean voidPlus = true;
 		String estType = optConfig.getEstimatorType();
 		if ("VOID".equalsIgnoreCase(estType))

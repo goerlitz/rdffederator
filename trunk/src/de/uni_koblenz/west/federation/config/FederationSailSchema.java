@@ -50,5 +50,6 @@ public class FederationSailSchema {
 	public static final URI ESTIMATOR = vf.createURI(NAMESPACE + "cardEstimator");
 	public static final URI STATISTIC = vf.createURI(NAMESPACE + "statistic");
 	public static final URI VOID_URI  = vf.createURI(NAMESPACE + "voidDescription");
+	public static final URI EVAL_STRATEGY  = vf.createURI(NAMESPACE + "evalStrategy");
 
 }
