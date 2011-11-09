@@ -74,29 +74,57 @@ public class SubQueryBuilder {
 		
 		List<TupleExpr> subQueries = new ArrayList<TupleExpr>();
 		
+		// create groups of triple patterns according to the configuration
 		List<List<MappedStatementPattern>> groups = getGroups(patterns);
 		
-		// create list of base expressions from all statement pattern lists
-		for (List<MappedStatementPattern> pList : groups) {
+		// create remote queries for all triple pattern groups
+		// triple patterns in groups should all have the same sources
+		for (List<MappedStatementPattern> patternGroup : groups) {
+			
+			// check that all patterns in a group have the same set of source
+			// TODO: needs improvement - not the best way to do it
+			Set<Graph> sources = null;
+			for (MappedStatementPattern pattern : patternGroup) {
+				if (sources == null)
+					sources = pattern.getSources();
+				else
+					if (!sources.equals(pattern.getSources())) {
+						LOGGER.warn("Statement Patterns with different sources in group");
+						sources.addAll(pattern.getSources());
+					}
+			}
+			
 			TupleExpr baseExpr = null;
 			
-			// join all statements of a list
-			for (MappedStatementPattern pattern : pList) {
-				baseExpr = (baseExpr == null) ? pattern : new Join(baseExpr, pattern);
+			// create a remote query if the pattern group has a single source
+			if (sources.size() == 1) {
+				for (MappedStatementPattern pattern : patternGroup) {
+					baseExpr = (baseExpr == null) ? pattern : new Join(baseExpr, pattern);
+				}
+				baseExpr = applyFilters(baseExpr, conditions);
+				subQueries.add(new RemoteQuery(baseExpr));
 			}
 			
-			// add all applicable filters
-			Set<String> varNames = VarNameCollector.process(baseExpr);
-			for (ValueExpr condition : conditions) {
-				if (varNames.containsAll(VarNameCollector.process(condition))) {
-					baseExpr = new Filter(baseExpr, condition);
+			// create individual remote queries if there is more than one source 
+			else {
+				for (MappedStatementPattern pattern : patternGroup) {
+					baseExpr = applyFilters(pattern, conditions);
+					subQueries.add(new RemoteQuery(baseExpr));
 				}
 			}
-			
-			subQueries.add(new RemoteQuery(baseExpr));
 		}
 		
 		return subQueries;
+	}
+	
+	private TupleExpr applyFilters(TupleExpr expr, List<ValueExpr> conditions) {
+		Set<String> varNames = VarNameCollector.process(expr);
+		for (ValueExpr condition : conditions) {
+			if (varNames.containsAll(VarNameCollector.process(condition))) {
+				expr = new Filter(expr, condition);
+			}
+		}
+		return expr;
 	}
 	
 	public List<List<MappedStatementPattern>> getGroups(List<MappedStatementPattern> patterns) {

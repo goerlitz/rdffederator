@@ -113,29 +113,25 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 	
 	// -------------------------------------------------------------------------
 	
-	/**
-	 * Evaluates the left join with the specified set of variable bindings as input.
-	 * IMPORTANT: left joins (optional parts) are currently not evaluated.
-	 * 
-	 * @param leftJoin
-	 *        The Left Join to evaluate
-	 * @param bindings
-	 *        The variables bindings to use for evaluating the expression, if
-	 *        applicable.
-	 * @return A cursor over the variable binding sets that match the join.
-	 */
-	@Override
-	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
-			LeftJoin leftJoin, BindingSet bindings)
-			throws QueryEvaluationException {
-		
-		CloseableIteration<BindingSet, QueryEvaluationException> result;
-		result = super.evaluate(leftJoin.getLeftArg(), bindings);
-		
-		LOGGER.info("skipping evaluation of OPTIONAL: " + OperatorTreePrinter.print(leftJoin.getRightArg()));
-		
-		return result;
-	}
+//	/**
+//	 * Evaluates the left join with the specified set of variable bindings as input.
+//	 * IMPORTANT: left joins (optional parts) are currently not evaluated.
+//	 * 
+//	 * @param leftJoin
+//	 *        The Left Join to evaluate
+//	 * @param bindings
+//	 *        The variables bindings to use for evaluating the expression, if
+//	 *        applicable.
+//	 * @return A cursor over the variable binding sets that match the join.
+//	 */
+//	@Override
+//	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+//			LeftJoin leftJoin, BindingSet bindings)
+//			throws QueryEvaluationException {
+//		
+//		CloseableIteration<BindingSet, QueryEvaluationException> result;
+//		return super.evaluate(leftJoin.getLeftArg(), bindings);
+//	}
 	
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
 			BindJoin join, BindingSet bindings) throws QueryEvaluationException {
@@ -318,6 +314,7 @@ public class FederationEvalStrategy extends EvaluationStrategyImpl {
 
 		// Filter any duplicates
 //		cursor = new DistinctCursor<BindingSet>(cursor);
+		// TODO: check if this is bad for performance
 		cursor = new DistinctIteration<BindingSet, QueryEvaluationException>(cursor);
 
 		return cursor;
