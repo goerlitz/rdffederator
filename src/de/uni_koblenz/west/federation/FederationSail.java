@@ -31,11 +31,13 @@ import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
+import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.federation.Federation;
 import org.openrdf.sail.helpers.SailBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.uni_koblenz.west.federation.config.InitializedWithSail;
 import de.uni_koblenz.west.federation.evaluation.FederationEvalStrategy;
 import de.uni_koblenz.west.federation.sources.SourceSelector;
 import de.uni_koblenz.west.statistics.VoidStatistics;
@@ -63,7 +65,6 @@ public class FederationSail extends SailBase {
 	private boolean initialized = false;
 	
 	public FederationSail() {
-		this.evalStrategy = new FederationEvalStrategy(this.vf);
 		this.members = new ArrayList<Repository>();
 	}
 	
@@ -94,8 +95,8 @@ public class FederationSail extends SailBase {
 	// --- SETTER --------------------------------------------------------------
 
 	public void setEvalStrategy(EvaluationStrategy evalStrategy) {
-		if (evalStrategy == null)
-			throw new IllegalArgumentException("evaluation strategy must not be NULL");
+//		if (evalStrategy == null)
+//			throw new IllegalArgumentException("evaluation strategy must not be NULL");
 		this.evalStrategy = evalStrategy;
 	}
 	
@@ -139,6 +140,9 @@ public class FederationSail extends SailBase {
 		
 		super.initialize();  // only Sesame 2 needs to initialize super class
 		
+//		if (this.evalStrategy == null)
+//			throw new SailException("Sail evaluation strategy has not been initialized");
+		
 		// initialize all members
 		for (Repository rep : this.members) {
 			try {
@@ -154,6 +158,18 @@ public class FederationSail extends SailBase {
 		VoidStatistics stats = VoidStatistics.getInstance();
 		this.selector.setStatistics(stats);
 		this.selector.initialize();
+		
+		// initialize evaluation strategy
+		if (this.evalStrategy == null)
+			this.evalStrategy = new FederationEvalStrategy(this.vf);
+		
+		if (this.evalStrategy instanceof InitializedWithSail) {
+			try {
+				((InitializedWithSail) this.evalStrategy).init(this);
+			} catch (SailConfigException e) {
+				throw new SailException("initialization of evaluation strategy failed", e);
+			}
+		}
 		
 		initialized = true;
 	}

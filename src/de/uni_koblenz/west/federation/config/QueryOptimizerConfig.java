@@ -26,12 +26,14 @@ import static de.uni_koblenz.west.federation.config.FederationSailSchema.GROUP_B
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_BIND_JOIN;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.USE_HASH_JOIN;
 import static de.uni_koblenz.west.federation.config.FederationSailSchema.OPT_TYPE;
+import static de.uni_koblenz.west.federation.config.FederationSailSchema.EVAL_STRATEGY;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.sail.config.SailConfigException;
 
 /**
@@ -49,6 +51,8 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 	private boolean useBindJoin;
 	private boolean useHashJoin;
 	
+	private EvaluationStrategy evalStrategy;
+	
 	protected QueryOptimizerConfig() {
 		super(OPT_TYPE);
 	}
@@ -61,6 +65,10 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 	
 	public String getEstimatorType() {
 		return this.estimatorType;
+	}
+	
+	public EvaluationStrategy getEvalStrategy() {
+		return this.evalStrategy;
 	}
 	
 	public boolean isGroupBySameAs() {
@@ -94,6 +102,8 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		model.add(self, USE_BIND_JOIN, vf.createLiteral(this.useBindJoin));
 		model.add(self, USE_HASH_JOIN, vf.createLiteral(this.useHashJoin));
 		
+		model.add(self, EVAL_STRATEGY, vf.createLiteral(this.evalStrategy.getClass().getName()));
+		
 		return self;
 	}
 
@@ -111,6 +121,21 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		
 		useBindJoin = getObjectBoolean(model, implNode, USE_BIND_JOIN, false);
 		useHashJoin = getObjectBoolean(model, implNode, USE_HASH_JOIN, false);
+		
+		Literal className = getObjectLiteral(model, implNode, EVAL_STRATEGY);
+		if (className != null) {
+			try {
+				evalStrategy = (EvaluationStrategy) Class.forName(className.stringValue()).newInstance();
+			} catch (ClassNotFoundException e) {
+				throw new SailConfigException("unknown evaluation strategy impl: " + className);
+			} catch (InstantiationException e) {
+				throw new SailConfigException("failed to create evaluation strategy impl: " + className, e);
+			} catch (IllegalAccessException e) {
+				throw new SailConfigException("failed to create evaluation strategy impl: " + className, e);
+			} catch (ClassCastException e) {
+				throw new SailConfigException(className + " is not an EvaluationStrategy", e);
+			}
+		}
 	}
 
 	@Override
@@ -120,6 +145,7 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		
 		if (this.estimatorType == null)
 			throw new SailConfigException("no cardinality estimator specified: use " + ESTIMATOR);
+		
 		// TODO: check for valid estimator settings
 	}
 
