@@ -31,7 +31,7 @@ import org.openrdf.query.algebra.helpers.StatementPatternCollector;
 import de.uni_koblenz.west.federation.index.Graph;
 
 /**
- * Marker class which defines that all child arguments should be executed
+ * Query Model Node which marks a sub tree to be a group of StatementPatterns which are executed class which defines that all child arguments should be executed
  * in one block on a SPARQL endpoint.
  * 
  * @author Olaf Goerlitz

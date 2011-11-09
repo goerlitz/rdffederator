@@ -159,10 +159,22 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 	private List<Join> createPhysicalJoins(TupleExpr leftArg, TupleExpr rightArg) {
 		List<Join> joins = new ArrayList<Join>();
 		if (bindJoin) {
-			joins.add(new BindJoin(leftArg, rightArg));
+			// need to clone the argument to maintain the proper parent reference
+			TupleExpr left = leftArg.clone();
+			TupleExpr right = rightArg.clone();
+			Join join = new BindJoin(left, right);
+			left.setParentNode(join);
+			right.setParentNode(join);
+			joins.add(join);
 		}
 		if (hashJoin) {
-			joins.add(new HashJoin(leftArg, rightArg));
+			// need to clone the argument to maintain the proper parent reference
+			TupleExpr left = leftArg.clone();
+			TupleExpr right = rightArg.clone();
+			Join join = new HashJoin(left, right);
+			left.setParentNode(join);
+			right.setParentNode(join);
+			joins.add(join);
 		}
 		return joins;
 	}
