@@ -1,6 +1,6 @@
 # !/bin/sh
 
-mainclass=de.uni_koblenz.west.statistics.util.StructurednessAnalyzer
+mainclass=de.uni_koblenz.west.splendid.statistics.util.StructurednessAnalyzer
 
 # add current dir and bin/ to the classpath
 classpath=.:bin/
