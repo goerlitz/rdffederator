@@ -7,8 +7,6 @@ cfg=${1:-"federation-test.properties"}
 
 mainclass=de.uni_koblenz.west.federation.test.FederationRepositoryTest
 
-cd eval
-
 # set classpath
 classpath=../bin
 
@@ -19,5 +17,4 @@ for jar in ../lib/*.jar; do classpath=$classpath:$jar; done
 
 # run federation test
 java -cp $classpath $mainclass $cfg
-cd ..
 

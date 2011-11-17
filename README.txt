@@ -16,7 +16,7 @@ cardinality.
 SPLENDID is based on the Sesame 2 sail architecture. A SPLENDID federation can
 be set up via Sesame's standard repository configuration mechanism.
 
-Example setup files can be found in setup/sail-config/.
+Example setup files can be found in eval/sail-config/.
 
 The repository configuration needs federation members with voiD descriptions
 containing statistical information. A generator for such void statistics
