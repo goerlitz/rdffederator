@@ -1,6 +1,6 @@
 # !/bin/sh
 
-mainclass=de.uni_koblenz.west.splendid.statistics.util.StructurednessAnalyzer
+mainclass=de.uni_koblenz.west.splendid.statistics.util.VoidGenerator
 
 # set classpath
 classpath=../bin
@@ -9,5 +9,5 @@ classpath=../bin
 for jar in ../lib/*.jar; do classpath=$classpath:$jar; done
 
 # run main class with classpath setting
-java -cp $classpath -Xmx2g $mainclass $*
+java -cp $classpath -Xmx2g $mainclass $* 1>void.n3
 
