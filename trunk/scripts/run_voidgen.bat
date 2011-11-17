@@ -1,7 +1,6 @@
 @ECHO OFF
-REM run SPLENDID federation test
 
-set MAIN=de.uni_koblenz.west.splendid.test.FederationRepositoryTest
+set MAIN=de.uni_koblenz.west.splendid.statistics.void2.VoidGenerator
 
 REM set classpath
 set CP=..\bin

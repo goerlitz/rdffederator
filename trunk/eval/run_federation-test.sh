@@ -5,7 +5,7 @@
 # set default config file if not specified
 cfg=${1:-"federation-test.properties"}
 
-mainclass=de.uni_koblenz.west.federation.test.FederationRepositoryTest
+mainclass=de.uni_koblenz.west.splendid.test.FederationRepositoryTest
 
 # set classpath
 classpath=../bin
