@@ -43,6 +43,10 @@ public class SourceSelectorConfig extends AbstractSailConfig {
 		super(SELECTOR_TYPE);
 	}
 	
+	protected SourceSelectorConfig(String type) {
+		this.setType(type);
+	}
+	
 	public static SourceSelectorConfig create(Graph model, Resource implNode) throws SailConfigException {
 		SourceSelectorConfig config = new SourceSelectorConfig();
 		config.parse(model, implNode);

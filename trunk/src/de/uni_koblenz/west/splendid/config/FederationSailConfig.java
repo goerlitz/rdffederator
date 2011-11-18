@@ -42,6 +42,9 @@ import org.openrdf.sail.config.SailConfigException;
  */
 public class FederationSailConfig extends AbstractSailConfig {
 	
+	private static final String DEFAULT_SOURCE_SELECTION = "INDEX_ASK";
+	private static final String DEFAULT_OPTIMIZER_STRATEGY = "DYNAMIC_PROGRAMMING";
+	
 	private final List<RepositoryImplConfig> memberConfig = new ArrayList<RepositoryImplConfig>();
 	private SourceSelectorConfig selectorConfig;
 	private QueryOptimizerConfig optimizerConfig;
@@ -77,8 +80,7 @@ public class FederationSailConfig extends AbstractSailConfig {
 	 * @return the resource representing this Sail configuration.
 	 */
 	@Override
-//	public Resource export(Model model) { // Sesame 3
-	public Resource export(Graph model) { // Sesame 2
+	public Resource export(Graph model) {
 		
 		Resource self = super.export(model);
 		
@@ -99,13 +101,11 @@ public class FederationSailConfig extends AbstractSailConfig {
 	 * @param implNode the resource representing this federation sail.
 	 */
 	@Override
-//	public void parse(Model model, Resource implNode) throws StoreConfigException { // Sesame 3
-	public void parse(Graph model, Resource implNode) throws SailConfigException { // Sesame 2
+	public void parse(Graph model, Resource implNode) throws SailConfigException {
 		super.parse(model, implNode);
 		
 		// extract the repository settings for all defined federation members
-//		for (Value member : model.filter(implNode, MEMBER, null).objects()) { // Sesame 3
-		for (Value member : filter(model, implNode, MEMBER)) { // Sesame 2
+		for (Value member : filter(model, implNode, MEMBER)) {
 			if (member instanceof Resource) {
 				try {
 					this.memberConfig.add(RepositoryImplConfigBase.create(model, (Resource) member));
@@ -120,11 +120,21 @@ public class FederationSailConfig extends AbstractSailConfig {
 		
 		// get source selection strategy
 		Resource sourceSelection = getObjectResource(model, implNode, SRC_SELECTION);
-		selectorConfig = SourceSelectorConfig.create(model, sourceSelection);
+		if (sourceSelection == null) {
+			// using default setting
+			selectorConfig = new SourceSelectorConfig(DEFAULT_SOURCE_SELECTION);
+		} else {
+			selectorConfig = SourceSelectorConfig.create(model, sourceSelection);
+		}
 		
 		// get query optimization strategy
 		Resource queryOptimization = getObjectResource(model, implNode, QUERY_OPT);
-		optimizerConfig = QueryOptimizerConfig.create(model, queryOptimization);
+		if (queryOptimization == null) {
+			// using default setting
+			optimizerConfig = new QueryOptimizerConfig(DEFAULT_OPTIMIZER_STRATEGY);
+		} else {
+			optimizerConfig = QueryOptimizerConfig.create(model, queryOptimization);
+		}
 	}
 
 	/**
@@ -136,12 +146,10 @@ public class FederationSailConfig extends AbstractSailConfig {
 	 *             If the configuration is invalid.
 	 */
 	@Override
-//	public void validate() throws StoreConfigException { // Sesame 3
-	public void validate() throws SailConfigException { // Sesame 2
+	public void validate() throws SailConfigException {
 		super.validate();
 		if (memberConfig.size() == 0) {
-//			throw new StoreConfigException("No federation members specified"); // Sesame 3
-			throw new SailConfigException("No federation members specified"); // Sesame 2
+			throw new SailConfigException("No federation members specified");
 		}
 		
 		// validate all member repositories

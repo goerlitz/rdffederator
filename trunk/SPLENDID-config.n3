@@ -23,31 +23,6 @@
       sr:sailImpl [
          sail:sailType "west:FederationSail" ;
 
-         # source selection {ASK, INDEX, INDEX_ASK}
-         fed:sourceSelection [
-            fed:selectorType "INDEX_ASK";
-            fed:useTypeStats true ;  # deprecated
-         ] ;
-
-         # optimizer settings {DYNAMIC_PROGRAMMING, PATTERN_HEURISTIC}
-         fed:queryOptimization [
-            fed:optimizerType "DYNAMIC_PROGRAMMING" ;
-
-            # cardinality estimation setting {VOID, VOID_PLUS, TRUE_CARD}            
-            fed:cardEstimator "VOID_PLUS" ;
-            
-            # sub query grouping
-            fed:groupBySource true ;
-            fed:groupBySameAs true ;
-            
-            # join operator implementation
-            fed:useBindJoin true ;
-            fed:useHashJoin true ;
-            
-            # use specific EvaluationStrategy
-            fed:evalStrategy "de.uni_koblenz.west.splendid.evaluation.FedXEvaluationStrategy"
-         ] ;
-
          # sparql endpoints
          fed:member [
             rep:repositoryType "west:VoidRepository" ;

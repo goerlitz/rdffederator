@@ -65,6 +65,10 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 	public String getType() {
 		return type;
 	}
+	
+	protected void setType(String type) {
+		this.type = type;
+	}
 
 	@Override
 	public Resource export(Graph model) {
@@ -132,7 +136,7 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 		try {
 			return getObjectLiteral(model, implNode, property).booleanValue();
 		} catch (NullPointerException e) {
-			LOGGER.warn("missing option " + property + ", default is " + defaultValue);
+			LOGGER.trace("missing option " + property + ", default is " + defaultValue);
 			return defaultValue;
 		} catch (IllegalArgumentException e) {
 			throw new SailConfigException("not a boolean value in option " + property);
@@ -151,7 +155,8 @@ public abstract class AbstractSailConfig implements SailImplConfig {
 	protected Resource getObjectResource(Graph model, Resource implNode, URI predicate) throws SailConfigException {
 		Iterator<Statement> objects = model.match(implNode, predicate, null);
 		if (!objects.hasNext())
-			throw new SailConfigException("found no object value for " + predicate);
+			return null;
+//			throw new SailConfigException("found no object value for " + predicate);
 		Statement st = objects.next();
 		if (objects.hasNext())
 			throw new SailConfigException("found multiple object values for " + predicate);

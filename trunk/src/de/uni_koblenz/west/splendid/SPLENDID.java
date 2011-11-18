@@ -80,7 +80,7 @@ public class SPLENDID {
 		}
 		
 		String configFile = args[0];
-		List<String> queryFiles = Arrays.asList(Arrays.copyOfRange(args, 2, args.length));
+		List<String> queryFiles = Arrays.asList(Arrays.copyOfRange(args, 1, args.length));
 		
 		try {
 			SPLENDID splendid = new SPLENDID(configFile);
@@ -171,6 +171,10 @@ public class SPLENDID {
 	 * @param queryFiles A list of files containing the queries.
 	 */
 	private void execSparqlQueries(List<String> queryFiles) {
+		if (queryFiles == null || queryFiles.size() == 0) {
+			LOGGER.warn("No query files specified");
+		}
+		
 		for (String queryString : loadSparqlQueries(queryFiles)) {
 			System.out.println("Executing QUERY:\n" + queryString);
 			System.out.println("RESULT:\n");
