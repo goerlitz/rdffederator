@@ -55,6 +55,8 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 	private boolean hashJoin;
 			
 	public DynamicProgrammingOptimizer(boolean hashJoin, boolean bindJoin) {
+		if (hashJoin == false && bindJoin == false)
+			throw new IllegalArgumentException("cannot create joins: all physical join types are disabled");
 		this.bindJoin = bindJoin;
 		this.hashJoin = hashJoin;
 	}
@@ -105,6 +107,7 @@ public class DynamicProgrammingOptimizer extends AbstractFederationOptimizer {
 		
 		// return the final plan
 		if (optPlans.get(count).size() == 0)
+			// This is wrong: how do we get here?
 			throw new UnsupportedOperationException("Queries requiring cross products are not supported (yet)");
 		
 		TupleExpr newOp = optPlans.get(count).iterator().next();

@@ -43,18 +43,24 @@ import org.openrdf.sail.config.SailConfigException;
  */
 public class QueryOptimizerConfig extends AbstractSailConfig {
 	
-	private String estimatorType;
+	private static final String DEFAULT_ESTIMATOR_TYPE = "INDEX_ASK";
 	
-	private boolean groupBySameAs;
-	private boolean groupBySource;
+	private String estimatorType = DEFAULT_ESTIMATOR_TYPE;
 	
-	private boolean useBindJoin;
-	private boolean useHashJoin;
+	private boolean groupBySameAs = false;
+	private boolean groupBySource = true;
+	
+	private boolean useBindJoin = true;
+	private boolean useHashJoin = true;
 	
 	private EvaluationStrategy evalStrategy;
 	
 	protected QueryOptimizerConfig() {
 		super(OPT_TYPE);
+	}
+	
+	protected QueryOptimizerConfig(String type) {
+		this.setType(type);
 	}
 	
 	public static QueryOptimizerConfig create(Graph model, Resource implNode) throws SailConfigException {
@@ -114,18 +120,20 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 		Literal estimator = getObjectLiteral(model, implNode, ESTIMATOR);
 		if (estimator != null) {
 			this.estimatorType = estimator.getLabel();
+		} else {
+			this.estimatorType = DEFAULT_ESTIMATOR_TYPE;
 		}
 		
-		groupBySameAs = getObjectBoolean(model, implNode, GROUP_BY_SAMEAS, false);
-		groupBySource = getObjectBoolean(model, implNode, GROUP_BY_SOURCE, false);
+		this.groupBySameAs = getObjectBoolean(model, implNode, GROUP_BY_SAMEAS, this.groupBySameAs);
+		this.groupBySource = getObjectBoolean(model, implNode, GROUP_BY_SOURCE, this.groupBySource);
 		
-		useBindJoin = getObjectBoolean(model, implNode, USE_BIND_JOIN, false);
-		useHashJoin = getObjectBoolean(model, implNode, USE_HASH_JOIN, false);
+		this.useBindJoin = getObjectBoolean(model, implNode, USE_BIND_JOIN, this.useBindJoin);
+		this.useHashJoin = getObjectBoolean(model, implNode, USE_HASH_JOIN, this.useHashJoin);
 		
 		Literal className = getObjectLiteral(model, implNode, EVAL_STRATEGY);
 		if (className != null) {
 			try {
-				evalStrategy = (EvaluationStrategy) Class.forName(className.stringValue()).newInstance();
+				this.evalStrategy = (EvaluationStrategy) Class.forName(className.stringValue()).newInstance();
 			} catch (ClassNotFoundException e) {
 				throw new SailConfigException("unknown evaluation strategy impl: " + className);
 			} catch (InstantiationException e) {
@@ -141,10 +149,12 @@ public class QueryOptimizerConfig extends AbstractSailConfig {
 	@Override
 	public void validate() throws SailConfigException {
 		super.validate();
-		// TODO: check for valid optimizer settings
 		
 		if (this.estimatorType == null)
 			throw new SailConfigException("no cardinality estimator specified: use " + ESTIMATOR);
+		
+		if (this.useHashJoin == false && this.useBindJoin == false)
+			throw new SailConfigException("cannot create joins: all physical join types are set to false");
 		
 		// TODO: check for valid estimator settings
 	}
