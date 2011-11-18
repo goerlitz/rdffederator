@@ -35,9 +35,9 @@ import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.test.config.Configuration;
-import de.uni_koblenz.west.federation.test.config.ConfigurationException;
-import de.uni_koblenz.west.federation.test.config.Query;
+import de.uni_koblenz.west.splendid.test.config.Configuration;
+import de.uni_koblenz.west.splendid.test.config.ConfigurationException;
+import de.uni_koblenz.west.splendid.test.config.Query;
 
 /**
  * Evaluation of the query processing.

@@ -14,15 +14,15 @@ import org.openrdf.query.parser.sparql.SPARQLParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_koblenz.west.federation.FederationSail;
-import de.uni_koblenz.west.federation.index.Graph;
-import de.uni_koblenz.west.federation.model.MappedStatementPattern;
-import de.uni_koblenz.west.federation.model.SubQueryBuilder;
-import de.uni_koblenz.west.federation.optimizer.AbstractFederationOptimizer;
-import de.uni_koblenz.west.federation.sources.SourceSelector;
-import de.uni_koblenz.west.federation.test.config.Configuration;
-import de.uni_koblenz.west.federation.test.config.ConfigurationException;
-import de.uni_koblenz.west.federation.test.config.Query;
+import de.uni_koblenz.west.splendid.FederationSail;
+import de.uni_koblenz.west.splendid.index.Graph;
+import de.uni_koblenz.west.splendid.model.MappedStatementPattern;
+import de.uni_koblenz.west.splendid.model.SubQueryBuilder;
+import de.uni_koblenz.west.splendid.optimizer.AbstractFederationOptimizer;
+import de.uni_koblenz.west.splendid.sources.SourceSelector;
+import de.uni_koblenz.west.splendid.test.config.Configuration;
+import de.uni_koblenz.west.splendid.test.config.ConfigurationException;
+import de.uni_koblenz.west.splendid.test.config.Query;
 
 /**
  * Evaluation of the source selection.
