@@ -60,13 +60,13 @@ declare -a map_pred_type=($(cat $ntriples | sed '/^ *#/d;/^ *$/d' | awk '{
   pred[p]++
   if (p == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>") type[o]++
 
-  # build id lookup table for predicates
+  # build ID lookup table for predicates (p -> ID)
   if (!(p in p_list)) p_list[p] = count++
 
-  # concat all occurring predicate ids for objects
+  # build object/predicate mapping, using concatenated predicate IDs (o -> "pID_1, .., pID_i")
   arr_po[o] = (o in arr_po) ? arr_po[o]","p_list[p] : p_list[p];
 
-  # concat all occurring predicate ids for objects
+  # build subject/predicate mapping, using concatenated predicate IDs (s -> "pID_1, .., pID_i")
   arr_ps[s] = (s in arr_ps) ? arr_ps[s]","p_list[p] : p_list[p];
 
 } END {
