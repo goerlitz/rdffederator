@@ -13,5 +13,6 @@
 	<classpathentry kind="lib" path="lib/commons-lang-2.5.jar"/>
 	<classpathentry kind="lib" path="lib/junit-4.10.jar"/>
 	<classpathentry kind="lib" path="lib/openrdf-sesame-2.6.1-onejar.jar" sourcepath="lib/sesame-core-2.6.1-sources.jar"/>
+	<classpathentry kind="lib" path="lib/SPLENDID-FedX11Bridge.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

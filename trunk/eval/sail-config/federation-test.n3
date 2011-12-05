@@ -43,6 +43,9 @@
             # join operator implementation
             fed:useBindJoin true ;
             fed:useHashJoin true ;
+            
+            # use custom EvaluationStrategy
+#            fed:evalStrategy "de.uni_koblenz.west.splendid.evaluation.FedXEvaluationStrategy"
          ] ;
 
          # sparql endpoints
