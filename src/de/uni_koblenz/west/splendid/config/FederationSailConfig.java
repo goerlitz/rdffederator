@@ -134,6 +134,8 @@ public class FederationSailConfig extends AbstractSailConfig {
 			optimizerConfig = new QueryOptimizerConfig(DEFAULT_OPTIMIZER_STRATEGY);
 		} else {
 			optimizerConfig = QueryOptimizerConfig.create(model, queryOptimization);
+			if (optimizerConfig.getType() == null)
+				optimizerConfig.setType(DEFAULT_OPTIMIZER_STRATEGY);
 		}
 	}
 
