@@ -37,6 +37,7 @@ import org.openrdf.query.Query;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.UnsupportedQueryLanguageException;
+import org.openrdf.query.Update;
 //import org.openrdf.result.ContextResult;
 //import org.openrdf.result.ModelResult;
 //import org.openrdf.result.NamespaceResult;
@@ -161,6 +162,12 @@ public class VoidRepositoryConnection extends ReadOnlyRepositoryConnection {
 //	public ModelResult match(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws StoreException {
 	public RepositoryResult<Statement> getStatements(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts) throws RepositoryException {
 		throw new UnsupportedOperationException("Not yet implemented");
+	}
+	
+	@Override
+	public Update prepareUpdate(QueryLanguage ql, String update, String baseURI)
+			throws RepositoryException, MalformedQueryException {
+		throw new UnsupportedOperationException("SPARQL update is not supported");
 	}
 	
 	// Sesame 2 only ===========================================================

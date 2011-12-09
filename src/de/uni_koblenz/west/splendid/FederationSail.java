@@ -32,7 +32,6 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.config.SailConfigException;
-import org.openrdf.sail.federation.Federation;
 import org.openrdf.sail.helpers.SailBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
