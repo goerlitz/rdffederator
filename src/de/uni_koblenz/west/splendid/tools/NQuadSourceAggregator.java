@@ -55,9 +55,9 @@ import org.semanticweb.yars.nx.parser.NxParser;
  * 
  * @author goerlitz@uni-koblenz.de
  */
-public class SourceAggregator {
+public class NQuadSourceAggregator {
 	
-	static final String USAGE = "SourceAggregator [-h] -o <outfile> -i <infile> [<infile2> ...]";
+	static final String USAGE = "NQuadSourceAggregator [-h] -o <outfile> -i <infile> [<infile2> ...]";
 	static final String LINE_SEP = System.getProperty("line.separator");
 	
 	static final Options OPTIONS    = new Options();
@@ -105,7 +105,7 @@ public class SourceAggregator {
 	        String outputFile = cmd.getOptionValue("o");
 	        
 	        // process all input files
-	        new SourceAggregator().process(outputFile, inputFiles);
+	        new NQuadSourceAggregator().process(outputFile, inputFiles);
 	        
 		} catch (ParseException exp) {
 			// print parse error and display usage message
@@ -251,6 +251,8 @@ public class SourceAggregator {
 		}
 		return in;
 	}
+	
+	// --------------------------------------------------------------
 	
 	/**
 	 * Simple counting class.
